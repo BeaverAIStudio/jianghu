@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" href="images/icon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="images/icon-180.png">
+<title>江湖将将胡 · 字符武侠</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --gold: #f0c060;
+  --gold2: #e08010;
+  --dark: #050410;
+  --panel: rgba(5,4,16,.97);
+  --border: rgba(240,192,96,.18);
+}
+
+body {
+  background: var(--dark);
+  color: #e8d5a3;
+  font-family: 'Courier New', '微软雅黑', monospace;
+  overflow: hidden;
+  min-height: 100vh;
+  user-select: none;
+}
+
+/* 粒子背景 */
+#bgCanvas {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 扫描线 */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0,0,0,.06) 2px, rgba(0,0,0,.06) 4px
+  );
+  pointer-events: none;
+  z-index: 1;
+  opacity: .4;
+}
+
+/* 主容器 */
+#gameContainer {
+  position: relative;
+  z-index: 10;
+  display: none;
+}
+
+/* ── 开始界面 ── */
+#startScreen {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  z-index: 100;
+  background: radial-gradient(ellipse at 50% 30%, rgba(20,10,40,.6) 0%, transparent 60%),
+              radial-gradient(ellipse at 20% 80%, rgba(50,5,20,.3) 0%, transparent 50%),
+              radial-gradient(ellipse at 80% 70%, rgba(10,5,30,.3) 0%, transparent 50%),
+              var(--dark);
+}
+
+.start-title {
+  text-align: center;
+  margin-bottom: 40px;
+  animation: fadeInDown 1.5s ease;
+}
+
+.start-title .icon {
+  font-size: 13px;
+  margin-bottom: 16px;
+  animation: logoGlow 3s ease-in-out infinite alternate;
+}
+.ascii-logo-wrap {
+  position: relative;
+  overflow: hidden;
+  display: inline-block;
+}
+.ascii-logo {
+  font-family: 'Courier New', 'Consolas', monospace;
+  font-size: 6px;
+  line-height: 1.15;
+  color: #f0c060;
+  text-shadow: 0 0 8px rgba(240,192,96,.3);
+  display: block;
+  letter-spacing: 0;
+  position: relative;
+  animation: logoGlow 3s ease-in-out infinite alternate;
+}
+.ascii-logo .logo-row {
+  display: block;
+  white-space: pre;
+}
+/* 扫描线覆盖层 */
+.ascii-logo-wrap::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, rgba(240,192,96,.6), transparent);
+  animation: logoScanline 3.5s linear infinite;
+  pointer-events: none;
+}
+@keyframes logoScanline {
+  0%   { top: -3px; opacity: 0; }
+  5%   { opacity: 1; }
+  95%  { opacity: 1; }
+  100% { top: calc(100% + 3px); opacity: 0; }
+}
+/* 逐行入场：每行延迟显现 */
+.ascii-logo .logo-row {
+  display: block;
+  opacity: 0;
+  animation: rowReveal 0.4s ease forwards;
+}
+.ascii-logo .logo-row:nth-child(1) { animation-delay: 0.1s; }
+.ascii-logo .logo-row:nth-child(2) { animation-delay: 0.2s; }
+.ascii-logo .logo-row:nth-child(3) { animation-delay: 0.3s; }
+.ascii-logo .logo-row:nth-child(4) { animation-delay: 0.4s; }
+.ascii-logo .logo-row:nth-child(5) { animation-delay: 0.5s; }
+.ascii-logo .logo-row:nth-child(6) { animation-delay: 0.6s; }
+.ascii-logo .logo-row:nth-child(7) { animation-delay: 0.7s; }
+.ascii-logo .logo-row:nth-child(8) { animation-delay: 0.8s; }
+.ascii-logo .logo-row:nth-child(9) { animation-delay: 0.9s; }
+@keyframes rowReveal {
+  from { opacity: 0; transform: translateX(-8px); filter: blur(2px); }
+  to   { opacity: 1; transform: translateX(0); filter: blur(0); }
+}
+.jjh-divider {
+  margin-top: 6px;
+  color: rgba(240,192,96,.3);
+  font-size: 11px;
+  letter-spacing: 2px;
+  opacity: 0;
+  animation: fadeDivider 0.6s ease forwards;
+  animation-delay: 1.2s;
+}
+@keyframes fadeDivider {
+  from { opacity: 0; letter-spacing: 6px; }
+  to   { opacity: 1; letter-spacing: 2px; }
+}
+
+@keyframes logoGlow {
+  0%   { filter: drop-shadow(0 0 6px rgba(240,192,96,.25)); text-shadow: 0 0 8px rgba(240,192,96,.3); }
+  50%  { filter: drop-shadow(0 0 12px rgba(240,192,96,.4)); text-shadow: 0 0 12px rgba(240,192,96,.5), 0 0 20px rgba(240,192,96,.15); }
+  100% { filter: drop-shadow(0 0 6px rgba(240,192,96,.25)); text-shadow: 0 0 8px rgba(240,192,96,.3); }
+}
+
+.start-title .name {
+  font-size: 32px;
+  color: var(--gold);
+  letter-spacing: 8px;
+  text-shadow: 0 0 40px rgba(240,192,96,.2), 0 2px 4px rgba(0,0,0,.8);
+  margin-bottom: 8px;
+}
+
+.start-title .sub {
+  font-size: 11px;
+  color: rgba(200,170,80,.4);
+  letter-spacing: 3px;
+}
+
+.start-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 280px;
+  width: 90%;
+  animation: fadeInUp 1.5s ease 0.3s both;
+}
+
+.start-btn {
+  background: rgba(240,192,96,.06);
+  border: 1px solid rgba(240,192,96,.2);
+  border-radius: 8px;
+  padding: 16px 24px;
+  color: #c0a060;
+  font-family: inherit;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all .3s ease;
+  text-align: center;
+  letter-spacing: 3px;
+}
+
+.start-btn:hover {
+  background: rgba(240,192,96,.12);
+  border-color: rgba(240,192,96,.4);
+  color: var(--gold);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(240,192,96,.1);
+}
+
+.start-btn.primary {
+  background: linear-gradient(135deg, rgba(240,192,96,.15), rgba(240,192,96,.05));
+  border-color: rgba(240,192,96,.35);
+  color: var(--gold);
+  font-size: 17px;
+  padding: 18px 24px;
+}
+
+.start-btn.primary:hover {
+  background: linear-gradient(135deg, rgba(240,192,96,.25), rgba(240,192,96,.1));
+  box-shadow: 0 4px 30px rgba(240,192,96,.15);
+}
+
+.start-btn .desc {
+  font-size: 10px;
+  opacity: .5;
+  margin-top: 4px;
+  letter-spacing: 1px;
+}
+
+.start-footer {
+  position: fixed;
+  bottom: 20px;
+  font-size: 10px;
+  color: rgba(150,120,60,.25);
+  letter-spacing: 1px;
+  animation: fadeIn 2s ease 1s both;
+}
+
+/* BUG标注 */
+.bug-note {
+  position: fixed;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  color: rgba(150,120,60,.2);
+  letter-spacing: 1px;
+  z-index: 150;
+  pointer-events: none;
+  text-align: center;
+}
+
+/* 加载进度条 */
+#loadingBar {
+  position: fixed;
+  bottom: 0; left: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--gold2), var(--gold), var(--gold2));
+  z-index: 200;
+  transition: width .3s ease;
+  box-shadow: 0 0 10px rgba(240,192,96,.3);
+}
+
+/* 主菜单BGM控制 */
+.menu-bgm-ctrl {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 150;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(5,4,16,.8);
+  border: 1px solid rgba(240,192,96,.12);
+  border-radius: 20px;
+  padding: 6px 14px;
+  transition: opacity .4s;
+}
+.menu-bgm-ctrl.hidden { opacity: 0; pointer-events: none; }
+.menu-bgm-btn {
+  background: none;
+  border: none;
+  color: rgba(240,192,96,.5);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 4px;
+  transition: color .2s;
+  line-height: 1;
+}
+.menu-bgm-btn:hover { color: #f0c060; }
+.menu-bgm-btn.active { color: #f0c060; }
+.menu-bgm-slider {
+  width: 60px;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(240,192,96,.15);
+  outline: none;
+  vertical-align: middle;
+}
+.menu-bgm-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: rgba(240,192,96,.6);
+  cursor: pointer;
+}
+.menu-bgm-slider::-moz-range-thumb {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: rgba(240,192,96,.6);
+  cursor: pointer;
+  border: none;
+}
+
+/* 动画 */
+@keyframes fadeIn {
+  from { opacity: 0; } to { opacity: 1; }
+}
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .6; }
+}
+</style>
+</head>
+<body>
+
+<!-- 粒子背景 -->
+<canvas id="bgCanvas"></canvas>
+
+<!-- 加载进度条 -->
+<div id="loadingBar" style="width: 0%"></div>
+
+<!-- 版本号 -->
+<div id="versionTag" style="position:fixed;bottom:12px;left:16px;z-index:150;font-size:10px;color:rgba(240,192,96,.3);letter-spacing:1px;pointer-events:none">V0.1</div>
+
+<!-- 开始界面（同时承担主菜单角色） -->
+<div id="startScreen">
+  <div class="start-title">
+    <div class="icon">
+      <div class="ascii-logo-wrap"><div class="ascii-logo" id="asciiLogo"><span class="logo-row"> ▄▄▄                 █▄    █▀   ▄▄▄▄▄▄      █    ▄█▀            █    ▄█▀            █     ▄▄▄▄▄▄▄</span><span class="logo-row">   ▀█ ▀▀▀▀██▀▀▀▀▀     ▀▀   █▄   █   ██  ▄▄  █   ██▀▀▀▀▀██   ▄▄  █   ██▀▀▀▀▀██      ▄█     █    ██</span><span class="logo-row">           █        ▄   ▀▀▀██▀▀ █▄▄▄██  ▀██▄█  ▀▀ █▄ ▄█▀    ▀██▄█  ▀▀ █▄ ▄█▀    ▀▀▀▀█▀▀▀▀ █▄▄▄▄██</span><span class="logo-row">▀██▄       █        ▀▀█▄   █    █▀▀▀██    ▀ █    ▄▄██▀▄       ▀ █    ▄▄██▀▄         █     █▀▀▀▀██</span><span class="logo-row">           █             ██▀██  █   ██     ▄█  ▀█▀▀   █▄       ▄█  ▀█▀▀   █▄     ██▀▀▀██  █▄   ██</span><span class="logo-row">   ▄▄      █          ▄▄ █   █  █▀▀▀██   ▄█▀█  ▀▀▀▀▀▀▀██▀▀   ▄█▀█  ▀▀▀▀▀▀▀██▀▀   ██   ██ ▄█▀▀▀▀██</span><span class="logo-row">  ▄█▀      █         ▄█  █████ ██   ██  ▀▀  █    █▄   █     ▀▀  █    █▄   █      ██▄▄▄██ ██    ██</span><span class="logo-row"> ▄█▀ ▄▄▄▄▄▄█▄▄▄▄▄▄  ▄█▀  █   ▀██    ██      █     ▀   █         █     ▀   █      ██   ▀███     ██</span><span class="logo-row">▀█▀  ▀▀▀▀▀▀▀▀▀▀▀▀▀  ▀▀       █▀   ▀█▀       █       ██▀         █       ██▀            █▀    ▀█▀▀</span></div></div>
+      <div class="jjh-divider">--- 一入江湖，身不由己 ---</div>
+    </div>
+    <div class="sub">· 字符武侠 · 奇遇江湖 · 江湖百态 ·</div>
+  </div>
+  
+  <div class="start-menu" id="startMenu">
+    <!-- 动态填充：等脚本加载后根据是否有存档生成按钮 -->
+      <div id="startMenuLoading" style="text-align:center;padding:20px">
+      <div style="font-size:18px;margin-bottom:12px;animation:pulse 1.5s infinite">╳</div>
+      <div style="font-size:12px;color:rgba(240,192,96,.5);letter-spacing:2px">正在加载江湖世界...</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 游戏主容器（动态加载） -->
+<div id="gameContainer"></div>
+
+<!-- 底部信息 -->
+<div class="start-footer">河狸AI游戏工作室 · Beaver AI Game Studio · v1.0</div>
+
+<!-- BUG标注 -->
+<div class="bug-note">本游戏由纯AI制作，BUG略多，正在逐步修复</div>
+
+<!-- 主菜单BGM控制 -->
+<div class="menu-bgm-ctrl" id="menuBgmCtrl">
+  <button class="menu-bgm-btn" id="menuBgmToggle" onclick="menuBgmToggle()" title="点击播放音乐">♪</button>
+  <input type="range" class="menu-bgm-slider" id="menuBgmSlider" min="0" max="100" value="40" oninput="menuBgmSetVol(this.value)">
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════
+//  主菜单BGM — 独立AudioContext，不与其他系统共享
+//  进页面播放，出页面（hideStartScreen）淡出停止
+// ════════════════════════════════════════════════════════════════
+(function initMenuBgm() {
+
+  // D宫调五声音阶频率表
+  const NOTES = [
+    146.83, 164.81, 185.00, 220.00, 246.94,   // D3~B3
+    293.66, 329.63, 369.99, 440.00, 493.88,   // D4~B4
+    587.33, 659.25, 739.99, 880.00,            // D5~A5
+  ];
+
+  // 旋律：悠远江湖感，大气叙事
+  const MELODY = [
+    [10,.9], [12,.7], [14,1.1], [12,.5], [10,.9], [11,.6], [9,.7],
+    [8,1.0], [10,.5], [12,1.1], [10,.5], [8,.9], [7,.5], [8,.8],
+    [6,.9], [8,.7], [10,1.0], [8,.5], [6,.8], [5,.5], [7,.9],
+    [8,1.1], [10,.7], [12,1.3], [10,.5], [12,.9], [14,1.5],
+  ];
+
+  // 低音：缓慢根音+五度交替
+  const BASS = [
+    [0, 3.2], [5, 3.2], [4, 3.2], [0, 3.2],
+    [2, 3.2], [4, 3.2], [3, 3.2], [0, 3.2],
+    [5, 3.2], [3, 3.2], [2, 3.2], [0, 3.2],
+  ];
+
+  const NOTE_DUR = 0.52; // 每单位时长秒数
+
+  let _actx = null;
+  let _timer = null;
+  let _timerBass = null;
+  let _masterGain = null;
+  let _volume = 0.10;
+  let _melIdx = 0;
+  let _basIdx = 0;
+  let _muted = false;
+  let _playing = false; // 当前是否在播放
+
+  function getACtx() {
+    if (!_actx) _actx = new (window.AudioContext || window.webkitAudioContext)();
+    if (_actx.state === 'suspended') _actx.resume();
+    return _actx;
+  }
+
+  // 古琴风格音符（正弦+颤音+泛音）
+  function playNote(freq, dur, vol) {
+    if (!freq || freq <= 0) return;
+    try {
+      const ctx = getACtx();
+      const t = ctx.currentTime;
+      const dest = _masterGain || ctx.destination;
+
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, t);
+
+      // 颤音
+      const vib = ctx.createOscillator();
+      const vibG = ctx.createGain();
+      vib.frequency.setValueAtTime(4.5, t);
+      vibG.gain.setValueAtTime(1.8, t);
+      vib.connect(vibG);
+      vibG.connect(osc.frequency);
+      vib.start(t);
+      vib.stop(t + dur + .1);
+
+      // 包络：快起慢落
+      const env = ctx.createGain();
+      env.gain.setValueAtTime(0, t);
+      env.gain.linearRampToValueAtTime(vol, t + Math.min(.04, dur * .1));
+      env.gain.setValueAtTime(vol * .85, t + dur * .3);
+      env.gain.exponentialRampToValueAtTime(vol * .4, t + dur * .7);
+      env.gain.exponentialRampToValueAtTime(.001, t + dur);
+
+      osc.connect(env);
+      env.connect(dest);
+      osc.start(t);
+      osc.stop(t + dur + .05);
+
+      // 泛音
+      const osc2 = ctx.createOscillator();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(freq * 2, t);
+      const env2 = ctx.createGain();
+      env2.gain.setValueAtTime(0, t);
+      env2.gain.linearRampToValueAtTime(vol * .1, t + .02);
+      env2.gain.exponentialRampToValueAtTime(.001, t + dur * .5);
+      osc2.connect(env2);
+      env2.connect(dest);
+      osc2.start(t);
+      osc2.stop(t + dur * .5 + .05);
+    } catch(e) {}
+  }
+
+  function playBass(freq, dur, vol) {
+    if (!freq || freq <= 0) return;
+    try {
+      const ctx = getACtx();
+      const t = ctx.currentTime;
+      const dest = _masterGain || ctx.destination;
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, t);
+      const env = ctx.createGain();
+      env.gain.setValueAtTime(0, t);
+      env.gain.linearRampToValueAtTime(vol, t + .1);
+      env.gain.setValueAtTime(vol, t + dur * .4);
+      env.gain.exponentialRampToValueAtTime(.001, t + dur);
+      osc.connect(env);
+      env.connect(dest);
+      osc.start(t);
+      osc.stop(t + dur + .05);
+    } catch(e) {}
+  }
+
+  function start() {
+    if (_timer) return;
+    _playing = true;
+    try {
+      const ctx = getACtx();
+      _masterGain = ctx.createGain();
+      _masterGain.gain.setValueAtTime(0, ctx.currentTime);
+      _masterGain.gain.linearRampToValueAtTime(_muted ? 0 : _volume, ctx.currentTime + .8);
+      _masterGain.connect(ctx.destination);
+
+      const melTotal = MELODY.reduce((s, n) => s + n[1], 0) * NOTE_DUR;
+      const basTotal = BASS.reduce((s, n) => s + n[1], 0) * NOTE_DUR;
+      _melIdx = 0;
+      _basIdx = 0;
+
+      function schedMel() {
+        if (!_masterGain) return;
+        const n = MELODY[_melIdx];
+        playNote(NOTES[n[0]], n[1] * NOTE_DUR, _volume * 1.2);
+        _melIdx = (_melIdx + 1) % MELODY.length;
+      }
+      function schedBas() {
+        if (!_masterGain) return;
+        const n = BASS[_basIdx];
+        playBass(NOTES[n[0]], n[1] * NOTE_DUR, _volume * .45);
+        _basIdx = (_basIdx + 1) % BASS.length;
+      }
+
+      schedMel();
+      schedBas();
+      _timer = setInterval(schedMel, melTotal / MELODY.length * 1000);
+      _timerBass = setInterval(schedBas, basTotal / BASS.length * 1000);
+    } catch(e) {}
+  }
+
+  function stop(fadeOut) {
+    _playing = false;
+    try {
+      // 立即静音
+      if (_masterGain) {
+        try {
+          const ctx = _actx || _masterGain.context;
+          if (ctx && ctx.state !== 'closed') {
+            _masterGain.gain.cancelScheduledValues(ctx.currentTime);
+            _masterGain.gain.setValueAtTime(0, ctx.currentTime);
+            // 如果需要淡出，再叠加一个短淡出
+            if (fadeOut !== false) {
+              _masterGain.gain.linearRampToValueAtTime(0, ctx.currentTime + .3);
+            }
+          }
+        } catch(e) {}
+      }
+      // 立即停止定时器
+      if (_timer)     { clearInterval(_timer);     _timer = null; }
+      if (_timerBass) { clearInterval(_timerBass); _timerBass = null; }
+      // 延迟后断开并关闭
+      const delay = fadeOut !== false ? 350 : 0;
+      setTimeout(() => {
+        if (_masterGain) {
+          try { _masterGain.disconnect(); } catch(e) {}
+          _masterGain = null;
+        }
+        if (_actx && _actx.state !== 'closed') {
+          try { _actx.close(); } catch(e) {}
+          _actx = null;
+        }
+      }, delay);
+    } catch(e) {
+      if (_timer)     { clearInterval(_timer);     _timer = null; }
+      if (_timerBass) { clearInterval(_timerBass); _timerBass = null; }
+      _masterGain = null;
+    }
+    // 隐藏控制条
+    const ctrl = document.getElementById('menuBgmCtrl');
+    if (ctrl) ctrl.classList.add('hidden');
+  }
+
+  function setVolume(v) {
+    _volume = Math.max(0, Math.min(1, v));
+    _muted = _volume === 0;
+    if (_masterGain) {
+      const ctx = getACtx();
+      _masterGain.gain.linearRampToValueAtTime(_muted ? 0 : _volume, ctx.currentTime + .2);
+    }
+  }
+
+  function toggleMute() {
+    if (!_playing) {
+      // 没在播放 → 启动BGM
+      start();
+      _muted = false;
+      // 恢复音效
+      if (window._menuSFX && window._menuSFX.setVol) {
+        const sliderVal = (document.getElementById('menuBgmSlider') || {}).value || 40;
+        window._menuSFX.setVol(parseInt(sliderVal) / 100);
+      }
+      const btn = document.getElementById('menuBgmToggle');
+      if (btn) {
+        btn.textContent = '♪';
+        btn.classList.add('active');
+        btn.title = '点击暂停音乐';
+      }
+    } else if (!_muted) {
+      // 播放中 → 静音
+      _muted = true;
+      if (_masterGain) {
+        const ctx = getACtx();
+        _masterGain.gain.linearRampToValueAtTime(0, ctx.currentTime + .2);
+      }
+      // 音效也静音
+      if (window._menuSFX && window._menuSFX.setVol) window._menuSFX.setVol(0);
+      const btn = document.getElementById('menuBgmToggle');
+      if (btn) {
+        btn.textContent = '✕';
+        btn.classList.remove('active');
+        btn.title = '点击恢复音乐';
+      }
+    } else {
+      // 静音中 → 恢复
+      _muted = false;
+      if (_masterGain) {
+        const ctx = getACtx();
+        _masterGain.gain.linearRampToValueAtTime(_volume, ctx.currentTime + .2);
+      }
+      // 恢复音效（按滑块当前值）
+      if (window._menuSFX && window._menuSFX.setVol) {
+        const sliderVal = (document.getElementById('menuBgmSlider') || {}).value || 40;
+        window._menuSFX.setVol(parseInt(sliderVal) / 100);
+      }
+      const btn = document.getElementById('menuBgmToggle');
+      if (btn) {
+        btn.textContent = '♪';
+        btn.classList.add('active');
+        btn.title = '点击暂停音乐';
+      }
+    }
+    return _muted;
+  }
+
+  // 暴露给全局（供HTML onclick和hideStartScreen调用）
+  window._menuBgmStart = start;
+  window._menuBgmStop = stop;
+  window._menuBgmSetVol = setVolume;
+  window._menuBgmToggle = toggleMute;
+  window._menuBgmIsMuted = () => _muted;
+})();
+
+// 全局包装函数（供HTML onclick使用）
+function menuBgmToggle() { window._menuBgmToggle && window._menuBgmToggle(); }
+function menuBgmSetVol(v)  {
+  const ratio = parseInt(v) / 100;           // 0~1
+  if (window._menuBgmSetVol) window._menuBgmSetVol(ratio * 0.25);  // BGM音量
+  if (window._menuSFX && window._menuSFX.setVol) window._menuSFX.setVol(ratio); // 音效同步
+}
+
+// 首次用户交互时启动BGM（Chrome要求AudioContext必须在手势中创建/resume）
+// 排除进入游戏按钮的点击（那些会调用hideStartScreen停止BGM）
+window._menuBgmAutoStarted = false;
+document.addEventListener('click', function _autoStartBgm(e) {
+  // 如果点击的是进入游戏相关的按钮，不启动BGM（会被立刻stop）
+  const btn = e.target.closest('.start-btn');
+  if (btn) {
+    const text = btn.textContent || '';
+    if (text.includes('初入江湖') || text.includes('继续江湖路') || text.includes('重新开始')) {
+      document.removeEventListener('click', _autoStartBgm);
+      return;
+    }
+  }
+  // 其他点击 → 启动BGM
+  if (window._menuBgmStart && !window._menuBgmAutoStarted) {
+    window._menuBgmAutoStarted = true;
+    window._menuBgmStart();
+    const btn2 = document.getElementById('menuBgmToggle');
+    if (btn2) { btn2.classList.add('active'); btn2.title = '点击暂停音乐'; }
+  }
+  document.removeEventListener('click', _autoStartBgm);
+}, { once: true });
+
+// ════════════════════════════════════════════════════════════════
+//  主菜单UI音效 — 独立轻量模块，武侠风短音效
+//  按钮点击：短促"叮"声 | LOGO扰动：电子故障感
+// ════════════════════════════════════════════════════════════════
+(function initMenuSFX() {
+
+  // 音效音量系数（0~1），随BGM滑块同步
+  let _sfxVol = 1.0;
+
+  // 获取或创建AudioContext（复用BGM的）
+  let _actx = null;
+  function getACtx() {
+    if (!_actx) {
+      // 尝试复用BGM的AudioContext
+      if (window._menuBgmACtx) {
+        _actx = window._menuBgmACtx;
+      } else {
+        _actx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      window._menuBgmACtx = _actx;
+    }
+    if (_actx.state === 'suspended') _actx.resume();
+    return _actx;
+  }
+
+  // ── 按钮点击音效：清脆"叮" ──
+  // 五声音阶叮声，随机选一个音高增加趣味
+  function playBtnClick(primary) {
+    if (_sfxVol <= 0) return;
+    try {
+      const ctx = getACtx();
+      const t = ctx.currentTime;
+      // D5 / E5 / A5 / D6 四种音高
+      const freqs = [587.33, 659.25, 880.00, 1174.66];
+      const freq = primary ? freqs[0] : freqs[Math.floor(Math.random() * freqs.length)];
+      const vol = (primary ? 0.12 : 0.08) * _sfxVol;
+
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, t);
+      osc.frequency.exponentialRampToValueAtTime(freq * 1.02, t + 0.01);
+
+      const env = ctx.createGain();
+      env.gain.setValueAtTime(0, t);
+      env.gain.linearRampToValueAtTime(vol, t + 0.008);
+      env.gain.exponentialRampToValueAtTime(vol * 0.3, t + 0.08);
+      env.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+
+      osc.connect(env);
+      env.connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.25);
+
+      // 高频泛音（金属感）
+      const osc2 = ctx.createOscillator();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(freq * 3, t);
+      const env2 = ctx.createGain();
+      env2.gain.setValueAtTime(0, t);
+      env2.gain.linearRampToValueAtTime(vol * 0.06, t + 0.005);
+      env2.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+      osc2.connect(env2);
+      env2.connect(ctx.destination);
+      osc2.start(t);
+      osc2.stop(t + 0.15);
+    } catch(e) {}
+  }
+
+  // ── LOGO扰动音效：电子故障感+低频嗡鸣 ──
+  function playLogoGlitch() {
+    if (_sfxVol <= 0) return;
+    try {
+      const ctx = getACtx();
+      const t = ctx.currentTime;
+
+      // 主音：下扫频（像电子故障）
+      const osc = ctx.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(800 + Math.random() * 400, t);
+      osc.frequency.exponentialRampToValueAtTime(100, t + 0.15);
+
+      const env = ctx.createGain();
+      env.gain.setValueAtTime(0.04 * _sfxVol, t);
+      env.gain.linearRampToValueAtTime(0.06 * _sfxVol, t + 0.03);
+      env.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+
+      osc.connect(env);
+      env.connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.2);
+
+      // 低频底噪
+      const osc2 = ctx.createOscillator();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(60 + Math.random() * 30, t);
+      const env2 = ctx.createGain();
+      env2.gain.setValueAtTime(0.03 * _sfxVol, t);
+      env2.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+      osc2.connect(env2);
+      env2.connect(ctx.destination);
+      osc2.start(t);
+      osc2.stop(t + 0.3);
+    } catch(e) {}
+  }
+
+  // ── 进入游戏音效：厚重过渡 ──
+  function playEnterGame() {
+    if (_sfxVol <= 0) return;
+    try {
+      const ctx = getACtx();
+      const t = ctx.currentTime;
+
+      // 低沉鼓声
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(120, t);
+      osc.frequency.exponentialRampToValueAtTime(40, t + 0.4);
+
+      const env = ctx.createGain();
+      env.gain.setValueAtTime(0.15 * _sfxVol, t);
+      env.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+
+      osc.connect(env);
+      env.connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.55);
+
+      // 风声（噪声感）
+      const bufferSize = ctx.sampleRate * 0.4;
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * 0.3;
+      const noise = ctx.createBufferSource();
+      noise.buffer = buffer;
+
+      const filt = ctx.createBiquadFilter();
+      filt.type = 'lowpass';
+      filt.frequency.setValueAtTime(400, t);
+      filt.frequency.exponentialRampToValueAtTime(80, t + 0.4);
+
+      const envN = ctx.createGain();
+      envN.gain.setValueAtTime(0.06 * _sfxVol, t);
+      envN.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+
+      noise.connect(filt);
+      filt.connect(envN);
+      envN.connect(ctx.destination);
+      noise.start(t);
+      noise.stop(t + 0.55);
+    } catch(e) {}
+  }
+
+  // ── 音量控制（由 menuBgmSetVol 同步调用）──
+  function setSFXVol(v) {
+    _sfxVol = Math.max(0, Math.min(1, v));
+  }
+
+  // 暴露到全局
+  window._menuSFX = {
+    btnClick: playBtnClick,
+    logoGlitch: playLogoGlitch,
+    enterGame: playEnterGame,
+    setVol: setSFXVol,
+    /** 销毁SFX的AudioContext，彻底停止所有音效 */
+    destroy: function() {
+      _sfxVol = 0;
+      if (_actx && _actx.state !== 'closed') {
+        try { _actx.close(); } catch(e) {}
+      }
+      _actx = null;
+      window._menuBgmACtx = null;
+    },
+  };
+})();
+
+// ── 粒子背景系统 ──
+(function initParticles() {
+  const canvas = document.getElementById('bgCanvas');
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  const PARTICLE_COUNT = 60;
+  
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  
+  function createParticle() {
+    return {
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      size: Math.random() * 1.5 + 0.3,
+      speedX: (Math.random() - 0.5) * 0.3,
+      speedY: (Math.random() - 0.5) * 0.3,
+      opacity: Math.random() * 0.4 + 0.1,
+      color: Math.random() > 0.7 
+        ? `rgba(240, 192, 96, OPACITY)` 
+        : `rgba(160, 140, 100, OPACITY)`,
+    };
+  }
+  
+  function init() {
+    resize();
+    particles = [];
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      particles.push(createParticle());
+    }
+  }
+  
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    for (const p of particles) {
+      p.x += p.speedX;
+      p.y += p.speedY;
+      
+      // 边界循环
+      if (p.x < 0) p.x = canvas.width;
+      if (p.x > canvas.width) p.x = 0;
+      if (p.y < 0) p.y = canvas.height;
+      if (p.y > canvas.height) p.y = 0;
+      
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = p.color.replace('OPACITY', p.opacity.toString());
+      ctx.fill();
+    }
+    
+    requestAnimationFrame(animate);
+  }
+  
+  window.addEventListener('resize', resize);
+  init();
+  animate();
+})();
+
+// ── 游戏脚本列表（按依赖顺序加载） ──
+const GAME_SCRIPTS = [
+  // ── 数据定义 ──
+  'js/data-skills.js',
+  'js/data-equip.js',
+  'js/data-world.js',
+  'js/data-scenes.js',
+  'js/data-sects.js',
+  // npc-portraits.js 必须在 data-enemies.js 之前（敌人字符画生成依赖）
+  'js/npc-portraits.js',
+  'js/data-enemies.js',
+  'js/data-story.js',
+  'js/data-journey.js',
+  'js/data-chars.js',
+
+  // ── NPC 数据（依赖 data-world 等基础数据）──
+  'js/npc-data-capital.js',
+  'js/npc-data-central.js',
+  'js/npc-data-sects.js',
+  'js/npc-data-misc.js',
+  'js/npc-data-map.js',
+
+  // ── NPC 系统 ──
+  'js/npc-skills.js',
+  'js/npc-logic.js',
+  'js/npc-combat.js',
+
+  // ── 核心系统 ──
+  'js/jianghu.js',
+  'js/story-ui.js',
+  'js/ui-pages.js',
+  'js/primary-stats.js',
+  'js/skill-proficiency.js',
+
+  // ── 旅行系统 ──
+  'js/travel.js',
+  'js/travel-encounters.js',
+  'js/travel-render.js',
+
+  // ── 武学/战斗 ──
+  'js/data-manuals.js',
+  'js/manuals.js',
+  'js/battle.js',
+  'js/battle-cinematic.js',
+
+  // ── 地下城 ──
+  'js/data-dungeon.js',
+  'js/dungeon.js',
+
+  // ── 合成系统 ──
+  'js/data-item-art.js',
+  'js/data-crafting.js',
+  'js/crafting.js',
+
+  // ── 角色编辑器 ──
+  'js/editor.js',
+
+  // ── 小游戏 ──
+  'js/minigame-sounds.js',
+  'js/minigame-gambling.js',
+  'js/minigame-fishing.js',
+  'js/minigame-cricket.js',
+  'js/minigame-escort.js',
+  'js/minigame-arena.js',
+  'js/minigame-pitchpot.js',
+  'js/minigame-go.js',
+  'js/minigame-herbalism.js',
+  'js/minigame-forge.js',
+
+  // ── 其他系统 ──
+  'js/level-system.js',
+
+  // ── 联机排行榜 ──
+  'js/leaderboard.js',
+
+  // ── 游戏流程（最后加载）──
+  'js/game-flow.js',
+  'js/origin-generator.js?v=311',
+
+];
+
+let loadedScripts = 0;
+let gameScriptsLoaded = false;
+
+// ── 加载游戏脚本 ──
+function loadGameScripts(callback) {
+  const bar = document.getElementById('loadingBar');
+  const total = GAME_SCRIPTS.length;
+  
+  // 检查是否已有存档
+  const hasSave = localStorage.getItem('wuxia_game_state') !== null;
+  
+  function loadNext(index) {
+    if (index >= total) {
+      gameScriptsLoaded = true;
+      bar.style.width = '100%';
+      
+      setTimeout(() => {
+        bar.style.opacity = '0';
+        // 脚本加载完毕：更新主界面按钮，初始化游戏流程（自动保存/快捷键等）
+        updateStartMenuButtons();
+        if (typeof initGameFlowSilent === 'function') {
+          initGameFlowSilent();
+        }
+        if (callback) callback();
+      }, 500);
+      return;
+    }
+    
+    const script = document.createElement('script');
+    script.src = GAME_SCRIPTS[index] + '?v=20260402i';
+    script.onload = () => {
+      loadedScripts = index + 1;
+      const progress = ((index + 1) / total) * 100;
+      bar.style.width = progress + '%';
+      
+      // 每5个脚本输出一次进度（调试用）
+      if ((index + 1) % 5 === 0) {
+        console.log(`加载进度: ${loadedScripts}/${total}`);
+      }
+      
+      loadNext(index + 1);
+    };
+    script.onerror = () => {
+      console.warn(`脚本加载失败: ${GAME_SCRIPTS[index]}，继续加载...`);
+      loadedScripts = index + 1;
+      const progress = ((index + 1) / total) * 100;
+      bar.style.width = progress + '%';
+      loadNext(index + 1);
+    };
+    document.body.appendChild(script);
+  }
+  
+  loadNext(0);
+}
+
+// ── 脚本加载完成后，更新开始界面按钮 ──
+function updateStartMenuButtons() {
+  const menuEl = document.getElementById('startMenu');
+  if (!menuEl) return;
+
+  // 为所有按钮添加点击音效（事件委托）
+  menuEl.addEventListener('click', function(e) {
+    const btn = e.target.closest('.start-btn');
+    if (!btn || !window._menuSFX) return;
+    const text = btn.textContent || '';
+    const isPrimary = btn.classList.contains('primary');
+    window._menuSFX.btnClick(isPrimary);
+  });
+
+  const hasSave = localStorage.getItem('wuxia_game_state') !== null;
+
+  if (hasSave) {
+    try {
+      const gs = JSON.parse(localStorage.getItem('wuxia_game_state'));
+      const lastTime = gs.lastSaveTime
+        ? new Date(gs.lastSaveTime).toLocaleString('zh-CN')
+        : '暂无';
+
+      menuEl.innerHTML = `
+        <button class="start-btn primary" onclick="doContinueGame()">
+          [>] 继续江湖路
+          <div class="desc">上次存档: ${lastTime}</div>
+        </button>
+        <button class="start-btn" onclick="doStartNewGame()">
+          [*] 重新开始
+          <div class="desc">清除存档，开启新的江湖人生</div>
+        </button>
+        <button class="start-btn" onclick="showOnlineMode()">
+          [◆] 联机模式
+          <div class="desc">与好友一同闯荡江湖</div>
+        </button>
+        <button class="start-btn" onclick="showStartHelp()">
+          [?] 游戏说明
+          <div class="desc">了解江湖世界的规则与玩法</div>
+        </button>
+        <button class="start-btn" onclick="showCredits()">
+          [~] 制作团队
+          <div class="desc">河狸AI游戏工作室</div>
+        </button>
+      `;
+    } catch (e) {
+      menuEl.innerHTML = buildNewPlayerButtons();
+    }
+  } else {
+    menuEl.innerHTML = buildNewPlayerButtons();
+  }
+}
+
+function buildNewPlayerButtons() {
+  return `
+    <button class="start-btn primary" onclick="doStartNewGame()">
+      [>>] 初入江湖
+      <div class="desc">创建角色，开启你的武侠人生</div>
+    </button>
+    <button class="start-btn" onclick="showOnlineMode()">
+      {◆} 联机模式
+      <div class="desc">与好友一同闯荡江湖</div>
+    </button>
+    <button class="start-btn" onclick="showStartHelp()">
+      {?} 游戏说明
+      <div class="desc">了解江湖世界的规则与玩法</div>
+    </button>
+    <button class="start-btn" onclick="showCredits()">
+      [~] 制作团队
+      <div class="desc">河狸AI游戏工作室</div>
+    </button>
+  `;
+}
+
+// ── 隐藏开始界面，进入游戏 ──
+function hideStartScreen() {
+  // 1. 同步主菜单静音状态到游戏内SoundFX
+  if (window._menuBgmIsMuted && typeof SoundFX !== 'undefined') {
+    SoundFX.setMuted(window._menuBgmIsMuted());
+  }
+
+  // 2. 立即停止主菜单BGM和SFX，彻底关闭AudioContext
+  if (window._menuSFX && window._menuSFX.destroy) window._menuSFX.destroy();
+  if (window._menuBgmStop) window._menuBgmStop(false);
+
+  const screen = document.getElementById('startScreen');
+  if (screen) {
+    screen.style.transition = 'opacity 0.6s ease';
+    screen.style.opacity = '0';
+    setTimeout(() => { screen.style.display = 'none'; }, 600);
+  }
+  const footer = document.querySelector('.start-footer');
+  if (footer) footer.style.display = 'none';
+}
+
+// ── 新玩家：进入出身流程 ──
+function doStartNewGame() {
+  if (typeof startNewGameWithOrigin === 'function') {
+    hideStartScreen();
+    startNewGameWithOrigin();
+  } else if (gameScriptsLoaded) {
+    showToast('[!] 出身系统加载异常，请刷新页面重试', 3000);
+    const poll = setInterval(() => {
+      if (typeof startNewGameWithOrigin === 'function') {
+        clearInterval(poll);
+        hideStartScreen();
+        startNewGameWithOrigin();
+      } else if (gameScriptsLoaded) {
+        clearInterval(poll);
+        showToast('[!] 出身系统加载异常，请刷新页面重试', 3000);
+      }
+    }, 200);
+  }
+}
+
+// ── 老玩家：继续游戏 ──
+function doContinueGame() {
+  if (typeof continueGame === 'function') {
+    hideStartScreen();
+    continueGame();
+  } else if (gameScriptsLoaded) {
+    showToast('[!] 游戏系统加载异常，请刷新页面重试', 3000);
+  } else {
+    showToast('... 正在加载江湖世界...', 1500);
+    const poll = setInterval(() => {
+      if (typeof continueGame === 'function') {
+        clearInterval(poll);
+        hideStartScreen();
+        continueGame();
+      } else if (gameScriptsLoaded) {
+        clearInterval(poll);
+        showToast('[!] 游戏系统加载异常，请刷新页面重试', 3000);
+      }
+    }, 200);
+  }
+}
+
+// ── startGame() 保留为兼容入口 ──
+function startGame() {
+  doStartNewGame();
+}
+
+// ── 游戏说明 ──
+function showStartHelp() {
+  const overlay = document.createElement('div');
+  overlay.id = 'startHelpOverlay';
+  overlay.style.cssText = `
+    position:fixed;top:0;left:0;width:100%;height:100%;
+    background:rgba(0,0,0,.92);z-index:500;
+    display:flex;align-items:center;justify-content:center;
+    padding:20px;
+  `;
+  overlay.innerHTML = `
+    <div style="max-width:580px;max-height:85vh;overflow-y:auto;
+      background:rgba(5,4,16,.98);border:1px solid rgba(240,192,96,.15);
+      border-radius:12px;padding:28px;">
+      
+      <div style="font-size:20px;color:#ffd060;letter-spacing:3px;margin-bottom:18px;text-align:center">
+        ── 江湖指南 ──
+      </div>
+
+      <div style="font-size:12px;color:#d0b090;line-height:1.9">
+
+        <div style="margin-bottom:14px">
+          <div style="color:#80ff80;font-size:13px;margin-bottom:5px">▸ DEMO阶段说明</div>
+          <div>⚡ DEMO阶段默认解锁全部小游戏，可直接体验所有玩法</div>
+        </div>
+
+        <div style="margin-bottom:14px">
+          <div style="color:#ffd080;font-size:13px;margin-bottom:5px">▸ 开始游戏</div>
+          <div>新玩家将经历一段出身故事，选择出身背景（铁匠世家/书香门第/江湖卖艺……共16种），经历成长事件，最终踏入江湖。</div>
+        </div>
+
+        <div style="margin-bottom:14px">
+          <div style="color:#ffd080;font-size:13px;margin-bottom:5px">▸ 核心战斗：将将胡手牌系统</div>
+          <div>纯卡牌驱动战斗，策略为王：</div>
+          <div style="margin-top:4px;padding-left:8px">
+            <div>• <b>连环 ☽</b> — 连续两张同花色，追加一次攻击</div>
+            <div>• <b>凝 ☁</b> — 冰冻伤害，冻结敌人一回合</div>
+            <div>• <b>势 ◎</b> — 蓄力爆发，伤害大幅提升</div>
+            <div>• <b>对子 +</b> — 双重打击，两张同牌型必定暴击</div>
+            <div>• <b>大连加成</b> — 3次同花色触发大连效果（大连·连环灭/凝冻/势绝/对子无双）</div>
+            <div>• <b>将将胡</b> — 混搭大连，四种效果叠加伤害爆表</div>
+          </div>
+          <div style="margin-top:4px;color:#a08060">☁ 花色：星/月/风，云为万能花色；同花色才能触发组合</div>
+          <div style="margin-top:2px;color:#a08060">🔺 气势：出牌+10，三连+15，组合+25；满100触发将将胡状态伤害×1.5</div>
+        </div>
+
+        <div style="margin-bottom:14px">
+          <div style="color:#ffd080;font-size:13px;margin-bottom:5px">▸ 成长体系</div>
+          <div>• <b>属性</b>：力道/体质/身法/悟性/气感/魅力，出身决定先天，后天升级分配</div>
+          <div>• <b>等级 & 境界</b>：后天境→先天境→宗师→大宗师→天人，境界突破有成功率</div>
+          <div>• <b>精力</b>：参与小游戏（钓鱼/采药/锻造等）需消耗精力，打坐/饮食恢复</div>
+          <div>• <b>饱食/口渴</b>：过低影响战斗属性，及时进食饮水</div>
+          <div>• <b>善恶值</b>：9档善恶（-100~+100），影响江湖名声与NPC态度</div>
+        </div>
+
+        <div style="margin-bottom:14px">
+          <div style="color:#ffd080;font-size:13px;margin-bottom:5px">▸ 江湖世界</div>
+          <div>• <b>25座城镇</b>：各具特色，客栈/医馆/铁匠铺/门派/NPC商店</div>
+          <div>• <b>25大门派</b>：少林/武当/华山/明教/五毒/唐门/桃花岛/逍遥派……加入解锁专属功法</div>
+          <div>• <b>地下城</b>：从初入江湖到江湖绝顶，覆盖Lv1~Lv100+</div>
+          <div>• <b>武学系统</b>：42本手册，290+技能，武器绑定门派自由组合</div>
+          <div>• <b>宠物</b>：野外捕捉，战斗助战</div>
+          <div>• <b>情缘</b>：江湖儿女，缘分相遇</div>
+          <div>• <b>城市争夺</b>：势力角逐，攻城略地</div>
+        </div>
+
+        <div style="margin-bottom:14px">
+          <div style="color:#ffd080;font-size:13px;margin-bottom:5px">▸ 小游戏（共10个）</div>
+          <div>钓鱼 / 斗蛐蛐 / 护镖 / 擂台 / 投壶 / 棋社(五子棋) / 采药 / 锻造 / 每日签到</div>
+        </div>
+
+        <div style="margin-bottom:14px">
+          <div style="color:#ffd080;font-size:13px;margin-bottom:5px">▸ 蛐蛐系统</div>
+          <div>野外捕捉蛐蛐，喂养培育后出战；体力/血量耗尽后用「💧治疗(3两)」恢复。</div>
+        </div>
+
+        <div style="margin-bottom:14px">
+          <div style="color:#ffd080;font-size:13px;margin-bottom:5px">▸ 主线剧情</div>
+          <div>《血骨门之乱》六章叙事节点，调查阴谋，对抗邪恶，揭露真相。</div>
+        </div>
+
+        <div style="margin-bottom:4px">
+          <div style="color:#ffd080;font-size:13px;margin-bottom:5px">▸ 快捷键</div>
+          <div>
+            <b>Esc</b> — 快速保存 &nbsp;
+            <b>Ctrl+G</b> — 任务指引 &nbsp;
+            <b>I</b> — 背包
+          </div>
+        </div>
+
+      </div>
+      
+      <div style="text-align:center;margin-top:18px">
+        <button onclick="document.getElementById('startHelpOverlay').remove()"
+          style="background:rgba(240,192,96,.1);border:1px solid rgba(240,192,96,.3);
+          color:#ffd060;padding:10px 28px;border-radius:6px;cursor:pointer;
+          font-family:inherit;font-size:13px">
+          关闭
+        </button>
+      </div>
+    </div>
+  `;
+  
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+  
+  document.body.appendChild(overlay);
+}
+
+// ── 联机模式（排行榜）──
+function showOnlineMode() {
+  const overlay = document.createElement('div');
+  overlay.id = 'onlineModeOverlay';
+  overlay.style.cssText = `
+    position:fixed;top:0;left:0;width:100%;height:100%;
+    background:rgba(0,0,0,.88);z-index:500;
+    display:flex;align-items:center;justify-content:center;padding:20px;
+  `;
+  overlay.innerHTML = `
+    <div style="
+      background:rgba(5,4,16,.98);border:1px solid rgba(240,192,96,.15);
+      border-radius:12px;padding:36px;text-align:center;max-width:380px;width:100%">
+      <div style="font-size:42px;margin-bottom:14px">🌐</div>
+      <div style="font-size:18px;color:#ffd060;letter-spacing:2px;margin-bottom:10px">
+        联机模式
+      </div>
+      <div style="color:#a08060;font-size:13px;line-height:1.8;margin-bottom:24px">
+        与天下侠士一较高下<br>查看全服排行榜
+      </div>
+      
+      <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:24px;">
+        <button onclick="document.getElementById('onlineModeOverlay').remove();showLeaderboard();"
+          style="background:linear-gradient(135deg,rgba(240,192,96,.2),rgba(240,192,96,.1));
+          border:1px solid rgba(240,192,96,.35);color:#ffd060;padding:14px 24px;border-radius:8px;cursor:pointer;
+          font-family:inherit;font-size:14px;display:flex;align-items:center;justify-content:center;gap:10px;">
+          <span style="font-size:18px">🏆</span>
+          <span>江湖排行榜</span>
+        </button>
+        
+        <button onclick="document.getElementById('onlineModeOverlay').remove();lbSubmitPlayerData();showToast('数据已同步到排行榜', 'ok');"
+          style="background:rgba(240,192,96,.08);border:1px solid rgba(240,192,96,.2);color:#c0a060;padding:12px 24px;border-radius:8px;cursor:pointer;
+          font-family:inherit;font-size:13px;display:flex;align-items:center;justify-content:center;gap:10px;">
+          <span style="font-size:16px">📤</span>
+          <span>同步我的数据</span>
+        </button>
+      </div>
+      
+      <div style="border-top:1px solid rgba(240,192,96,.1);padding-top:16px;margin-top:16px;">
+        <div style="font-size:11px;color:#604830;line-height:1.6;">
+          💡 排行榜每小时更新 · 数据保存24小时
+        </div>
+      </div>
+      
+      <div style="margin-top:16px;">
+        <button onclick="document.getElementById('onlineModeOverlay').remove()"
+          style="background:rgba(100,100,100,.1);border:1px solid rgba(200,200,200,.15);
+          color:#808080;padding:10px 28px;border-radius:6px;cursor:pointer;
+          font-family:inherit;font-size:12px;">
+          返回
+        </button>
+      </div>
+    </div>
+  `;
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
+// ── 制作团队 ──
+function showCredits() {
+  const overlay = document.createElement('div');
+  overlay.id = 'creditsOverlay';
+  overlay.style.cssText = `
+    position:fixed;top:0;left:0;width:100%;height:100%;
+    background:rgba(0,0,0,.92);z-index:500;
+    display:flex;align-items:center;justify-content:center;
+    padding:20px;
+  `;
+  overlay.innerHTML = `
+    <div style="max-width:400px;text-align:center;
+      background:rgba(5,4,16,.98);border:1px solid rgba(240,192,96,.12);
+      border-radius:12px;padding:36px;">
+      
+      <div style="font-size:40px;margin-bottom:12px;color:#f0c060;font-family:monospace">
+        _/\\_
+      </div>
+      <div style="font-size:20px;color:#ffd060;letter-spacing:4px;margin-bottom:6px">
+        河狸AI游戏工作室
+      </div>
+      <div style="font-size:10px;color:rgba(200,170,80,.35);letter-spacing:2px;margin-bottom:24px">
+        BEAVER AI GAME STUDIO
+      </div>
+      
+      <div style="font-size:11px;color:#a09080;line-height:2">
+        <div style="margin-bottom:8px">
+          <span style="color:#c0a060">策划/设计</span> · 河狸AI
+        </div>
+        <div style="margin-bottom:8px">
+          <span style="color:#c0a060">技术开发</span> · 河狸AI
+        </div>
+        <div style="margin-bottom:8px">
+          <span style="color:#c0a060">剧情文案</span> · 河狸AI
+        </div>
+        <div style="margin-bottom:8px">
+          <span style="color:#c0a060">美术风格</span> · 字符画美学
+        </div>
+      </div>
+      
+      <div style="margin:20px 0;padding:16px;border-top:1px solid rgba(240,192,96,.08);
+        border-bottom:1px solid rgba(240,192,96,.08);font-size:10px;
+        color:rgba(150,120,60,.4);line-height:1.8">
+        本游戏由AI辅助创作<br>
+        灵感源自经典武侠文化<br>
+        所有NPC均为原创虚构人物
+      </div>
+      
+      <button onclick="document.getElementById('creditsOverlay').remove()"
+        style="background:rgba(240,192,96,.1);border:1px solid rgba(240,192,96,.25);
+        color:#c0a060;padding:8px 24px;border-radius:6px;cursor:pointer;
+        font-family:inherit;font-size:12px">
+        返回
+      </button>
+    </div>
+  `;
+  
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+  
+  document.body.appendChild(overlay);
+}
+
+// ── LOGO字符画动画：循环随机字符扰动 ──
+(function initLogoFx() {
+  const el = document.getElementById('asciiLogo');
+  if (!el) return;
+  // 扰动用的字符集：混合块元素与武侠符号
+  const glitchChars = '█▓▒░▀▄▌▐╬╫╪═║╔╗╚╝┃━┏┓┗┛┣┫┳┻╋◆◇★☆※';
+  // 保存每行的原始文本
+  const rows = Array.from(el.querySelectorAll('.logo-row'));
+  const originals = rows.map(r => r.textContent);
+  // 动画在入场完成后启动（入场动画总时长约1.4s）
+  setTimeout(() => {
+    // 每隔3-6秒触发一次扰动
+    function scheduleGlitch() {
+      const delay = 3000 + Math.random() * 3000;
+      setTimeout(() => {
+        doGlitch();
+        scheduleGlitch();
+      }, delay);
+    }
+    function doGlitch() {
+      // 播放LOGO扰动音效
+      if (window._menuSFX) window._menuSFX.logoGlitch();
+      // 随机选3~7行进行扰动（大范围闪烁更有冲击力）
+      const count = 3 + Math.floor(Math.random() * 5);
+      const indices = new Set();
+      while (indices.size < count && indices.size < rows.length) {
+        indices.add(Math.floor(Math.random() * rows.length));
+      }
+      const duration = 150 + Math.random() * 200; // 扰动持续150~350ms
+      const origColors = new Map();
+      indices.forEach(i => origColors.set(i, rows[i].style.color));
+      // 闪烁阶段：快速切换随机字符
+      let flickers = 0;
+      const maxFlickers = 4 + Math.floor(Math.random() * 4);
+      const flickerInterval = setInterval(() => {
+        indices.forEach(i => {
+          const orig = originals[i];
+          const glitched = orig.split('').map(ch => {
+            if (ch === ' ') return ' ';
+            if (Math.random() > 0.3) return glitchChars[Math.floor(Math.random() * glitchChars.length)];
+            return ch;
+          }).join('');
+          rows[i].textContent = glitched;
+        });
+        flickers++;
+        if (flickers >= maxFlickers) {
+          clearInterval(flickerInterval);
+          // 恢复原样
+          setTimeout(() => {
+            indices.forEach(i => {
+              rows[i].textContent = originals[i];
+            });
+          }, 60);
+        }
+      }, duration / maxFlickers);
+    }
+    scheduleGlitch();
+  }, 1500);
+})();
+
+// ── 页面加载后自动开始加载脚本 ──
+window.addEventListener('load', () => {
+  // 延迟一帧开始加载，让开始界面先渲染
+  requestAnimationFrame(() => {
+    loadGameScripts();
+  });
+});
+</script>
+
+</body>
+</html>

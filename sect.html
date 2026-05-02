@@ -1,0 +1,3080 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<title>门派 - 江湖将将胡</title>
+<style>
+/* ════════════════════════════════════════════════════
+   sect.html - 门派总舵（独立页面）
+   ════════════════════════════════════════════════════ */
+*{margin:0;padding:0;box-sizing:border-box;}
+
+:root{
+  --gold:#f0c060; --gold2:#e08010; --gold3:#ffe8a0;
+  --dark:#050410;
+  --panel:rgba(8,6,18,.97); --panel2:rgba(12,10,24,.95);
+  --border:rgba(240,192,96,.15); --border2:rgba(240,192,96,.25);
+  --text:#e8d5a3; --text2:rgba(220,200,160,.75); --text3:rgba(180,160,120,.5);
+  --ok:#80e880; --warn:#ffaa40; --danger:#ff6060;
+}
+
+body{
+  background:var(--dark);color:var(--text);
+  font-family:'Courier New','微软雅黑',monospace;
+  overflow-x:hidden;min-height:100vh;user-select:none;
+  background-image:
+    radial-gradient(ellipse at 20% 10%,rgba(30,15,60,.5) 0%,transparent 45%),
+    radial-gradient(ellipse at 80% 90%,rgba(40,10,20,.4) 0%,transparent 45%),
+    radial-gradient(ellipse at 50% 50%,rgba(5,4,16,1) 0%,rgba(2,1,8,1) 100%);
+}
+
+/* 扫描线 */
+body::before{
+  content:'';position:fixed;top:0;left:0;width:100%;height:100%;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.05) 2px,rgba(0,0,0,.05) 4px);
+  pointer-events:none;z-index:1;opacity:.35;
+}
+
+/* ── 顶栏 ── */
+.sect-title-bar{
+  display:flex;align-items:center;gap:10px;
+  padding:14px 16px;border-bottom:1px solid var(--border);
+  background:linear-gradient(180deg,rgba(4,2,12,1) 0%,rgba(6,4,18,.99) 100%);
+  position:relative;z-index:10;
+  box-shadow:0 3px 30px rgba(0,0,0,.6), 0 1px 0 rgba(240,192,96,.06);
+}
+.sect-title-bar h1{
+  flex:1;font-size:17px;letter-spacing:6px;
+  background:linear-gradient(180deg,#fff8d8 0%,#f0c060 50%,#c87820 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.stb-back{
+  background:rgba(30,15,8,.85);border:1px solid rgba(160,100,40,.25);
+  color:#c08040;padding:7px 14px;border-radius:6px;
+  cursor:pointer;font-size:12px;letter-spacing:1px;
+  transition:.2s;text-decoration:none;display:inline-block;
+}
+.stb-back:hover{background:rgba(60,30,10,.9);color:#e0c060;}
+.stb-back:active{transform:scale(.96);}
+
+/* ── 主容器 ── */
+#sectRoot{position:relative;z-index:3;padding-bottom:40px;}
+
+/* ── 无门派参数时的提示区 ── */
+.sect-browser{max-width:600px;margin:0 auto;padding:40px 20px;}
+.sb-header{
+  text-align:center;padding:28px 20px 22px;margin-bottom:14px;
+  border:1px solid var(--border);border-radius:12px;
+  background:linear-gradient(170deg,rgba(240,192,64,.03),transparent);
+}
+.sb-header h2{font-size:18px;color:var(--gold);letter-spacing:5px;margin-bottom:12px;}
+.sb-header p{font-size:13px;color:var(--text3);line-height:2;}
+
+/* ── 已加入门派：总览区 ── */
+.sect-hq{max-width:800px;margin:0 auto;padding:14px 12px;}
+
+/* 门派头部横幅 */
+.sect-hero{
+  border-radius:12px;overflow:hidden;margin-bottom:14px;
+  border:1px solid var(--border);
+  background:linear-gradient(170deg,var(--hero-bg1,rgba(240,192,64,.06)),var(--hero-bg2,rgba(240,192,64,.02)));
+  position:relative;
+}
+.sect-hero-inner{padding:20px 18px 16px;}
+.sect-hero-top{
+  display:flex;align-items:center;gap:14px;margin-bottom:14px;
+}
+.sect-hero-emblem{
+  width:64px;height:64px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;font-size:32px;
+  background:var(--hero-badge,rgba(240,192,64,.08));
+  border:1px solid var(--hero-border,rgba(240,192,64,.2));
+  flex-shrink:0;
+}
+.sect-hero-info{flex:1;min-width:0;}
+.sect-hero-name{font-size:22px;font-weight:bold;letter-spacing:3px;color:var(--hero-color,#f0c060);}
+.sect-hero-title{font-size:12px;color:var(--text2);margin-top:2px;letter-spacing:1px;}
+.sect-hero-tag{font-size:10px;color:var(--text3);margin-top:4px;}
+.sect-hero-meta{
+  display:flex;gap:10px;flex-wrap:wrap;align-self:flex-start;margin-top:4px;
+}
+.sect-meta-chip{
+  font-size:9px;padding:2px 8px;border-radius:4px;letter-spacing:.5px;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:var(--text3);
+}
+
+/* 阶级 & 贡献条 */
+.sect-rank-bar{
+  margin-top:14px;padding:14px 16px;background:rgba(0,0,0,.25);
+  border-top:1px solid rgba(255,255,255,.05);
+  border-radius:0 0 12px 12px;
+}
+.srb-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.srb-label{font-size:11px;color:var(--text3);letter-spacing:1px;}
+.srb-value{font-size:13px;color:var(--gold);font-weight:bold;}
+.srb-value .rank-icon{margin-right:4px;}
+.srb-progress{
+  height:8px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden;
+}
+.srb-progress-fill{
+  height:100%;background:linear-gradient(90deg,var(--rank-color1,#80e880),var(--rank-color2,#50c850));
+  border-radius:4px;transition:width .5s ease;
+  min-width:0;
+}
+.srb-rank-stages{
+  display:flex;justify-content:space-between;margin-top:6px;
+  gap:2px;
+}
+.srb-stage{
+  font-size:8px;color:var(--text3);text-align:center;flex:1;opacity:.5;
+  transition:opacity .2s;
+}
+.srb-stage.active{opacity:1;font-weight:bold;color:var(--text2);}
+.srb-stage.current{color:var(--gold);}
+
+/* ── Tab 导航 ── */
+.sect-tabs{
+  display:flex;gap:0;margin-bottom:0;
+  border-bottom:2px solid var(--border);
+  background:linear-gradient(180deg,rgba(8,6,18,.95),rgba(6,4,16,.98));
+  position:relative;z-index:5;
+  overflow-x:auto;-webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.sect-tabs::-webkit-scrollbar{display:none;}
+.sect-tab{
+  flex:1;min-width:70px;padding:12px 8px;text-align:center;
+  font-size:12px;color:var(--text3);cursor:pointer;letter-spacing:1px;
+  border:none;background:none;transition:all .2s;
+  white-space:nowrap;position:relative;font-family:inherit;
+  border-bottom:2px solid transparent;margin-bottom:-2px;
+}
+.sect-tab:hover{color:var(--text2);background:rgba(255,255,255,.03);}
+.sect-tab.active{
+  color:var(--tab-color,var(--gold));font-weight:bold;
+  border-bottom-color:var(--tab-color,var(--gold));
+  background:linear-gradient(180deg,rgba(240,192,64,.04),transparent);
+}
+.sect-tab-icon{display:block;font-size:16px;margin-bottom:2px;}
+.sect-tab-text{display:block;font-size:10px;letter-spacing:1px;}
+
+/* Tab 内容区 */
+.sect-tab-content{display:none;padding:14px 0;}
+.sect-tab-content.active{display:block;}
+
+/* ── 总览面板 ── */
+.sect-overview-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;
+}
+@media(max-width:520px){.sect-overview-grid{grid-template-columns:1fr;}}
+
+.sect-info-card{
+  padding:14px;border:1px solid var(--border);border-radius:10px;
+  background:var(--panel2);
+}
+.sect-card-title{
+  font-size:11px;color:var(--gold);letter-spacing:2px;margin-bottom:10px;
+  padding-bottom:6px;border-bottom:1px dashed rgba(255,255,255,.06);
+}
+.sect-card-body{font-size:12px;color:var(--text2);line-height:1.8;}
+
+/* 被动加成 */
+.sect-bonus-list{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:6px;}
+.sect-bonus-tag{
+  font-size:11px;padding:2px 8px;border-radius:4px;
+  background:rgba(128,232,128,.06);border:1px solid rgba(128,232,128,.15);
+  color:#90d090;
+}
+.sect-bonus-inactive{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.08);color:var(--text3);}
+
+/* 关系网 */
+.sect-rel-item{display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:11px;}
+.sect-rel-label{color:var(--text3);min-width:42px;font-size:10px;}
+.sect-rel-tags{display:flex;flex-wrap:wrap;gap:4px;}
+.sect-rel-tag{
+  font-size:10px;padding:1px 7px;border-radius:4px;
+}
+
+/* ── 长老殿（加入/退出/掌门）── */
+.sect-hall{
+  text-align:center;padding:20px 16px;
+  border:1px solid var(--border);border-radius:12px;
+  background:linear-gradient(170deg,rgba(240,192,64,.02),transparent);
+}
+.sh-master-avatar{
+  font-size:56px;margin-bottom:10px;filter:drop-shadow(0 0 20px rgba(240,192,64,.2));
+}
+.sh-master-name{font-size:16px;color:var(--gold);letter-spacing:3px;margin-bottom:4px;}
+.sh-master-title{font-size:11px;color:var(--text3);margin-bottom:16px;}
+.sh-action-btn{
+  display:inline-block;padding:12px 32px;border-radius:10px;
+  font-size:14px;letter-spacing:3px;cursor:pointer;
+  border:1px solid;transition:.2s;font-family:inherit;margin:4px;
+}
+.sh-join-btn{
+  background:linear-gradient(135deg,rgba(200,150,30,.75),rgba(240,180,40,.75));
+  border-color:rgba(220,170,50,.5);color:#fff8e0;font-weight:bold;
+}
+.sh-join-btn:hover{box-shadow:0 0 20px rgba(220,160,30,.4);}
+.sh-leave-btn{
+  background:linear-gradient(135deg,rgba(180,50,30,.6),rgba(200,70,50,.6));
+  border-color:rgba(220,80,60,.4);color:#ffd0d0;
+}
+.sh-leave-btn:hover{box-shadow:0 0 20px rgba(200,60,40,.3);}
+.sh-locked-msg{
+  font-size:13px;color:var(--warn);padding:12px;
+  background:rgba(255,170,64,.05);border:1px solid rgba(255,170,64,.15);
+  border-radius:8px;margin-top:10px;
+}
+.sh-req-box{
+  text-align:left;margin-top:16px;padding:14px;border-radius:8px;
+  background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.05);
+}
+.sh-req-title{font-size:11px;color:var(--gold);margin-bottom:8px;letter-spacing:1px;}
+.sh-req-line{font-size:11px;color:var(--text2);line-height:1.9;}
+
+/* ── 藏经阁（功法商店）── */
+.sect-library-empty{
+  text-align:center;padding:40px 16px;color:var(--text3);
+  font-size:13px;letter-spacing:1px;
+}
+.sl-manual-grid{display:grid;gap:8px;}
+.sl-manual-item{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 14px;border:1px solid var(--border);border-radius:10px;
+  background:var(--panel2);transition:.15s;cursor:pointer;
+}
+.sl-manual-item:hover{border-color:var(--border2);background:rgba(240,192,64,.03);}
+.sl-manual-icon{font-size:26px;flex-shrink:0;}
+.sl-manual-info{flex:1;min-width:0;}
+.sl-manual-name{font-size:13px;color:var(--gold);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sl-manual-desc{font-size:10px;color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sl-manual-price{
+  text-align:right;flex-shrink:0;
+}
+.sl-manual-cost{font-size:13px;color:var(--ok);font-weight:bold;}
+.sl-manual-currency{font-size:9px;color:var(--text3);}
+.sl-manual-locked{opacity:.4;cursor:not-allowed;}
+.sl-manual-owned{border-color:rgba(128,232,128,.25);background:rgba(128,232,128,.03);}
+
+/* ── 贡献商店 ── */
+.cs-shop-section{margin-bottom:16px;}
+.cs-shop-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:10px;padding-bottom:8px;
+  border-bottom:1px dashed rgba(255,255,255,.06);
+}
+.cs-shop-title{font-size:13px;color:var(--ok);font-weight:bold;letter-spacing:1px;}
+.cs-shop-balance{font-size:12px;color:var(--ok);}
+.cs-item{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 12px;background:rgba(255,255,255,.02);
+  border:1px solid transparent;border-radius:8px;margin-bottom:6px;
+  transition:.15s;cursor:pointer;
+}
+.cs-item:hover:not(.cs-locked):not(.cs-cant-afford){
+  background:rgba(128,232,128,.04);border-color:rgba(128,232,128,.15);
+}
+.cs-item.cs-locked{opacity:.4;cursor:not-allowed;}
+.cs-item.cs-cant-afford{opacity:.55;}
+.cs-item-icon{font-size:20px;flex-shrink:0;}
+.cs-item-info{flex:1;min-width:0;}
+.cs-item-name{font-size:12px;color:#f0d090;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cs-item-desc{font-size:10px;color:var(--text3);margin-top:1px;}
+.cs-item-price{
+  text-align:right;flex-shrink:0;
+}
+.cs-item-cost{font-size:12px;color:var(--ok);font-weight:bold;}
+.cs-item-curr{font-size:8px;color:var(--text3);}
+
+/* ── 门派任务链 ── */
+.sc-chain-header{
+  padding:14px;border:1px solid var(--border);border-radius:10px;
+  margin-bottom:14px;background:var(--panel2);
+}
+.sc-chain-name{font-size:15px;color:var(--gold);font-weight:bold;letter-spacing:2px;}
+.sc-chain-theme{font-size:11px;color:var(--text3);margin-top:4px;}
+
+.sc-task-list{}
+.sc-task-node{
+  display:flex;gap:10px;padding:12px 14px;margin-bottom:8px;
+  border:1px solid var(--border);border-radius:10px;
+  background:var(--panel2);transition:.15s;
+  position:relative;
+}
+.sc-task-node:hover{border-color:var(--border2);}
+.sc-task-status{
+  width:36px;height:36px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:16px;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  color:var(--text3);
+}
+.sc-task-status.done{background:rgba(128,232,128,.08);border-color:rgba(128,232,128,.25);color:var(--ok);}
+.sc-task-status.active{background:rgba(240,192,64,.08);border-color:rgba(240,192,64,.25);color:var(--gold);}
+.sc-task-status.locked{opacity:.4;}
+.sc-task-body{flex:1;min-width:0;}
+.sc-task-name{font-size:13px;color:var(--text);font-weight:bold;}
+.sc-task-desc{font-size:11px;color:var(--text3);margin-top:3px;line-height:1.5;}
+.sc-task-reward{font-size:10px;color:var(--ok);margin-top:4px;}
+.sc-task-action{
+  align-self:center;flex-shrink:0;
+}
+.sc-task-btn{
+  padding:7px 14px;border-radius:6px;font-size:11px;cursor:pointer;
+  border:1px solid rgba(240,192,64,.3);background:rgba(240,192,64,.08);
+  color:var(--gold);font-family:inherit;letter-spacing:1px;transition:.15s;
+}
+.sc-task-btn:hover{background:rgba(240,192,64,.15);}
+.sc-task-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+/* ── 演武场 ── */
+.sa-arena-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 14px;border:1px solid var(--border);border-radius:10px;
+  background:var(--panel2);margin-bottom:12px;
+}
+.sa-arena-title{font-size:14px;color:var(--gold);font-weight:bold;letter-spacing:2px;}
+.sa-arena-info{font-size:11px;color:var(--text3);}
+.sa-opponent-grid{display:grid;gap:8px;}
+.sa-opponent{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 14px;border:1px solid var(--border);border-radius:10px;
+  background:var(--panel2);transition:.15s;cursor:pointer;
+}
+.sa-opponent:hover:not(.sa-locked):not(.sa-defeated){border-color:var(--border2);background:rgba(240,192,64,.03);}
+.sa-opponent.sa-locked{opacity:.4;cursor:not-allowed;}
+.sa-opponent.sa-defeated{opacity:.5;border-color:rgba(128,232,128,.2);background:rgba(128,232,128,.03);}
+.sa-opp-icon{font-size:28px;flex-shrink:0;}
+.sa-opp-info{flex:1;min-width:0;}
+.sa-opp-name{font-size:13px;color:var(--gold);}
+.sa-opp-title{font-size:10px;color:var(--text3);margin-top:2px;}
+.sa-opp-level{
+  text-align:right;flex-shrink:0;
+}
+.sa-opp-lv{font-size:12px;color:var(--warn);font-weight:bold;}
+.sa-opp-reward{font-size:9px;color:var(--ok);margin-top:2px;}
+.sa-arena-result{
+  position:fixed;inset:0;z-index:500;
+  background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;
+}
+.sa-arena-result.active{display:flex;}
+.sa-arena-result-box{
+  width:min(420px,90vw);padding:30px 24px;border-radius:14px;
+  background:linear-gradient(170deg,#121418,#0e1014);
+  border:1px solid rgba(240,192,96,.25);text-align:center;
+}
+.sa-result-icon{font-size:48px;margin-bottom:12px;}
+.sa-result-text{font-size:16px;color:var(--text);line-height:1.6;margin-bottom:8px;}
+.sa-result-reward{font-size:13px;color:var(--ok);margin-bottom:16px;}
+.sa-result-btn{
+  padding:10px 28px;border-radius:8px;font-size:13px;cursor:pointer;
+  border:1px solid rgba(240,192,64,.4);background:rgba(240,192,64,.1);
+  color:var(--gold);font-family:inherit;letter-spacing:2px;
+}
+
+/* ── 炼丹房 ── */
+.sc-alchemy-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 14px;border:1px solid var(--border);border-radius:10px;
+  background:var(--panel2);margin-bottom:12px;
+}
+.sc-alchemy-title{font-size:14px;color:#a0d0ff;font-weight:bold;letter-spacing:2px;}
+.sc-alchemy-balance{font-size:11px;color:var(--text3);}
+.sc-recipe-list{display:grid;gap:8px;}
+.sc-recipe-item{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 14px;border:1px solid var(--border);border-radius:10px;
+  background:var(--panel2);transition:.15s;cursor:pointer;
+}
+.sc-recipe-item:hover:not(.sc-locked):not(.sc-cant-craft){border-color:rgba(160,208,255,.25);background:rgba(160,208,255,.04);}
+.sc-recipe-item.sc-locked{opacity:.4;cursor:not-allowed;}
+.sc-recipe-item.sc-cant-craft{opacity:.55;}
+.sc-recipe-icon{font-size:26px;flex-shrink:0;}
+.sc-recipe-info{flex:1;min-width:0;}
+.sc-recipe-name{font-size:13px;color:#a0d0ff;}
+.sc-recipe-desc{font-size:10px;color:var(--text3);margin-top:2px;}
+.sc-recipe-mats{font-size:9px;color:var(--warn);margin-top:4px;}
+.sc-recipe-mats .has{color:var(--ok);}
+.sc-recipe-mats .miss{color:var(--danger);}
+.sc-recipe-result{
+  text-align:right;flex-shrink:0;
+}
+.sc-recipe-exp{font-size:11px;color:var(--ok);font-weight:bold;}
+
+/* ── 藏宝阁 ── */
+.st-treasury-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 14px;border:1px solid var(--border);border-radius:10px;
+  background:linear-gradient(170deg,rgba(255,215,100,.05),transparent);margin-bottom:12px;
+}
+.st-treasury-title{font-size:14px;color:#ffd700;font-weight:bold;letter-spacing:2px;}
+.st-treasury-balance{font-size:12px;color:#ffd700;}
+.st-treasury-cat{font-size:11px;color:var(--gold2);letter-spacing:1px;margin:14px 0 8px;padding-left:4px;border-bottom:1px dashed rgba(255,215,100,.15);padding-bottom:4px;}
+.st-treasure-item{
+  display:flex;align-items:center;gap:10px;
+  padding:11px 13px;background:rgba(255,215,100,.02);
+  border:1px solid transparent;border-radius:9px;margin-bottom:6px;
+  transition:.15s;cursor:pointer;
+}
+.st-treasure-item:hover:not(.st-locked):not(.st-cant-afford){
+  background:rgba(255,215,100,.06);border-color:rgba(255,215,100,.18);
+}
+.st-treasure-item.st-locked{opacity:.35;cursor:not-allowed;}
+.st-treasure-item.st-cant-afford{opacity:.5;}
+.st-treasure-icon{font-size:22px;flex-shrink:0;}
+.st-treasure-info{flex:1;min-width:0;}
+.st-treasure-name{font-size:12px;color:#f0d080;}
+.st-treasure-desc{font-size:10px;color:var(--text3);margin-top:1px;}
+.st-treasure-price{text-align:right;flex-shrink:0;}
+.st-treasure-cost{font-size:13px;color:#ffd700;font-weight:bold;}
+.st-treasure-curr{font-size:9px;color:var(--text3);}
+
+/* ── 公告栏 ── */
+.sb-board-header{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 14px;border:1px solid var(--border);border-radius:10px;
+  background:var(--panel2);margin-bottom:12px;
+}
+.sb-board-title{font-size:14px;color:var(--warn);font-weight:bold;letter-spacing:2px;}
+.sb-board-time{font-size:10px;color:var(--text3);margin-left:auto;}
+.sb-daily-section{margin-bottom:14px;}
+.sb-daily-label{
+  font-size:11px;color:var(--gold);letter-spacing:1px;padding:6px 10px;
+  border-bottom:1px dashed rgba(240,192,96,.12);margin-bottom:8px;
+  display:flex;align-items:center;gap:6px;
+}
+.sb-daily-card{
+  display:flex;align-items:center;gap:10px;padding:11px 13px;
+  border:1px solid var(--border);border-radius:9px;background:var(--panel2);
+  margin-bottom:6px;transition:.15s;cursor:pointer;
+}
+.sb-daily-card:hover:not(.sb-done):not(.sb-locked){border-color:var(--border2);background:rgba(240,192,64,.03);}
+.sb-daily-card.sb-done{opacity:.55;border-color:rgba(128,232,128,.2);}
+.sb-daily-card.sb-locked{opacity:.4;cursor:not-allowed;}
+.sb-daily-icon{font-size:22px;flex-shrink:0;}
+.sb-daily-info{flex:1;min-width:0;}
+.sb-daily-name{font-size:12px;color:var(--text);}
+.sb-daily-desc{font-size:10px;color:var(--text3);margin-top:2px;}
+.sb-daily-action{flex-shrink:0;}
+.sb-daily-btn{
+  padding:6px 12px;border-radius:6px;font-size:11px;cursor:pointer;
+  border:1px solid rgba(240,192,64,.3);background:rgba(240,192,64,.08);
+  color:var(--gold);font-family:inherit;transition:.15s;
+}
+.sb-daily-btn:hover{background:rgba(240,192,64,.15);}
+.sb-daily-btn:disabled{opacity:.4;cursor:not-allowed;}
+.sb-daily-status{font-size:11px;color:var(--ok);font-weight:bold;}
+.sb-bounty-section{margin-top:16px;}
+.sb-bounty-empty{
+  text-align:center;padding:30px 16px;color:var(--text3);
+  font-size:13px;letter-spacing:1px;
+}
+
+/* 任务叙事弹窗 */
+.sc-narrative-overlay{
+  position:fixed;inset:0;z-index:500;
+  background:rgba(0,0,0,.82);display:none;align-items:center;justify-content:center;
+  animation:fadeIn .18s ease;
+}
+.sc-narrative-overlay.active{display:flex;}
+.sc-narrative-box{
+  width:min(520px,94vw);max-height:80vh;border-radius:12px;
+  background:linear-gradient(170deg,#121418,#0e1014);
+  border:1px solid rgba(240,192,96,.2);
+  box-shadow:0 0 60px rgba(0,0,0,.7);
+  overflow-y:auto;display:flex;flex-direction:column;
+}
+.sc-narrative-scene{
+  text-align:center;padding:18px 16px 12px;
+  font-family:'Courier New',monospace;font-size:11px;
+  color:var(--gold2);line-height:1.6;white-space:pre;
+  border-bottom:1px solid rgba(255,255,255,.06);
+  background:rgba(240,192,64,.02);
+}
+.sc-narrative-lines{padding:18px 20px;}
+.sc-narrative-line{
+  font-size:13px;color:var(--text2);line-height:1.9;margin-bottom:6px;
+}
+.sc-narrative-footer{
+  padding:14px 20px;display:flex;gap:10px;
+  border-top:1px solid rgba(255,255,255,.06);flex-shrink:0;
+}
+.sc-narrative-btn{
+  flex:1;padding:11px 0;border-radius:8px;font-size:13px;
+  cursor:pointer;font-family:inherit;letter-spacing:2px;transition:.15s;
+}
+.sc-narrative-confirm{
+  background:linear-gradient(135deg,rgba(200,150,30,.8),rgba(240,180,40,.8));
+  border:1px solid rgba(220,170,50,.5);color:#fff8e0;font-weight:bold;
+}
+.sc-narrative-cancel{
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#aaa;
+}
+
+/* ── Toast ── */
+.sect-toast{
+  position:fixed;top:20px;left:50%;transform:translateX(-50%);
+  padding:10px 22px;border-radius:8px;font-size:13px;z-index:9999;
+  pointer-events:none;animation:stToastIn .25s ease;
+  max-width:90vw;text-align:center;letter-spacing:.5px;
+}
+@keyframes stToastIn{from{opacity:0;transform:translateX(-50%) translateY(-10px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
+
+
+/* ═══ 动画 ═══ */
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+
+/* ── 门派入场动画全屏覆盖层 ── */
+.sect-entry-overlay{
+  position:fixed;inset:0;z-index:99999;
+  background:linear-gradient(180deg, #0a0612 0%, #0d0818 50%, #080410 100%);
+  display:none;align-items:center;justify-content:center;
+  flex-direction:column;text-align:center;
+  pointer-events:auto;
+}
+.sect-entry-overlay.active{display:flex!important;}
+
+/* ASCII 大画容器 */
+.sect-entry-art{
+  font-family:'Courier New',monospace;font-size:15px;line-height:1.4;
+  color:var(--entry-color,#f0c060);white-space:pre;overflow-x:auto;
+  max-width:96vw;max-height:58vh;margin:0 auto;padding:16px 12px;
+  opacity:0;transform:scale(.88) translateY(20px);
+  transition:opacity .8s ease, transform .9s cubic-bezier(.2,.8,.2,1);
+  text-shadow:0 0 14px var(--entry-glow,rgba(240,192,96,.35));
+  filter:drop-shadow(0 0 18px var(--entry-glow,rgba(240,192,96,.2)));
+}
+.sect-entry-art.show{opacity:1;transform:scale(1) translateY(0);}
+
+/* 入场门派名称 */
+.sect-entry-name{
+  margin-top:20px;font-size:30px;font-weight:bold;
+  letter-spacing:8px;color:var(--entry-color,#f0c060);
+  opacity:0;transform:translateY(15px);
+  transition:opacity .6s ease .7s, transform .6s ease .7s;
+  text-shadow:0 0 24px var(--entry-glow,rgba(240,192,96,.4)), 0 0 60px var(--entry-glow,rgba(240,192,96,.15));
+}
+.sect-entry-name.show{opacity:1;transform:translateY(0);}
+
+/* 入场副标题 */
+.sect-entry-sub{
+  margin-top:8px;font-size:14px;color:rgba(255,255,255,.55);
+  letter-spacing:4px;opacity:0;
+  transition:opacity .5s ease 1.2s;
+}
+.sect-entry-sub.show{opacity:1;}
+
+/* 跳过按钮 */
+.sect-entry-skip{
+  position:absolute;bottom:24px;left:50%;transform:translateX(-50%);
+  padding:8px 22px;border-radius:6px;font-size:11px;cursor:pointer;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+  color:var(--text3);letter-spacing:1px;transition:.2s;opacity:0;
+  transition:opacity .3s ease 1.2s, background .2s;
+}
+.sect-entry-skip.show{opacity:1;}
+.sect-entry-skip:hover{background:rgba(255,255,255,.12);color:var(--text);}
+
+/* 粒子飘落效果（门派特色） */
+.entry-particle{
+  position:absolute;width:3px;height:3px;border-radius:50%;
+  pointer-events:none;opacity:0;
+  animation:epFall linear forwards;
+}
+@keyframes epFall{
+  0%{opacity:0;transform:translateY(-10px) scale(.5);}
+  15%{opacity:.7;}
+  85%{opacity:.4;}
+  100%{opacity:0;transform:translateY(100vh) scale(.2);}
+}
+
+/* Hero区内的ASCII形象画 */
+.sect-hero-ascii{
+  text-align:center;padding:14px 8px 6px;
+  font-family:'Courier New',monospace;font-size:12.5px;line-height:1.35;
+  color:var(--hero-color,#f0c060);white-space:pre;overflow-x:auto;
+  opacity:0;animation:saFadeIn .7s ease .15s forwards;
+  border-bottom:1px solid rgba(255,255,255,.05);
+  margin-bottom:8px;background:rgba(0,0,0,.2);
+  border-radius:8px;letter-spacing:.08em;
+  filter:drop-shadow(0 0 8px var(--hero-glow,rgba(240,192,96,.12)));
+}
+@keyframes saFadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+/* 打字光标闪烁 */
+.sect-type-cursor{
+  display:inline-block;width:2px;height:1em;background:var(--entry-color,#f0c060);
+  animation:typeBlink .7s step-end infinite;vertical-align:text-bottom;margin-left:2px;
+}
+@keyframes typeBlink{50%{transparent;}}
+
+/* ── 入场动画阶段控制 ── */
+.sect-entry-overlay.entry-phase-fadein .entry-ascii{opacity:1;transform:scale(1) translateY(0);animation:asciiShimmer 2.5s ease-out forwards;}
+.sect-entry-overlay.entry-phase-exit{opacity:0;transition:opacity .45s ease;pointer-events:none;}
+
+@keyframes asciiShimmer{
+  0%{opacity:0;transform:scale(.92) translateY(18px);filter:brightness(.5);}
+  30%{opacity:1;transform:scale(.98) translateY(4px);filter:brightness(1.1);}
+  60%{transform:scale(1) translateY(0);filter:brightness(1);}
+  100%{opacity:1;transform:scale(1) translateY(0);filter:brightness(1);}
+}
+
+/* 标题/副标题文字渐显 */
+.entry-text-show{opacity:1 !important;transform:translateY(0) !important;transition:opacity .6s cubic-bezier(.2,.8,.2,1), transform .6s cubic-bezier(.2,.8,.2,1) !important;}
+.entry-title{opacity:0;transform:translateY(12px);transition:opacity .5s ease, transform .5s ease;}
+.entry-sub{opacity:0;transform:translateY(8px);transition:opacity .4s ease .15s, transform .4s ease .15s;}
+
+/* 分隔线从中心向两边展开 */
+.entry-bar{
+  width:0;height:1px;background:linear-gradient(90deg, transparent, var(--sect-glow,#f0c060), transparent);
+  margin:10px auto;transition:width .7s cubic-bezier(.2,.8,.2,1) .6s;
+}
+.entry-bar-grow{width:min(320px,70vw) !important;}
+
+/* 脉冲提示 */
+@keyframes entryPulse{
+  0%,100%{opacity:.5;}
+  50%{opacity:1;text-shadow:0 0 12px currentColor;}
+}
+
+/* ═══ 手机适配 ═══ */
+@media(max-width:640px){
+  /* 顶栏 */
+  .sect-title-bar{padding:10px 12px;}
+  .sect-title-bar h1{font-size:15px;letter-spacing:3px;}
+  .stb-back{padding:6px 10px;font-size:11px;}
+
+  /* 浏览提示 */
+  .sect-browser{padding:24px 14px;}
+  .sb-header{padding:20px 14px 16px;}
+  .sb-header h2{font-size:16px;letter-spacing:3px;}
+
+  /* 总舵 */
+  .sect-hq{padding:10px 8px;}
+
+  /* 英雄区 */
+  .sect-hero-inner{padding:14px 12px 12px;}
+  .sect-hero-top{gap:10px;}
+  .sect-hero-emblem{width:48px;height:48px;font-size:24px;border-radius:10px;}
+  .sect-hero-name{font-size:17px;letter-spacing:1px;}
+  .sect-hero-title{font-size:10px;}
+  .sect-hero-meta{gap:6px;}
+  .sect-meta-chip{font-size:8px;padding:1px 6px;}
+
+  /* 阶级进度条 */
+  .sect-rank-bar{padding:10px 12px;}
+  .srb-label{font-size:10px;}
+  .srb-value{font-size:12px;}
+  .srb-rank-stages{gap:1px;}
+  .srb-stage{font-size:7px;}
+
+  /* Tab 导航 */
+  .sect-tab{min-width:56px;padding:10px 4px;}
+  .sect-tab-icon{font-size:14px;}
+  .sect-tab-text{font-size:9px;}
+  .sect-tab-content{padding:10px 0;}
+
+  /* 信息卡片 */
+  .sect-info-card{padding:10px;}
+  .sect-card-title{font-size:10px;margin-bottom:8px;}
+  .sect-card-body{font-size:11px;line-height:1.7;}
+
+  /* 长老殿 */
+  .sect-hall{padding:16px 12px;}
+  .sh-master-avatar{font-size:40px;}
+  .sh-master-name{font-size:14px;letter-spacing:2px;}
+  .sh-action-btn{padding:10px 24px;font-size:13px;letter-spacing:2px;}
+
+  /* 藏经阁 */
+  .sl-manual-item{padding:10px 12px;}
+  .sl-manual-icon{font-size:22px;}
+  .sl-manual-name{font-size:12px;}
+  .sl-manual-cost{font-size:12px;}
+
+  /* 贡献商店 */
+  .cs-item{padding:8px 10px;}
+  .cs-item-icon{font-size:18px;}
+  .cs-item-name{font-size:11px;}
+  .cs-item-cost{font-size:11px;}
+
+  /* 门派任务 */
+  .sc-task-node{padding:10px 12px;}
+  .sc-task-status{width:30px;height:30px;font-size:14px;}
+  .sc-task-name{font-size:12px;}
+  .sc-task-desc{font-size:10px;line-height:1.4;}
+  .sc-task-btn{padding:6px 12px;font-size:10px;}
+
+  /* 演武场 */
+  .sa-opponent{padding:10px 12px;}
+  .sa-opp-icon{font-size:22px;}
+  .sa-opp-name{font-size:12px;}
+
+  /* 炼丹房 */
+  .sc-recipe-item{padding:10px 12px;}
+  .sc-recipe-icon{font-size:22px;}
+  .sc-recipe-name{font-size:12px;}
+
+  /* 藏宝阁 */
+  .st-treasure-item{padding:8px 10px;}
+  .st-treasure-icon{font-size:18px;}
+  .st-treasure-name{font-size:11px;}
+  .st-treasure-cost{font-size:12px;}
+
+  /* 公告栏 */
+  .sb-daily-card{padding:8px 10px;}
+  .sb-daily-icon{font-size:18px;}
+  .sb-daily-name{font-size:11px;}
+  .sb-daily-btn{padding:5px 10px;font-size:10px;}
+
+  /* 叙事弹窗 */
+  .sc-narrative-scene{padding:14px 12px 10px;font-size:9px;}
+  .sc-narrative-lines{padding:14px 16px;}
+  .sc-narrative-line{font-size:12px;line-height:1.7;}
+  .sc-narrative-footer{padding:10px 14px;}
+  .sc-narrative-btn{padding:9px 0;font-size:12px;}
+
+  /* 入场动画 */
+  .sect-entry-art{font-size:10px;max-height:45vh;padding:12px 8px;}
+  .sect-entry-name{font-size:22px;letter-spacing:4px;}
+  .sect-entry-sub{font-size:12px;letter-spacing:2px;}
+
+  /* ASCII形象画 */
+  .sect-hero-ascii{font-size:10px;line-height:1.3;}
+}
+
+
+</style>
+</head>
+<body>
+
+<!-- DEBUG: 页面加载确认 -->
+<script>console.log('[sect] body start, readyState:', document.readyState);</script>
+
+<!-- ══ 门派入场动画全屏覆盖层 ══ -->
+<div class="sect-entry-overlay" id="sectEntryOverlay">
+  <div class="sect-entry-art" id="sectEntryArt"></div>
+  <div class="sect-entry-name" id="sectEntryName"></div>
+  <div class="sect-entry-sub" id="sectEntrySub"></div>
+  <button class="sect-entry-skip" id="sectEntrySkip">跳过 ▸</button>
+</div>
+
+<!-- 顶栏 -->
+<div class="sect-title-bar" id="sectTitleBar">
+  <a class="stb-back" id="sectBackBtn" href="javascript:void(0)">◀ 返回城镇</a>
+  <h1 id="sectPageTitle">🏯 门派志</h1>
+  <div style="width:72px"></div>
+</div>
+
+<div id="sectRoot">
+
+<!-- ══ 无门派参数时的提示页 ══ -->
+  <div class="sect-browser" id="sectBrowserView" style="display:none">
+    <div class="sb-header">
+      <h2>🏯 门派总舵</h2>
+      <p>请先从城镇旅行前往门派地点，方可进入总舵<br><span style="color:var(--text3);font-size:10px">在城镇中点击「▶ 出城闯江湖」，选择有🏯标记的门派方向</span></p>
+    </div>
+  </div>
+
+  <!-- ══ 视图B：已选/已加入 → 总舵界面 ══ -->
+  <div class="sect-hq" id="sectHqView" style="display:none">
+
+    <!-- 门派英雄区 -->
+    <div class="sect-hero" id="sectHeroArea">
+      <div class="sect-hero-inner" id="sectHeroInner">
+        <!-- JS 填充 -->
+      </div>
+      <!-- 阶级进度条 -->
+      <div class="sect-rank-bar" id="sectRankBar" style="display:none">
+        <!-- JS 填充 -->
+      </div>
+    </div>
+
+    <!-- Tab 导航 -->
+    <div class="sect-tabs" id="sectTabsNav">
+      <button class="sect-tab active" data-tab="overview">
+        <span class="sect-tab-icon">📋</span><span class="sect-tab-text">总览</span>
+      </button>
+      <button class="sect-tab" data-tab="hall">
+        <span class="sect-tab-icon">🏛</span><span class="sect-tab-text">长老殿</span>
+      </button>
+      <button class="sect-tab" data-tab="library">
+        <span class="sect-tab-icon">📖</span><span class="sect-tab-text">藏经阁</span>
+      </button>
+      <button class="sect-tab" data-tab="shop">
+        <span class="sect-tab-icon">⚔</span><span class="sect-tab-text">贡献商店</span>
+      </button>
+      <button class="sect-tab" data-tab="missions">
+        <span class="sect-tab-icon">📜</span><span class="sect-tab-text">门派要务</span>
+      </button>
+      <button class="sect-tab" data-tab="arena">
+        <span class="sect-tab-icon">⚔️</span><span class="sect-tab-text">演武场</span>
+      </button>
+      <button class="sect-tab" data-tab="alchemy">
+        <span class="sect-tab-icon">🧪</span><span class="sect-tab-text">炼丹房</span>
+      </button>
+      <button class="sect-tab" data-tab="treasury">
+        <span class="sect-tab-icon">💰</span><span class="sect-tab-text">藏宝阁</span>
+      </button>
+      <button class="sect-tab" data-tab="realm">
+        <span class="sect-tab-icon">🏰</span><span class="sect-tab-text">秘境</span>
+      </button>
+      <button class="sect-tab" data-tab="building">
+        <span class="sect-tab-icon">🏗</span><span class="sect-tab-text">建筑</span>
+      </button>
+      <button class="sect-tab" data-tab="talent">
+        <span class="sect-tab-icon">🌟</span><span class="sect-tab-text">天赋</span>
+      </button>
+      <button class="sect-tab" data-tab="npc">
+        <span class="sect-tab-icon">👥</span><span class="sect-tab-text">弟子</span>
+      </button>
+      <button class="sect-tab" data-tab="events">
+        <span class="sect-tab-icon">📜</span><span class="sect-tab-text">动态</span>
+      </button>
+      <button class="sect-tab" data-tab="war">
+        <span class="sect-tab-icon">⚔️</span><span class="sect-tab-text">战争</span>
+      </button>
+      <button class="sect-tab" data-tab="economy">
+        <span class="sect-tab-icon">💰</span><span class="sect-tab-text">经济</span>
+      </button>
+      <button class="sect-tab" data-tab="board">
+        <span class="sect-tab-icon">📢</span><span class="sect-tab-text">公告栏</span>
+      </button>
+    </div>
+
+    <!-- Tab 内容：总览 -->
+    <div class="sect-tab-content active" id="tab-overview">
+      <div class="sect-overview-grid" id="sectOverviewGrid">
+        <!-- JS 渲染 -->
+      </div>
+    </div>
+
+    <!-- Tab 内容：长老殿 -->
+    <div class="sect-tab-content" id="tab-hall">
+      <div class="sect-hall" id="sectHallContent">
+        <!-- JS 渲染 -->
+      </div>
+    </div>
+
+    <!-- Tab 内容：藏经阁 -->
+    <div class="sect-tab-content" id="tab-library">
+      <div class="sl-manual-grid" id="sectLibraryList">
+        <!-- JS 渲染 -->
+      </div>
+    </div>
+
+    <!-- Tab 内容：贡献商店 -->
+    <div class="sect-tab-content" id="tab-shop">
+      <div id="sectShopContent">
+        <!-- JS 渲染 -->
+      </div>
+    </div>
+
+    <!-- Tab 内容：门派任务链 -->
+    <div class="sect-tab-content" id="tab-missions">
+      <div id="sectMissionContent">
+        <!-- JS 渲染 -->
+      </div>
+    </div>
+
+    <!-- Tab 内容：演武场 -->
+    <div class="sect-tab-content" id="tab-arena">
+      <div id="sectArenaContent">
+        <!-- JS 渲染 -->
+      </div>
+    </div>
+
+    <!-- Tab 内容：炼丹房 -->
+    <div class="sect-tab-content" id="tab-alchemy">
+      <div id="sectAlchemyContent">
+        <!-- JS 渲染 -->
+      </div>
+    </div>
+
+    <!-- Tab 内容：藏宝阁 -->
+    <div class="sect-tab-content" id="tab-treasury">
+      <div id="sectTreasuryContent">
+        <!-- JS 渲染 -->
+      </div>
+    </div>
+
+    <!-- Tab 内容：门派秘境 -->
+    <div class="sect-tab-content" id="tab-realm">
+      <div id="sectRealmContent">
+        <!-- JS 渲染 -->
+      </div>
+    </div>
+
+    <!-- Tab 内容：门派天赋 -->
+    <div class="sect-tab-content" id="tab-talent">
+      <div id="sectTalentContent"></div>
+    </div>
+    <!-- Tab 内容：门派建筑 -->
+    <div class="sect-tab-content" id="tab-building">
+      <div id="sectBuildingContent">
+        <!-- JS 渲染 -->
+      </div>
+    </div>
+
+    <!-- Tab 内容：门派弟子 -->
+    <div class="sect-tab-content" id="tab-npc">
+      <div id="sectNpcContent">
+        <!-- JS 渲染 -->
+      </div>
+    </div>
+
+    <!-- Tab 内容：门派动态 -->
+    <div class="sect-tab-content" id="tab-events">
+      <div id="sectEventsContent">
+        <!-- JS 渲染 -->
+      </div>
+    </div>
+
+    <!-- Tab 内容：阵营战争 -->
+    <div class="sect-tab-content" id="tab-war">
+      <div id="sectWarContent">
+        <!-- JS 渲染 -->
+      </div>
+    </div>
+
+    <!-- Tab 内容：门派经济 -->
+    <div class="sect-tab-content" id="tab-economy">
+      <div id="sectEconomyContent">
+        <!-- JS 渲染 -->
+      </div>
+    </div>
+
+    <!-- Tab 内容：公告栏 -->
+    <div class="sect-tab-content" id="tab-board">
+      <div id="sectBoardContent">
+        <!-- JS 渲染 -->
+      </div>
+    </div>
+
+  </div><!-- /sectHqView -->
+
+</div><!-- /sectRoot -->
+
+<!-- 叙事弹窗 -->
+<div class="sc-narrative-overlay" id="scNarrativeOverlay">
+  <div class="sc-narrative-box">
+    <div class="sc-narrative-scene" id="scNarrScene"></div>
+    <div class="sc-narrative-lines" id="scNarrLines"></div>
+    <div class="sc-narrative-footer">
+      <button class="sc-narrative-btn sc-narrative-cancel" id="scNarrCancel">返回</button>
+      <button class="sc-narrative-btn sc-narrative-confirm" id="scNarrConfirm">确认</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════ JS 依赖（与 town.html 共享核心数据） ═══════════ -->
+<script src="js/data-skills.js"></script>
+<script src="js/data-equip.js"></script>
+<script src="js/data-world.js?v=332"></script>
+<script src="js/data-scenes.js"></script>
+<script src="js/data-sects.js"></script>
+<script src="js/npc-portraits.js?v=337"></script>
+<script src="js/data-enemies.js"></script>
+<script src="js/data-story.js"></script>
+<script src="js/data-journey.js"></script>
+<link rel="stylesheet" href="css/journey.css">
+<script src="js/bg-particles.js"></script>
+<script src="js/travel.js"></script>
+<script src="js/travel-encounters.js?v=101"></script>
+<script src="js/city-encounters.js?v=100"></script>
+<script src="js/npc-data-capital.js?v=337"></script>
+<script src="js/npc-data-central.js?v=337"></script>
+<script src="js/npc-data-sects.js?v=330"></script>
+<script src="js/npc-data-misc.js?v=333"></script>
+<script src="js/npc-data-map.js?v=331"></script>
+<script src="js/npc-logic.js?v=353"></script>
+<script src="js/npc-skills.js?v=330"></script>
+<script src="js/npc-combat.js?v=331"></script>
+<script src="js/jianghu.js?v=331"></script>
+<script src="js/achievements.js?v=1"></script>
+<script src="js/story-ui.js?v=340"></script>
+<script src="js/game-flow.js"></script>
+<script src="js/tip-system.js"></script>
+<script src="js/chiptune-bgm.js?v=2"></script>
+<script src="js/minigame-sounds.js?v=102"></script>
+<script src="js/data-chars.js"></script>
+<script src="js/battle-cinematic.js?v=100"></script>
+<script src="js/battle.js"></script>
+<script src="js/level-system.js"></script>
+<script src="js/primary-stats.js"></script>
+<script src="js/skill-proficiency.js"></script>
+<script src="js/data-manuals.js"></script>
+<script src="js/manuals.js"></script>
+<script src="js/data-dungeon.js"></script>
+<script src="js/dungeon.js"></script>
+<script src="js/sect-realm.js"></script>
+<script src="js/sect-war.js"></script>
+<script src="js/sect-building.js"></script>
+<script src="js/sect-npc-growth.js"></script>
+<script src="js/sect-economy.js"></script>
+<script src="js/sect-talent.js?v=2"></script>
+<script src="js/sect-card-bonus.js"></script>
+<script src="js/data-item-art.js"></script>
+<script src="js/data-crafting.js"></script>
+<script src="js/crafting.js?v=342"></script>
+<script src="js/travel-render.js?v=336"></script>
+<script src="js/ui-pages.js"></script>
+<script src="js/editor.js?v=7"></script>
+<script src="js/master-apprentice.js?v=100"></script>
+<script src="js/sworn-brother.js?v=100"></script>
+<script src="js/sect-championship.js?v=100"></script>
+<script src="js/sect-grandmaster.js?v=100"></script>
+
+
+<script>
+// ════════════════════════════════════════════════════════════════
+//  sect.html — 门派总舵
+// ════════════════════════════════════════════════════════════════
+
+(function(){
+  'use strict';
+
+  // ── 状态 ──
+  let currentSectId = null;   // 当前查看/加入的门派ID
+  let isJoined = false;       // 是否已加入当前门派
+  let currentTab = 'overview';
+
+  // ── 门派规模 → 功能开关表 ──
+  // supreme=超级门派(全功能) / major=大型门派(大部分) / minor=小型/新兴势力(基础)
+  const SECT_TIER_FEATURES = {
+    supreme: {
+      library: true,    // 藏经阁：完整功法列表
+      shop: true,       // 贡献商店：完整商品
+      missions: true,   // 门派要务：完整任务链(3-4节)
+      hallFull: true,   // 长老殿：完整版（掌门对话+多选项）
+      arena: true,      // 演武场：全部对手
+      alchemy: true,    // 炼丹房：完整配方
+      treasury: true,   // 藏宝阁：稀有装备/道具
+      board: true,      // 公告栏：日常+悬赏
+      realm: true,      // 秘境：全部3难度
+      building: true,   // 建筑：升级系统
+      talent: true,     // 天赋：天赋树
+      npc: true,        // 弟子：NPC成长
+      events: true,     // 动态：随机事件
+      war: true,        // 战争：阵营战争
+      economy: true,    // 经济：资金库+悬赏
+    },
+    major: {
+      library: true,
+      shop: true,
+      missions: true,
+      hallFull: false,
+      arena: true,      // 演武场：有（3个对手）
+      alchemy: true,    // 炼丹房：基础配方
+      treasury: true,   // 藏宝阁：有（商品少）
+      board: true,      // 公告栏：日常有，悬赏无
+      realm: true,      // 秘境：全部3难度
+      building: true,   // 建筑：升级系统
+      talent: true,     // 天赋：天赋树
+      npc: true,        // 弟子：NPC成长
+      events: true,     // 动态：随机事件
+      war: true,        // 战争：阵营战争
+      economy: true,    // 经济：资金库+悬赏
+    },
+    minor: {
+      library: true,
+      shop: false,
+      missions: false,
+      hallFull: false,
+      arena: false,     // 演武场：无
+      alchemy: false,   // 炼丹房：无
+      treasury: false,  // 藏宝阁：无
+      board: true,      // 公告栏：仅日常
+      realm: true,      // 秘境：全部3难度
+      building: true,   // 建筑：升级系统
+      talent: true,     // 天赋：天赋树
+      npc: true,        // 弟子：NPC成长
+      events: true,     // 动态：随机事件
+      war: true,        // 战争：阵营战争
+      economy: true,    // 经济：资金库+悬赏
+    },
+  };
+
+  /**
+   * 获取当前门派的功能开关
+   */
+  function getSectFeatures(sect){
+    const tier = (sect && sect.tier) || 'minor';
+    return SECT_TIER_FEATURES[tier] || SECT_TIER_FEATURES.minor;
+  }
+
+  // ── 工具函数 ──
+  function qs(s){ return document.querySelector(s); }
+  function qsa(s){ return document.querySelectorAll(s); }
+  function showToast(msg, type){
+    type = type || 'info';
+    const colors = { info:'#f0c060', warn:'#ffaa40', error:'#ff6060', ok:'#80e880' };
+    const el = document.createElement('div');
+    el.className = 'sect-toast';
+    el.style.background = colors[type] || colors.info;
+    el.style.color = '#000';
+    el.textContent = msg;
+    document.body.appendChild(el);
+    setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, 2500);
+  }
+
+  // ── ASCII 转义工具 ──
+  function _escapeAscii(art){
+    return (art||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/\n/g,'<br>').replace(/ /g,'&nbsp;');
+  }
+
+  // ══════════════════════════════════════
+  //  🎬 门派入场动画系统
+  // ══════════════════════════════════════
+  function playEntryAnimation(sect){
+    var overlay = qs('#sectEntryOverlay');
+    var artBox = overlay ? document.getElementById('sectEntryArt') : null;
+    var titleEl = overlay ? document.getElementById('sectEntryName') : null;
+    var subEl = overlay ? document.getElementById('sectEntrySub') : null;
+
+    if(!overlay){ console.warn('[entry] no overlay'); _skipEntry(); return; }
+    if(!artBox){ console.warn('[entry] no artBox'); _skipEntry(); return; }
+    if(!sect){ console.warn('[entry] no sect data'); _skipEntry(); return; }
+
+    // 设置 ASCII 大画
+    var artContent = (sect.asciiArt || sect.ascii || '');
+    if(!artContent){
+      console.warn('[entry] no ascii art for', sect.id);
+      _skipEntry(); return;
+    }
+
+    artBox.innerHTML = '<pre style="margin:0;color:inherit;font-size:.72em;line-height:1.15;text-shadow:0 0 8px ' + (sect.color||'#f0c060') + '66;white-space:pre-wrap;word-break:break-all">' + _escapeAscii(artContent) + '</pre>';
+    artBox.style.setProperty('--entry-color', sect.color || '#f0c060');
+    artBox.style.setProperty('--entry-glow', (sect.color||'#f0c060') + '44');
+
+    // 标题
+    if(titleEl){
+      titleEl.textContent = sect.name || '门派总舵';
+      titleEl.style.setProperty('--entry-color', sect.color || '#f0c060');
+      titleEl.style.setProperty('--entry-glow', (sect.color||'#f0c060') + '33');
+    }
+    // 副标题
+    if(subEl) subEl.textContent = '「' + (sect.tag || '') + '」·' + ({supreme:'超级',major:'大型',minor:'小型'}[sect.tier]||'' ) + '门派';
+
+    // 强制显示 overlay
+    overlay.className = 'sect-entry-overlay active entry-phase-fadein';
+    void overlay.offsetWidth;
+
+    // 阶段1：ASCII画渐显
+    setTimeout(function(){ if(artBox) artBox.classList.add('show'); }, 80);
+
+    // 阶段2：标题
+    setTimeout(function(){
+      if(titleEl) titleEl.classList.add('show');
+    }, 700);
+
+    // 阶段3：副标题
+    setTimeout(function(){
+      if(subEl) subEl.classList.add('show');
+    }, 1200);
+
+    // 阶段4：提示（更醒目）
+    setTimeout(function(){
+      // 检查是否已关闭
+      if(!overlay || !overlay.parentNode) return;
+      var hint = document.createElement('div');
+      hint.className = 'sect-entry-skip show';
+      hint.innerHTML = '👆 点击任意处进入总舵 →';
+      hint.style.cssText = 'position:absolute;bottom:30px;left:50%;transform:translateX(-50%);padding:10px 28px;border-radius:8px;font-size:13px;cursor:pointer;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:#ccc;letter-spacing:2px;z-index:100;';
+      overlay.appendChild(hint);
+    }, 1800);
+
+    // 点击关闭
+    var closed = false;
+    function closeEntry(){
+      if(closed) return;
+      closed = true;
+      overlay.classList.add('entry-phase-exit');
+      setTimeout(function(){
+        if(!overlay) return;
+        overlay.style.display = 'none';
+        overlay.className = 'sect-entry-overlay';
+        if(artBox) artBox.classList.remove('show');
+        if(titleEl) titleEl.classList.remove('show');
+        if(subEl) subEl.classList.remove('show');
+        // 清除动态添加的提示
+        var hints = overlay.querySelectorAll('.sect-entry-skip');
+        for(var i=0;i<hints.length;i++){
+          if(hints[i].parentNode && i > 0 || hints[i].innerHTML.indexOf('点击任意处')>=0)
+            hints[i].remove();
+        }
+      }, 500);
+    }
+
+    // 绑定点击事件（多种方式确保能触发）
+    function _onEntryClick(e){
+      e.preventDefault();
+      e.stopPropagation();
+      closeEntry();
+    }
+    overlay.addEventListener('click', _onEntryClick);
+    overlay.addEventListener('touchend', _onEntryClick, {once:true});
+    // 双击也触发
+    overlay.addEventListener('dblclick', function(e){
+      e.preventDefault();
+      closeEntry();
+    });
+  }
+
+  function _skipEntry(){
+    // 无动画时直接隐藏
+    var o = qs('#sectEntryOverlay');
+    if(o){
+      o.style.display = 'none';
+      o.className = 'sect-entry-overlay';
+    }
+  }
+
+  // ── 初始化入口 ──
+  function sectInit(){
+    // DEBUG: 确认初始化被调用
+    console.log('[sect] sectInit called, readyState:', document.readyState);
+    
+    // fallback: 如果 edS 未定义，尝试从 localStorage 恢复基础数据
+    if(typeof edS === 'undefined'){
+      try{
+        var _saved = JSON.parse(localStorage.getItem('wuxia_editor') || '{}');
+        if(_saved && _saved.name){
+          window.edS = _saved;
+        } else {
+          // 完全无存档时创建一个最小化的假 edS 以便浏览
+          window.edS = { name:'侠客', sect:null, level:1, silver:0, contribution:0 };
+        }
+      }catch(e){
+        window.edS = { name:'侠客', sect:null, level:1, silver:0, contribution:0 };
+      }
+    }
+
+    // 从 URL 参数或 sessionStorage 获取目标门派
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetSect = urlParams.get('sect') || sessionStorage.getItem('wuxia_target_sect') || null;
+    const returnCity = sessionStorage.getItem('wuxia_return_city') || 'luoyang';
+
+    // 返回按钮
+    qs('#sectBackBtn').addEventListener('click', function(){
+      if(typeof clearGameAudio === 'function') clearGameAudio();
+      sessionStorage.setItem('pendingTravelTo', returnCity);
+      window.location.href = 'town.html';
+    });
+
+    // 决定显示哪个视图
+    const playerSect = edS.sect || null;
+
+    if(targetSect){
+      // 指定了目标门派 → 总舵界面
+      currentSectId = targetSect;
+      isJoined = (playerSect === targetSect);
+      console.log('[sect] calling showHqView for:', targetSect, 'SECTS exists:', typeof SECTS !== 'undefined');
+      showHqView();
+      if(typeof BgmManager !== 'undefined') BgmManager.play('townMellow');
+
+      // 门派演武场战斗结果检查
+      _checkSectArenaResult();
+    } else {
+      // 无门派参数 → 显示提示
+      showNoSectView();
+    }
+
+    // 绑定 Tab 切换
+    qsa('.sect-tab').forEach(function(tab){
+      tab.addEventListener('click', function(){
+        const t = this.getAttribute('data-tab');
+        switchTab(t);
+      });
+    });
+  }
+
+  // ── 无门派参数时显示提示 ──
+  function showNoSectView(){
+    qs('#sectBrowserView').style.display = '';
+    qs('#sectHqView').style.display = 'none';
+    qs('#sectPageTitle').textContent = '🏯 门派总舵';
+    // 隐藏 Tab 导航
+    const tabsNav = qs('#sectTabsNav');
+    if(tabsNav) tabsNav.style.display = 'none';
+  }
+
+  // ── 显示门派总舵（指定门派的完整页面）──
+  function showHqView(){
+    qs('#sectBrowserView').style.display = 'none';
+    qs('#sectHqView').style.display = '';
+    // 确保 Tab 导航可见
+    const tabsNav = qs('#sectTabsNav');
+    if(tabsNav) tabsNav.style.display = '';
+
+    const sect = (typeof SECTS !== 'undefined') ? SECTS.find(function(s){return s.id === currentSectId;}) : null;
+    if(!sect){
+      // 延迟重试：可能数据还未加载完
+      console.warn('[sect] 门派数据未找到:', currentSectId, 'SECTS:', typeof SECTS !== 'undefined' ? SECTS.length : 'undefined');
+      setTimeout(function(){ showHqView(); }, 300);
+      return;
+    }
+
+    // 更新标题栏颜色主题
+    document.documentElement.style.setProperty('--tab-color', sect.color);
+
+    // 🎬 播放入场动画（每次进入门派总舵时播放，可点击跳过）
+    window._entryPlayed = false;
+    if(!window._entryPlayed){
+      window._entryPlayed = true;
+      setTimeout(function(){ playEntryAnimation(sect); }, 200);
+    }
+    console.log('[sect] showHqView completed for:', sect.id, 'SECTS count:', (typeof SECTS !== 'undefined' ? SECTS.length : 'undefined'));
+
+    // ── 根据门派规模动态调整可用功能 ──
+    const feats = getSectFeatures(sect);
+    applyTierTabs(sect, feats);
+
+    // 渲染各区域
+    renderHero(sect);
+    renderOverview(sect);
+    renderHall(sect);
+    renderLibrary(sect);
+    renderShop(sect);
+    renderMissions(sect);
+    renderArena(sect);     // 演武场
+    renderAlchemy(sect);   // 炼丹房
+    renderTreasury(sect);  // 藏宝阁
+    renderRealmPanel(sect); // 秘境
+    renderSectBuildingPanel(sect); // 建筑
+    renderSectTalentPanel(sect);  // 天赋
+    renderSectNpcPanel(sect);      // 弟子成长
+    renderSectEventsPanel(sect); // 动态事件
+    renderSectWarPanel(sect);    // 阵营战争
+    renderSectEconomyPanel(sect); // 门派经济
+    renderBoard(sect);            // 公告栏
+
+    // 更新页面标题
+    const joinMark = isJoined ? '✦' : '🔍';
+    qs('#sectPageTitle').textContent = joinMark + ' ' + sect.name;
+  }
+
+  /**
+   * 根据门派规模隐藏/锁定 Tab
+   * - 功能不可用 → 隐藏 Tab 按钮 + 内容区显示锁定提示
+   */
+  function applyTierTabs(sect, feats){
+    // Tab ID → 功能开关 的映射
+    const tabMap = {
+      'library':   { feat:'library',   label:'藏经阁',   icon:'📖', lockMsg:'🔒 本门派规模较小，暂无藏经阁' },
+      'shop':      { feat:'shop',      label:'贡献商店', icon:'⚔',  lockMsg:'🔒 本门派暂无贡献商店' },
+      'missions':  { feat:'missions',  label:'门派要务', icon:'📜', lockMsg:'🔒 本门派暂无要务发布' },
+      'arena':     { feat:'arena',     label:'演武场',   icon:'⚔️', lockMsg:'🏚 本门派规模较小，暂无演武场' },
+      'alchemy':   { feat:'alchemy',   label:'炼丹房',   icon:'🧪', lockMsg:'🏚 本门派暂无炼丹设施' },
+      'treasury':  { feat:'treasury',  label:'藏宝阁',   icon:'💰', lockMsg:'🏚 本门派暂无藏宝阁' },
+      'realm':     { feat:'realm',     label:'秘境',     icon:'🏰', lockMsg:'🏚 本门派暂无秘境' },
+      'building':  { feat:'building',  label:'建筑',     icon:'🏗', lockMsg:'🏚 本门派暂无建筑系统' },
+      'talent':    { feat:'talent',    label:'天赋',     icon:'🌟', lockMsg:'🏚 本门派暂无天赋系统' },
+      'npc':       { feat:'npc',       label:'弟子',     icon:'👥', lockMsg:'🏚 本门派暂无弟子系统' },
+      'events':    { feat:'events',    label:'动态',     icon:'📜', lockMsg:'🏚 本门派暂无动态' },
+      'war':       { feat:'war',       label:'战争',     icon:'⚔️', lockMsg:'🏚 本门派暂无战争' },
+      'economy':   { feat:'economy',   label:'经济',     icon:'💰', lockMsg:'🏚 本门派暂无经济系统' },
+    };
+
+    Object.keys(tabMap).forEach(function(tabId){
+      const cfg = tabMap[tabId];
+      const tabBtn = qs('.sect-tab[data-tab="' + tabId + '"]');
+      const tabContent = qs('#tab-' + tabId);
+
+      if(!feats[cfg.feat]){
+        // 功能不可用 → 隐藏 Tab 按钮
+        if(tabBtn) tabBtn.style.display = 'none';
+        // 内容区显示锁定提示（如果当前正在查看这个 tab）
+        if(tabContent){
+          tabContent.innerHTML =
+            '<div class="sect-library-empty" style="padding:30px 16px">' +
+            '<div style="font-size:28px;margin-bottom:10px">🏚</div>' +
+            '<div style="font-size:13px;color:var(--text3);letter-spacing:1px">' + cfg.lockMsg + '</div>' +
+            '<div style="font-size:11px;color:var(--text3);margin-top:8px;opacity:.6">「' + (sect.tag||'') + '」— ' + ({supreme:'超级',major:'大型',minor:'新兴'}[sect.tier]||'小型') + '势力</div>' +
+            '</div>';
+        }
+      } else {
+        // 功能可用 → 确保显示
+        if(tabBtn) tabBtn.style.display = '';
+      }
+    });
+
+    // 如果当前激活的 tab 被隐藏了，切回 overview
+    if(!feats[currentTab] && currentTab !== 'overview' && currentTab !== 'hall'){
+      switchTab('overview');
+    }
+  }
+
+  // ── Tab 切换 ──
+  function switchTab(tab){
+    currentTab = tab;
+    qsa('.sect-tab').forEach(function(t){ t.classList.toggle('active', t.getAttribute('data-tab') === tab); });
+    qsa('.sect-tab-content').forEach(function(c){ c.classList.toggle('active', c.id === 'tab-' + tab); });
+  }
+
+
+  // ════════════════════════════════════════
+  //   区域渲染函数
+  // ════════════════════════════════════════
+
+  // ── 英雄横幅 + 阶级条 + ASCII形象画 ──
+  function renderHero(sect){
+    const ed = edS || {};
+    const rank = ed.sectRank || 'disciple';
+    const contrib = ed.sectContrib || 0;
+    const rankCfg = (typeof SECT_RANK_CFG !== 'undefined') ? SECT_RANK_CFG[rank] : null;
+
+    // 注入门派颜色变量
+    const hero = qs('#sectHeroArea');
+    hero.style.setProperty('--hero-bg1', sect.bg1 || 'rgba(240,192,64,.06)');
+    hero.style.setProperty('--hero-bg2', sect.bg2 || 'rgba(240,192,64,.02)');
+    hero.style.setProperty('--hero-border', sect.border || 'rgba(240,192,64,.2)');
+    hero.style.setProperty('--hero-badge', sect.color + '15');
+    hero.style.setProperty('--hero-color', sect.color);
+    hero.style.setProperty('--hero-glow', sect.glow || 'rgba(240,192,96,.2)');
+
+    var tierLabel = {supreme:'✦ 超级门派',major:'◆ 大型门派',minor:'◇ 新兴势力'}[sect.tier]||'';
+    var alignMap = {righteous:'#80d0ff',neutral:'#888',chaotic:'#ffaa40',evil:'#ff6060'};
+    var alignLabel = {righteous:'⚖ 正道', neutral:'〇 中立', chaotic:'⚡ 混乱', evil:'☠ 邪道'}[sect.alignment||'neutral']||'〇 中立';
+
+    // ── 构建ASCII大画（嵌入Hero区顶部）──
+    var artHtml = (sect.asciiArt ?
+      '<div class="sect-hero-ascii" style="color:' + sect.color + ';--hero-glow:' + (sect.glow||'rgba(240,192,96,.15)') + '">' +
+        _escapeAscii(sect.asciiArt) +
+      '</div>' : '');
+
+    qs('#sectHeroInner').innerHTML =
+      artHtml +
+      '<div class="sect-hero-top">' +
+        '<div class="sect-hero-emblem" style="border-color:' + (sect.color||'#f0c060') + '44;background:' + (sect.color||'#f0c060') + '12">' + sect.emblem + '</div>' +
+        '<div class="sect-hero-info">' +
+          '<div class="sect-hero-name" style="color:' + sect.color + '">' + sect.name + '</div>' +
+          '<div class="sect-hero-title">' + sect.title + '</div>' +
+          '<div class="sect-hero-tag">「' + sect.tag + '」</div>' +
+          '<div class="sect-hero-meta">' +
+            '<span class="sect-meta-chip">' + tierLabel + '</span>' +
+            '<span class="sect-meta-chip" style="color:' + (alignMap[sect.alignment]||'#888') + '">' + alignLabel + '</span>' +
+            '<span class="sect-meta-chip">⚔ ' + sect.members + '</span>' +
+            (isJoined ? '<span class="sect-meta-chip" style="color:var(--ok);border-color:rgba(128,232,128,.2)">' + (rankCfg?rankCfg.icon+rankCfg.name:'弟子') + '</span>' : '') +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+    // 阶级进度条（仅已加入时显示）
+    const rankBar = qs('#sectRankBar');
+    if(isJoined && typeof SECT_RANK_CFG !== 'undefined'){
+      rankBar.style.display = '';
+      const ranks = ['disciple','elite','elder','grand','grandmaster'];
+      const currIdx = ranks.indexOf(rank);
+      const isMaxRank = currIdx >= ranks.length - 1;
+      const nextIdx = isMaxRank ? currIdx : currIdx + 1;
+      const nextRank = isMaxRank ? null : SECT_RANK_CFG[ranks[nextIdx]];
+      const prevContrib = currIdx > 0 ? SECT_RANK_CFG[ranks[currIdx-1]].minContrib : 0;
+      const nextContrib = nextRank ? nextRank.minContrib : contrib + 1;
+      const pct = isMaxRank ? 100 : (nextContrib > prevContrib ? Math.min(100, ((contrib - prevContrib) / (nextContrib - prevContrib)) * 100) : 100);
+
+      const rankColors = {
+        disciple:{c1:'#a0a0a0',c2:'#808080'},
+        elite:{c1:'#60c0e0',c2:'#3080b0'},
+        elder:{c1:'#e0a040',c2:'#c08020'},
+        grand:{c1:'#ffe060',c2:'#d0a010'},
+        grandmaster:{c1:'#ff9020',c2:'#e06010'},
+      };
+      const rc = rankColors[rank] || rankColors.disciple;
+
+      rankBar.innerHTML =
+        '<div class="srb-row"><span class="srb-label">当前阶级</span><span class="srb-value"><span class="rank-icon">' + (rankCfg?rankCfg.icon:'📜') + '</span>' + (rankCfg?rankCfg.name:'弟子') + '</span></div>' +
+        '<div class="srb-row"><span class="srb-label">贡献值</span><span class="srb-value" style="color:var(--ok)">⚔ ' + contrib + (nextRank ? ' / ' + nextRank.minContrib + ' → ' + nextRank.name : '') + '</span></div>' +
+        '<div class="srb-progress"><div class="srb-progress-fill" style="width:' + pct + '%;--rank-color1:' + rc.c1 + ';--rank-color2:' + rc.c2 + '"></div></div>' +
+        '<div class="srb-rank-stages">' + ranks.map(function(r,i){
+          const sc = SECT_RANK_CFG[r];
+          const isActive = i <= currIdx;
+          const isCurrent = i === currIdx;
+          return '<div class="srb-stage' + (isActive?' active':'') + (isCurrent?' current':'') + '">' + sc.icon + sc.name + '</div>';
+        }).join('') + '</div>';
+    } else {
+      rankBar.style.display = 'none';
+    }
+  }
+
+  // ── 门派综合实力评分 ──
+  // 基于门派等级、弟子数、建筑、声望等多维综合计算
+  function _calcSectPower(sect){
+    if(!sect) return 0;
+    var bd = _calcSectPowerBreakdown(sect);
+    var total = 0;
+    for(var i=0;i<bd.length;i++) total += bd[i].val;
+    return total;
+  }
+  function _calcSectPowerBreakdown(sect){
+    if(!sect) return [];
+    var tierBase = { supreme:300, major:200, minor:100 };
+    var base = tierBase[sect.tier] || 100;
+    // 弟子数（每100人=10分，上限60）
+    var memberScore = Math.min(60, Math.round((sect.members||100) / 100 * 10));
+    // 门派建筑总分（如果有建筑数据）
+    var buildingScore = 0;
+    if(typeof sbGetAllEffects === 'function'){
+      var effects = sbGetAllEffects();
+      if(effects){
+        var keys = Object.keys(effects);
+        for(var i=0;i<keys.length;i++){
+          // 每种建筑效果=5分，总上限50
+          buildingScore += 5;
+        }
+        buildingScore = Math.min(50, buildingScore);
+      }
+    }
+    // NPC实力（从 NPC_DB 查找门派NPC）
+    var npcScore = 0;
+    if(typeof NPC_DB !== 'undefined' && NPC_DB.length){
+      var sectNpcs = NPC_DB.filter(function(n){ return n.sect === sect.id; });
+      if(sectNpcs.length){
+        var avgLvl = sectNpcs.reduce(function(s,n){ return s + (n.level||1); },0) / sectNpcs.length;
+        npcScore = Math.min(40, Math.round(sectNpcs.length * 3 + avgLvl * 0.3));
+      }
+    }
+    // 资金实力（如果有经济数据）
+    var econScore = 0;
+    if(typeof seGetFund === 'function'){
+      var fund = seGetFund();
+      if(fund > 0) econScore = Math.min(30, Math.round(Math.log10(fund+1) * 8));
+    }
+    // 声望加成（与其他门派平均好感值）
+    var repScore = 0;
+    if(typeof swLoadRelations === 'function'){
+      var rels = swLoadRelations();
+      var sum = 0, count = 0;
+      for(var key in rels){
+        if(key.indexOf(sect.id) === 0 && rels.hasOwnProperty(key)){
+          sum += rels[key]; count++;
+        }
+      }
+      if(count > 0) repScore = Math.min(20, Math.round((sum/count+100)/10));
+    }
+    return [
+      { label:'门派底蕴', val:base, color:'#f0c060' },
+      { label:'弟子规模', val:memberScore, color:'#60d0e0' },
+      { label:'建筑设施', val:buildingScore, color:'#80c0ff' },
+      { label:'弟子实力', val:npcScore, color:'#d0a0ff' },
+      { label:'资金储备', val:econScore, color:'#a0e080' },
+      { label:'江湖声望', val:repScore, color:'#ff9060' },
+    ];
+  }
+
+  // ── 声望奖励渲染（基于门派间好感值解锁跨门派奖励）──
+  // 存档 key：wuxia_sect_rep_rewards = { sectId_targetId_rewardKey: true }
+  var REP_REWARD_SAVE = 'wuxia_sect_rep_rewards';
+
+  // 声望奖励配置：每个好感等级对应的奖励
+  var REP_REWARDS = {
+    friendly: { minRel: 20, label:'友好互惠', icon:'😊',
+      desc:'友好关系带来的互惠',
+      rewards: [
+        { key:'silver_gift', label:'银两馈赠', icon:'💰', desc:'对方门派赠送银两', action:'silver', value:200 },
+        { key:'exp_book',    label:'武学交流', icon:'📖', desc:'获得少量经验', action:'exp', value:100 },
+      ]
+    },
+    close: { minRel: 50, label:'亲密同盟', icon:'🤝',
+      desc:'亲密同盟的深厚情谊',
+      rewards: [
+        { key:'rare_material', label:'稀有材料', icon:'💎', desc:'对方赠送稀有材料', action:'material', value:1 },
+        { key:'sect_manual',   label:'功法秘籍', icon:'📜', desc:'获赠对方门派入门功法', action:'manual', value:1 },
+      ]
+    },
+    sworn: { minRel: 80, label:'生死之交', icon:'❤',
+      desc:'过命的交情',
+      rewards: [
+        { key:'legendary_recipe', label:'传奇丹方', icon:'✨', desc:'获赠传奇炼丹丹方', action:'recipe', value:1 },
+        { key:'power_boost',      label:'内力灌顶', icon:'🔮', desc:'获得大量内力', action:'mp', value:200 },
+      ]
+    }
+  };
+
+  function _repRewardLoad(){
+    try { return JSON.parse(localStorage.getItem(REP_REWARD_SAVE) || '{}'); } catch(e){ return {}; }
+  }
+  function _repRewardSave(data){
+    try { localStorage.setItem(REP_REWARD_SAVE, JSON.stringify(data)); } catch(e){}
+  }
+  function _isRepRewardClaimed(sectId, targetId, rewardKey){
+    var data = _repRewardLoad();
+    return !!data[sectId + '_' + targetId + '_' + rewardKey];
+  }
+  function _claimRepRewardInner(sectId, targetId, rewardKey, reward){
+    var data = _repRewardLoad();
+    var rk = sectId + '_' + targetId + '_' + rewardKey;
+    if(data[rk]) return { ok:false, msg:'已经领取过了' };
+    data[rk] = true;
+    _repRewardSave(data);
+    // 实际发放奖励
+    var ed = typeof edS !== 'undefined' ? edS : null;
+    if(ed && reward.action === 'silver'){
+      if(typeof addSilver === 'function') addSilver(reward.value);
+      else if(ed.silver !== undefined) ed.silver = (ed.silver||0) + reward.value;
+    } else if(ed && reward.action === 'exp'){
+      ed.exp = (ed.exp||0) + reward.value;
+    } else if(ed && reward.action === 'mp'){
+      ed.mp = (ed.mp||0) + reward.value;
+    }
+    if(typeof saveEditorState === 'function') saveEditorState();
+    return { ok:true, msg:reward.icon + ' ' + reward.label + ' 领取成功！' };
+  }
+
+  function _renderRepRewards(sect){
+    if(!sect.relations) return '';
+    var allIds = [];
+    if(sect.relations.allies) allIds = allIds.concat(sect.relations.allies);
+    if(sect.relations.rivals) allIds = allIds.concat(sect.relations.rivals);
+    if(sect.relations.enemies) allIds = allIds.concat(sect.relations.enemies);
+    // 去重
+    allIds = allIds.filter(function(id,i){ return allIds.indexOf(id)===i; });
+    if(!allIds.length) return '';
+
+    var getSectName = function(id){
+      var s = SECTS.find(function(x){ return x.id === id; });
+      return s ? s.name : id;
+    };
+
+    var html = '<div style="margin-top:10px">';
+    var hasAny = false;
+
+    // 按好感等级分组显示
+    var relLevels = ['sworn','close','friendly'];
+    relLevels.forEach(function(levelKey){
+      var cfg = REP_REWARDS[levelKey];
+      var matchedSects = allIds.filter(function(id){ return swGetRelation(sect.id, id) >= cfg.minRel; });
+      if(!matchedSects.length) return;
+      hasAny = true;
+
+      html += '<div style="margin-bottom:10px">' +
+        '<div style="font-size:11px;color:'+({sworn:'#ff6090',close:'#60d0a0',friendly:'#60d060'}[levelKey])+';margin-bottom:4px;letter-spacing:1px">' +
+        cfg.icon + ' ' + cfg.label + '（好感≥' + cfg.minRel + '）</div>';
+
+      matchedSects.forEach(function(targetId){
+        var relVal = swGetRelation(sect.id, targetId);
+        html += '<div style="background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:6px;padding:6px 8px;margin-bottom:4px">';
+        html += '<div style="font-size:11px;color:rgba(220,210,190,.8);margin-bottom:4px">' + getSectName(targetId) + ' <span style="font-size:10px;color:var(--text3)">好感 ' + relVal + '</span></div>';
+
+        cfg.rewards.forEach(function(rw){
+          var claimed = _isRepRewardClaimed(sect.id, targetId, rw.key);
+          if(claimed){
+            html += '<div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3);margin-top:2px"><span>' + rw.icon + '</span><span style="opacity:.6">' + rw.label + '</span><span style="margin-left:auto;font-size:9px;color:#60d060">✓ 已领取</span></div>';
+          } else {
+            html += '<div style="display:flex;align-items:center;gap:4px;font-size:10px;margin-top:2px">' +
+              '<span>' + rw.icon + '</span>' +
+              '<span style="color:rgba(220,210,190,.9)">' + rw.label + '</span>' +
+              '<span style="font-size:9px;color:var(--text3)">' + rw.desc + '</span>' +
+              '<button onclick="window._claimRepReward(\'' + sect.id + '\',\'' + targetId + '\',\'' + rw.key + '\')" ' +
+                'style="margin-left:auto;padding:2px 8px;border:1px solid #60d06044;background:#60d06015;color:#60d060;border-radius:4px;font-size:10px;cursor:pointer;font-family:inherit">领取</button>' +
+              '</div>';
+          }
+        });
+
+        html += '</div>';
+      });
+
+      html += '</div>';
+    });
+
+    if(!hasAny) return '';
+    html += '</div>';
+    return '<div class="sect-info-card"><div class="sect-card-title">🎁 声望奖励</div>' +
+      '<div class="sect-card-body"><div style="font-size:10px;color:var(--text3);margin-bottom:6px">提升门派间好感值，解锁跨门派奖励</div>' + html + '</div></div>';
+  }
+
+  // 暴露给 onclick
+  window._claimRepReward = function(sectId, targetId, rewardKey){
+    // 找到对应的 reward 配置
+    var reward = null;
+    var levels = ['sworn','close','friendly'];
+    for(var i=0;i<levels.length;i++){
+      var cfg = REP_REWARDS[levels[i]];
+      for(var j=0;j<cfg.rewards.length;j++){
+        if(cfg.rewards[j].key === rewardKey){ reward = cfg.rewards[j]; break; }
+      }
+      if(reward) break;
+    }
+    if(!reward) return;
+    var result = _claimRepRewardInner(sectId, targetId, rewardKey, reward);
+    if(result.ok && typeof showToast === 'function') showToast(result.msg, 'success');
+    // 刷新总览
+    if(typeof SECTS !== 'undefined'){
+      var sect = SECTS.find(function(s){ return s.id === sectId; });
+      if(sect) renderOverview(sect);
+    }
+  };
+
+  // ── 总览面板 ──
+  function renderOverview(sect){
+    const grid = qs('#sectOverviewGrid');
+
+    // 门派简介
+    const descCard =
+      '<div class="sect-info-card">' +
+        '<div class="sect-card-title">📜 门派简介</div>' +
+        '<div class="sect-card-body">' + sect.desc + '<br><br><i style="color:var(--text3);font-size:11px">「' + sect.motto + '」</i></div>' +
+      '</div>';
+
+    // 被动加成
+    let bonusHtml = '';
+    if(typeof _renderSectPassiveBonus === 'function'){
+      bonusHtml = _renderSectPassiveBonus(sect.id, isJoined);
+    }
+    const bonusCard = bonusHtml ?
+      '<div class="sect-info-card">' + bonusHtml + '</div>' : '';
+
+    // 关系网
+    let relHtml = '';
+    if(typeof renderSectRelations === 'function'){
+      relHtml = renderSectRelations(sect);
+    }
+    const relCard = relHtml ?
+      '<div class="sect-info-card"><div class="sect-card-title">🌐 江湖关系</div>' + relHtml + '</div>' : '';
+
+    // ── 声望奖励卡 ──
+    var repRewardCard = '';
+    if(typeof swGetRelation === 'function' && typeof SECTS !== 'undefined'){
+      repRewardCard = _renderRepRewards(sect);
+    }
+
+    // 修炼功法系别
+    let schoolHtml = '';
+    if(sect.schools && typeof SK_SCHOOL_INFO !== 'undefined'){
+      schoolHtml = sect.schools.map(function(k){
+        const sc = SK_SCHOOL_INFO[k];
+        return sc ? '<span style="font-size:11px;color:'+sc.color+';border:1px solid '+sc.color+'44;background:'+sc.color+'0d;padding:2px 8px;border-radius:4px">'+sc.label+'</span>' : '';
+      }).filter(Boolean).join(' ');
+    }
+    const schoolCard = schoolHtml ?
+      '<div class="sect-info-card"><div class="sect-card-title">⚡ 修炼体系</div><div class="sect-card-body" style="display:flex;flex-wrap:wrap;gap:6px">' + schoolHtml + '</div></div>' : '';
+
+    // ── 门派综合实力评分 ──
+    var powerCard = '';
+    if(typeof SECTS !== 'undefined'){
+      var powerScore = _calcSectPower(sect);
+      var rankAll = SECTS.map(function(s){ return { id:s.id, name:s.name, icon:s.emblem||s.icon, score:_calcSectPower(s), tier:s.tier, align:s.alignment }; })
+        .sort(function(a,b){ return b.score - a.score; });
+      var myRank = rankAll.findIndex(function(r){ return r.id === sect.id; }) + 1;
+
+      // 门派综合信息条
+      var statsHtml = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">';
+      statsHtml += '<div style="background:rgba(255,255,255,.03);padding:6px 8px;border-radius:6px"><span style="font-size:10px;color:var(--text3)">📊 综合实力</span><div style="font-size:18px;font-weight:bold;color:#f0c060;margin-top:2px">' + powerScore + '</div></div>';
+      statsHtml += '<div style="background:rgba(255,255,255,.03);padding:6px 8px;border-radius:6px"><span style="font-size:10px;color:var(--text3)">🏆 江湖排名</span><div style="font-size:18px;font-weight:bold;color:' + (myRank<=3?'#ffd700':'#e8d090') + ';margin-top:2px">第' + myRank + '名</div></div>';
+      statsHtml += '<div style="background:rgba(255,255,255,.03);padding:6px 8px;border-radius:6px"><span style="font-size:10px;color:var(--text3)">👥 门派弟子</span><div style="font-size:14px;color:#c0d8e8;margin-top:2px">' + (sect.members||0) + '人</div></div>';
+      statsHtml += '<div style="background:rgba(255,255,255,.03);padding:6px 8px;border-radius:6px"><span style="font-size:10px;color:var(--text3)">⚖ 阵营</span><div style="font-size:14px;color:' + ({righteous:'#60d060',neutral:'#b0b0b0',chaotic:'#ff8040',evil:'#ff4040'}[sect.alignment]||'#b0b0b0') + ';margin-top:2px">' + ({righteous:'正道',neutral:'中立',chaotic:'混乱',evil:'邪道'}[sect.alignment]||'中立') + '</div></div>';
+      statsHtml += '</div>';
+
+      // 实力评分构成
+      var breakdown = _calcSectPowerBreakdown(sect);
+      var bkHtml = breakdown.map(function(b){
+        var pct = powerScore > 0 ? Math.round(b.val / powerScore * 100) : 0;
+        return '<div style="display:flex;align-items:center;gap:6px;font-size:10px;margin-top:3px">' +
+          '<span style="width:50px;color:var(--text3);text-align:right">' + b.label + '</span>' +
+          '<div style="flex:1;height:4px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden"><div style="width:'+pct+'%;height:100%;background:'+b.color+';border-radius:2px"></div></div>' +
+          '<span style="width:28px;color:'+b.color+';text-align:right">' + b.val + '</span></div>';
+      }).join('');
+
+      // 江湖排行 TOP 10
+      var topHtml = '<div style="margin-top:10px"><div style="font-size:10px;color:rgba(200,170,100,.5);letter-spacing:1px;margin-bottom:4px">▸ 江湖门派排行</div>';
+      var top10 = rankAll.slice(0, 10);
+      top10.forEach(function(r, idx){
+        var isMe = r.id === sect.id;
+        var medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : (idx+1);
+        var tierTag = {supreme:'⚡',major:'🗡',minor:'🔰'}[r.tier]||'';
+        var alignColor = {righteous:'#60d060',neutral:'#b0b0b0',chaotic:'#ff8040',evil:'#ff4040'}[r.align]||'#b0b0b0';
+        topHtml += '<div style="display:flex;align-items:center;gap:6px;padding:3px 0;' + (isMe?'background:rgba(240,192,96,.08);border-radius:4px;padding:3px 6px;margin:1px -6px;':'') + '">' +
+          '<span style="width:20px;text-align:center;font-size:12px">' + medal + '</span>' +
+          '<span style="width:16px;text-align:center;font-size:11px">' + tierTag + '</span>' +
+          '<span style="flex:1;font-size:11px;color:' + (isMe?'#f0d090':'rgba(220,210,190,.8)') + ';font-weight:' + (isMe?'bold':'normal') + '">' + r.name + '</span>' +
+          '<span style="font-size:11px;color:' + alignColor + ';opacity:.6">' + ({righteous:'正',neutral:'中',chaotic:'乱',evil:'邪'}[r.align]||'') + '</span>' +
+          '<span style="width:30px;text-align:right;font-size:11px;color:#f0c060;font-weight:bold">' + r.score + '</span></div>';
+      });
+      topHtml += '</div>';
+
+      powerCard = '<div class="sect-info-card"><div class="sect-card-title">📊 门派实力</div>' +
+        '<div class="sect-card-body">' + statsHtml +
+        '<div style="margin-top:8px;padding-top:6px;border-top:1px solid rgba(255,255,255,.06)"><div style="font-size:10px;color:var(--text3);margin-bottom:2px">实力构成</div>' + bkHtml + '</div>' +
+        topHtml + '</div></div>';
+    }
+
+    grid.innerHTML = descCard + bonusCard + relCard + repRewardCard + schoolCard + powerCard;
+  }
+
+  // ── 长老殿（加入/退出/掌门对话）──
+  function renderHall(sect){
+    const el = qs('#sectHallContent');
+    const ed = edS || {};
+    const playerLevel = ed.level || 1;
+    const playerSect = ed.sect || null;
+
+    if(!isJoined){
+      // 未加入 → 显示申请加入界面
+      const cfg = (typeof SECT_TRIAL_CFG !== 'undefined') ? SECT_TRIAL_CFG[sect.tier] : null;
+      const trialName = cfg ? cfg.name : '试炼';
+      const canJoin = playerLevel >= 5;
+
+      // 冷却期检查
+      let cooldownHtml = '';
+      if(ed.sectLeaveCooldown && ed.sectLeaveCooldown > Date.now()){
+        const remaining = Math.ceil((ed.sectLeaveCooldown - Date.now()) / (86400000));
+        cooldownHtml = '<div class="sh-locked-msg">⏳ 冷却中：需等待 ' + remaining + ' 天才能重新申请</div>';
+      }
+      // 已有门派
+      let switchHtml = '';
+      if(playerSect && playerSect !== sect.id){
+        const oldName = (SECTS.find(function(s){return s.id === playerSect}) || {}).name || playerSect;
+        switchHtml = '<p style="color:var(--warn);font-size:12px;margin-bottom:10px">⚠ 你当前属于「' + oldName + '」，申请加入将自动脱离旧门派。</p>';
+      }
+
+      el.innerHTML =
+        '<div class="sh-master-avatar">' + sect.emblem + '</div>' +
+        '<div class="sh-master-name" style="color:' + sect.color + '">' + sect.name + '</div>' +
+        '<div class="sh-master-title">「' + sect.title + '」</div>' +
+        switchHtml + cooldownHtml +
+        (canJoin && !cooldownHtml ?
+          '<button class="sh-action-btn sh-join-btn" onclick="window._startSectTrial && _startSectTrial(\'' + sect.id + '\')">📜 ' + trialName + ' · 申请加入</button>'
+          :
+          (!canJoin ? '<div class="sh-locked-msg">🔒 需要 Lv5 才能申请加入门派</div>' : '')
+        ) +
+        '<div class="sh-req-box">' +
+          '<div class="sh-req-title">📋 入门要求</div>' +
+          '<div class="sh-req-line">· 模式：<b>' + trialName + '</b></div>' +
+          '<div class="sh-req-line">· 等级要求：Lv5（你 Lv' + playerLevel + '）</div>' +
+          (cfg ? '<div class="sh-req-line">· 考官等级约 Lv~' + cfg.baseLvl + '</div>' : '') +
+          '<div class="sh-req-line" style="margin-top:6px;color:var(--text3)">' + (cfg?cfg.desc:'通过门派考验即可成为弟子') + '</div>' +
+        '</div>';
+    } else {
+      // 已加入 → 显示掌门/退出选项
+      const rank = ed.sectRank || 'disciple';
+      const rankCfg = (typeof SECT_RANK_CFG !== 'undefined') ? SECT_RANK_CFG[rank] : null;
+      const contrib = ed.sectContrib || 0;
+
+      el.innerHTML =
+        '<div class="sh-master-avatar">' + sect.emblem + '</div>' +
+        '<div class="sh-master-name" style="color:' + sect.color + '">' + sect.name + '</div>' +
+        '<div class="sh-master-title">身份：' + (rankCfg?rankCfg.icon+rankCfg.name:'弟子') + ' · 贡献 ⚔' + contrib + '</div>' +
+        '<div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center">' +
+          '<button class="sh-action-btn sh-leave-btn" onclick="window._onSectLeaveClick && _onSectLeaveClick(\'' + sect.id + '\')">🚪 退出门派</button>' +
+        '</div>' +
+        '<div class="sh-req-box" style="margin-top:14px">' +
+          '<div class="sh-req-title">🏯 门派信息</div>' +
+          '<div class="sh-req-line">· 阵营：' + ({righteous:'正道',neutral:'中立',chaotic:'混乱',evil:'邪道'}[sect.alignment]||'中立') + '</div>' +
+          '<div class="sh-req-line">· 规模：' + ({supreme:'超级',major:'大型',minor:'新兴'}[sect.tier]||'未知') + '</div>' +
+          '<div class="sh-req-line">· 弟子：' + sect.members + '</div>' +
+          '<div class="sh-req-line" style="margin-top:6px;color:var(--text3);font-style:italic">「' + sect.motto + '」</div>' +
+        '</div>';
+    }
+
+    // ── 追加掌门传承面板 ──
+    if (isJoined && typeof gmEnhanceHall === 'function') {
+      setTimeout(function(){ gmEnhanceHall(sect.id); }, 60);
+    }
+  }
+
+  // ── 藏经阁（功法商店）──
+  function renderLibrary(sect){
+    const listEl = qs('#sectLibraryList');
+    const ed = edS || {};
+
+    if(!isJoined){
+      listEl.innerHTML = '<div class="sect-library-empty">🔒 加入「<b style="color:'+sect.color+'">' + sect.name + '</b>」后方可查阅藏经阁</div>';
+      return;
+    }
+
+    // 收集本门派 reqSect 的功法
+    let manuals = [];
+    if(typeof MANUAL_DB !== 'undefined'){
+      Object.keys(MANUAL_DB).forEach(function(mid){
+        const m = MANUAL_DB[mid];
+        if(m.reqSect === sect.id || (Array.isArray(m.reqSect) && m.reqSect.includes(sect.id))){
+          manuals.push({id:mid, data:m});
+        }
+      });
+    }
+
+    if(manuals.length === 0){
+      listEl.innerHTML = '<div class="sect-library-empty">📖 藏经阁暂无私籍可购……</div>';
+      return;
+    }
+
+    // 排序：按价格升序
+    manuals.sort(function(a,b){return (a.data.price||0) - (b.data.price||0);});
+
+    const ownedManuals = JSON.parse(localStorage.getItem('wuxia_manuals') || '[]');
+
+    listEl.innerHTML = manuals.map(function(item){
+      const m = item.data;
+      const owned = ownedManuals.includes(item.id);
+      const lvReq = m.reqLv || 1;
+      const playerLv = ed.level || 1;
+      const locked = playerLv < lvReq;
+      const price = m.price || 0;
+      const silver = ed.silver || 0;
+
+      return '<div class="sl-manual-item ' + (owned?'sl-manual-owned':'') + (locked?' sl-manual-locked':'') + '" ' +
+        (owned || locked ? '' : 'onclick="window._buySectManual && _buySectManual(\'' + item.id + '\')"') +
+        ' title="' + (owned?'已拥有':(locked?'等级不足 Lv'+lvReq:'点击购买')) + '">' +
+        '<div class="sl-manual-icon">' + (m.icon||'📜') + '</div>' +
+        '<div class="sl-manual-info">' +
+          '<div class="sl-manual-name">' + m.name + (owned ? ' ✓' : (locked ? ' 🔒' : '')) + '</div>' +
+          '<div class="sl-manual-desc">' + (m.desc||'') + (lvReq>1 ? ' · 需Lv'+lvReq : '') + '</div>' +
+        '</div>' +
+        '<div class="sl-manual-price">' +
+          (owned ? '<span style="font-size:11px;color:var(--ok)">已获得</span>' :
+           '<span class="sl-manual-cost">' + price + '</span><span class="sl-manual-currency">银两</span>') +
+        '</div></div>';
+    }).join('');
+  }
+
+  // ── 贡献商店 ──
+  function renderShop(sect){
+    const shopEl = qs('#sectShopContent');
+    const feats = getSectFeatures(sect);
+
+    // 规模不够 → 显示锁定提示（与 applyTierTabs 保持一致）
+    if(!feats.shop){
+      return; // 已由 applyTierTabs 填充锁定提示
+    }
+
+    const ed = edS || {};
+    const contrib = ed.sectContrib || 0;
+    const playerLv = ed.level || 1;
+
+    if(!isJoined){
+      shopEl.innerHTML = '<div class="sect-library-empty">⚔ 加入门派后方可使用贡献商店</div>';
+      return;
+    }
+
+    const shop = (typeof SECT_CONTRIB_SHOP !== 'undefined') ? SECT_CONTRIB_SHOP[sect.id] : null;
+    if(!shop || !shop.items || !shop.items.length){
+      shopEl.innerHTML = '<div class="sect-library-empty">🏪 本店暂无货物……</div>';
+      return;
+    }
+
+    let html = '<div class="cs-shop-section">' +
+      '<div class="cs-shop-header">' +
+        '<span class="cs-shop-title">⚔ 门派贡献商店</span>' +
+        '<span class="cs-shop-balance">💰 当前贡献：<b>' + contrib + '</b></span>' +
+      '</div>';
+
+    shop.items.forEach(function(item){
+      const locked = playerLv < (item.reqLv || 0);
+      const canAfford = contrib >= item.cost;
+
+      html += '<div class="cs-item' + (locked?' cs-locked':'') + (!canAfford&&!locked?' cs-cant-afford':'') + '" ' +
+        (locked ? '' : 'onclick="window._onSectContribBuy && _onSectContribBuy(\'' + sect.id + '\',\'' + item.id + '\')"') +
+        ' title="' + (locked?'需要 Lv'+(item.reqLv||0):(canAfford?'点击购买':'贡献不足')) + '">' +
+        '<span class="cs-item-icon">' + item.icon + '</span>' +
+        '<div class="cs-item-info">' +
+          '<span class="cs-item-name">' + item.name + (locked?' 🔒':'') + '</span>' +
+          '<span class="cs-item-desc">' + item.desc + '</span>' +
+        '</div>' +
+        '<div class="cs-item-price">' +
+          '<span class="cs-item-cost">' + item.cost + '</span>' +
+          '<span class="cs-item-curr">贡献</span>' +
+        '</div></div>';
+    });
+
+    html += '</div>';
+    shopEl.innerHTML = html;
+  }
+
+  // ── 门派任务链 ──
+  function renderMissions(sect){
+    const el = qs('#sectMissionContent');
+    const feats = getSectFeatures(sect);
+
+    // 规模不够 → 显示锁定提示（与 applyTierTabs 保持一致）
+    if(!feats.missions){
+      return; // 已由 applyTierTabs 填充锁定提示
+    }
+
+    const ed = edS || {};
+
+    if(!isJoined){
+      el.innerHTML = '<div class="sect-library-empty">📜 加入门派后方可接取门派要务</div>';
+      return;
+    }
+
+    const chain = (typeof SECT_CHAINS !== 'undefined') ? SECT_CHAINS[sect.id] : null;
+    if(!chain || !chain.chain || !chain.chain.length){
+      el.innerHTML = '<div class="sect-library-empty">📜 本门暂无要务发布……</div>';
+      return;
+    }
+
+    // 读取任务进度
+    let progress = {};
+    if(typeof getSectChainProgress === 'function'){
+      progress = getSectChainProgress();
+    }
+
+    const chainProgress = progress[sect.id] || {};
+
+    // 头部
+    let html =
+      '<div class="sc-chain-header">' +
+        '<div class="sc-chain-name">' + sect.emblem + ' ' + chain.name + '</div>' +
+        '<div class="sc-chain-theme">' + (chain.theme||'') + '</div>' +
+      '</div><div class="sc-task-list">';
+
+    // 记录第一个 active 节点之前的都是 done
+    let foundActive = false;
+
+    chain.chain.forEach(function(node, idx){
+      const nodeState = chainProgress[node.id] || (foundActive ? 'locked' : 'available');
+      // 自动推断状态：如果后续节点已有进度则前面已完成
+      if(nodeState === 'available' && idx > 0){
+        const prevNode = chain.chain[idx-1];
+        if(chainProgress[prevNode.id] === 'done'){ /* keep available */ }
+        else if(Object.keys(chainProgress).some(function(k){return chain.chain.slice(0,idx).some(function(n){return n.id===k;}) && chainProgress[k]==='done';})){
+          foundActive = true;
+        }
+      }
+      if(nodeState === 'done') foundActive = true;
+
+      const statusClass = nodeState === 'done' ? 'done' : (nodeState === 'active' || nodeState === 'available' ? 'active' : 'locked');
+      const statusIcon = nodeState === 'done' ? '✅' : (nodeState === 'active' ? '🔶' : (nodeState === 'available' ? '⬜' : '🔒'));
+      const canAccept = (nodeState === 'available' || nodeState === 'active');
+
+      html +=
+        '<div class="sc-task-node" data-node-id="' + node.id + '">' +
+          '<div class="sc-task-status ' + statusClass + '">' + statusIcon + '</div>' +
+          '<div class="sc-task-body">' +
+            '<div class="sc-task-name">' + node.icon + ' ' + node.name + '</div>' +
+            '<div class="sc-task-desc">' + node.desc + '</div>' +
+            (node.rewardText ? '<div class="sc-task-reward">🎁 ' + node.rewardText + '</div>' : '') +
+          '</div>' +
+          (canAccept ?
+            '<div class="sc-task-action"><button class="sc-task-btn" onclick="window._acceptSectMission && _acceptSectMission(\'' + sect.id + '\',\'' + node.id + '\')">接取</button></div>'
+            : ''
+          ) +
+        '</div>';
+    });
+
+    html += '</div>';
+    el.innerHTML = html;
+  }
+
+  // ════════════════════════════════════════
+  //   ⚔️ 演武场 — 与本门弟子切磋
+  // ════════════════════════════════════════
+
+  // 演武场对手数据（每个门派3-5个对手）
+  const SECT_ARENA_OPPONENTS = (function(){
+    const base = {};
+    // 为所有门派生成默认对手
+    if(typeof SECTS !== 'undefined'){
+      SECTS.forEach(function(sect){
+        const names = {
+          shaolin:['慧空法师','慧明武僧','慧能禅师','玄苦大师','方丈师兄'],
+          wudang:['清虚道长','清风师兄','纯阳子','太初道人','冲虚子'],
+          huashan:['岳肃师弟','令狐师兄','封不平','成不忧','丛不弃'],
+          mingjiao:['韦一笑','范遥长老','说不得','彭莹玉','五散人'],
+          wudu:['蓝凤凰','何铁手','毒娘子','葛长老','五毒童子'],
+          tangmen:['唐门杀手','唐无影','唐百晓','唐暗器','唐千机'],
+          taohuadao:['哑仆','曲师兄','陆师妹','黄药师','桃花侍女'],
+          xiaoyao:['苏星河','丁春秋','薛慕华','范百岁','天山童姥'],
+          emei:['静玄师太','周芷若师妹','丁敏君','灭绝师太','纪晓芙'],
+          kongtong:['关根长老','宗维侠','唐文亮','常敬之','耿天霸'],
+          kunlun:['何足道','班淑娴','昆仑掌门','西华子','青灵子'],
+          tiandibang:['帮众甲','帮众乙','堂主丙','护法丁','天地帮少主'],
+          guigu:['鬼谷弟子','算命先生','阵法师','谋士','鬼谷门客'],
+          shengguang:['圣骑士','牧师长老','审判官','圣光使者','光明祭司'],
+          diancang:['点苍剑士','蛊师弟子','南疆行者','点苍掌门','苗疆侠客'],
+          tianshan:['冰霜弟子','天山侍女','六阳掌传人','折梅手传人','天山长老'],
+          xixia:['密宗僧人','西域武士','预言者','国师护卫','西夏王子'],
+          tianlong:['罗汉弟子','龙象武士','吐蕃勇士','天龙护法','天龙帮主'],
+          nangong:['南宫少爷','世家护卫','剑术教师','南宫老爷','管家'],
+          xuanming:['玄冥弟子','寒冰使者','黑衣杀手','二老亲信','教徒'],
+          haisha:['海盗头目','水贼喽啰','七杀刀客','东海浪人','海沙船长'],
+          riyue:['日月教徒','黑木崖守卫','十长老亲随','东方不败','任我行'],
+          xuegu:['血骨卫士','炼血者','死士','血骨长老','血骨门主'],
+          lingxiao:['凌霄弟子','情报探子','剑术高手','阁主亲信','凌霄楼主'],
+          qingcheng:['青城弟子','松风观人','余沧海','辟邪剑客','青城长老'],
+        };
+        const list = names[sect.id] || ['入门弟子','资深弟子','精英弟子','内门弟子','首席弟子'];
+        const tiers = ['func','func','major','major', sect.tier==='supreme'?'elite':'major'];
+        base[sect.id] = list.map(function(n, i){
+          return {
+            id: 'arena_' + sect.id + '_' + i,
+            name: n,
+            title: (i<2?'外门弟子':(i<4?'内门弟子':'核心成员')),
+            level: Math.max(5, (sect.tier==='supreme'?50:(sect.tier==='major'?30:15)) + i*10 + Math.round(Math.random()*5)),
+            tier: tiers[i],
+            rewardContrib: 5 + i*5 + (sect.tier==='supreme'?10:(sect.tier==='major'?5:0)),
+            rewardSilver: 20 + i*15,
+            icon: (i<3?'🥋':(i<4?'⚔️':'👑')),
+            schoolTag: (sect.schools&&sect.schools[0])||'force',
+          };
+        });
+      });
+    }
+    return base;
+  })();
+
+  function renderArena(sect){
+    const el = qs('#sectArenaContent');
+    const feats = getSectFeatures(sect);
+    if(!feats.arena) return; // applyTierTabs 已填充锁定提示
+
+    const ed = edS || {};
+    if(!isJoined){
+      el.innerHTML = '<div class="sb-board-empty">⚔️ 加入「<b style="color:'+sect.color+'">' + sect.name + '</b>」后方可使用演武场</div>';
+      return;
+    }
+
+    // 读取今日已击败记录
+    let defeatedToday = [];
+    try{ defeatedToday = JSON.parse(localStorage.getItem('wuxia_arena_defeated_'+sect.id+'_'+_todayStr()) || '[]'); }catch(e){}
+
+    const opponents = SECT_ARENA_OPPONENTS[sect.id] || [];
+    if(!opponents.length){
+      el.innerHTML = '<div class="sb-board-empty">🏟 本门演武场暂无对手……</div>';
+      return;
+    }
+
+    // 过滤：根据阶级解锁不同难度
+    const playerRank = ed.sectRank || 'disciple';
+    const maxUnlockIdx = {disciple:2, elite:3, elder:4, grand:5}[playerRank] || 2;
+
+    let html =
+      '<div class="sa-arena-header">' +
+        '<span class="sa-arena-title">⚔️ ' + sect.name + ' · 演武场</span>' +
+        '<span class="sa-arena-info">今日击败：' + defeatedToday.length + '/' + opponents.length + '</span>' +
+      '</div><div class="sa-opponent-grid">';
+
+    opponents.forEach(function(opp, idx){
+      const isDefeated = defeatedToday.includes(opp.id);
+      const isLocked = idx >= maxUnlockIdx;
+      const canFight = !isDefeated && !isLocked;
+
+      html +=
+        '<div class="sa-opponent' + (isLocked?' sa-locked':'') + (isDefeated?' sa-defeated':'') + '" ' +
+        (canFight ? 'onclick="window._onArenaFight && _onArenaFight(\''+sect.id+'\','+idx+')"' : '') +
+        '>' +
+        '<div class="sa-opponent-icon">' + opp.icon + '</div>' +
+        '<div class="sa-opponent-info">' +
+          '<div class="sa-opponent-name">' + opp.name + (isDefeated ? ' ✅' : (isLocked ? ' 🔒' : '')) + '</div>' +
+          '<div class="sa-opponent-title">' + opp.title + ' · ' + ({func:'普通',major:'精英',elite:'顶尖'}[opp.tier]||'') + '</div>' +
+        '</div>' +
+        '<div class="sa-opponent-level">' +
+          '<div class="sa-opp-lv">Lv' + opp.level + '</div>' +
+          '<div class="sa-opp-reward">⚔' + opp.rewardContrib + ' 💰' + opp.rewardSilver + '</div>' +
+        '</div></div>';
+    });
+
+    html += '</div>';
+    el.innerHTML = html;
+
+    // ── 追加段位赛 / 武斗大会 / 排行榜 ──
+    if (typeof scEnhanceArena === 'function') {
+      var oldSc = document.getElementById('scEnhancedArena');
+      if (oldSc) oldSc.remove();
+      setTimeout(function(){ scEnhanceArena(sect.id); }, 50);
+    }
+  }
+
+  // 演武场战斗
+  // 门派演武场战斗结果处理（从 battle.html 返回后触发）
+  function _checkSectArenaResult(){
+    try{
+      const raw = sessionStorage.getItem('wuxia_arena_battle_result');
+      if(!raw) return;
+      const result = JSON.parse(raw);
+      sessionStorage.removeItem('wuxia_arena_battle_result');
+      sessionStorage.removeItem('wuxia_arena_from_sect');
+
+      if(!result.sectArena) return; // 不是门派演武场，跳过
+      const { won, sectId, oppIdx, reward, fled } = result;
+      const opponents = SECT_ARENA_OPPONENTS[sectId] || [];
+      const opp = opponents[oppIdx] || {};
+      const npcName = (typeof SECTS !== 'undefined') ?
+        (SECTS.find(s => s.id === sectId) || {}).name + '·' + opp.name : opp.name;
+
+      _showArenaResult(won, sectId, oppIdx, { name: npcName, id: opp.id }, !!fled);
+    }catch(e){ console.warn('[sect] _checkSectArenaResult error:', e); }
+  }
+
+  window._onArenaFight = function(sectId, oppIdx){
+    const sect = (typeof SECTS!=='undefined') ? SECTS.find(function(s){return s.id===sectId;}) : null;
+    if(!sect) return;
+    const opponents = SECT_ARENA_OPPONENTS[sectId] || [];
+    const opp = opponents[oppIdx];
+    if(!opp) return;
+
+    const ed = edS || {};
+    const tierMult = {supreme:1.6,major:1.25,minor:1.0}[sect.tier]||1.1;
+
+    const arenaNpc = {
+      id: opp.id,
+      name: sect.name + '·' + opp.name,
+      level: opp.level,
+      tier: opp.tier,
+      role:'fighter',
+      schoolTag: opp.schoolTag,
+      maxHp: Math.round((40 + opp.level*8)*tierMult*0.7),
+      atk: Math.round((5 + opp.level*1.0)*tierMult),
+      def: Math.round((2 + opp.level*0.5)*tierMult),
+      spd: Math.round((5 + opp.level*0.08)*tierMult*10)/10,
+      crit: Math.min(28, Math.round(5 + opp.level*0.12)),
+      dodge: Math.min(18, Math.round(3 + opp.level*0.06)),
+      maxMp: Math.round((30 + opp.level*4)*tierMult*0.6),
+    };
+
+    // 构建擂台战斗上下文，直接走 battle.html 路线（不经过 openRplFightPanel）
+    const tierNames = {func:'普通',major:'精英',elite:'顶尖'};
+    const arenaContext = {
+      player: {
+        id: 'cp_self',
+        name: (typeof edS !== 'undefined' && edS.name) ? edS.name : '你',
+        title: '切磋者',
+        maxHp: (typeof edS !== 'undefined' && edS.maxHp) || 150,
+        hp: (typeof edS !== 'undefined' && edS.hp) || 150,
+        atk: (typeof edS !== 'undefined' && edS.atk) || 20,
+        def: (typeof edS !== 'undefined' && edS.def) || 10,
+        crit: (typeof edS !== 'undefined' && edS.crit) || 0.1,
+        dodge: (typeof edS !== 'undefined' && edS.dodge) || 0.05,
+        maxMp: (typeof edS !== 'undefined' && edS.maxMp) || 80,
+        mp: (typeof edS !== 'undefined' && edS.mp) || 80,
+        speed: (typeof edS !== 'undefined' && edS.speed) || 10,
+        speedN: (typeof edS !== 'undefined' && edS.speedN) || 1,
+        color: (typeof edS !== 'undefined' && edS.color) || '#60c8ff',
+        stand: (typeof edS !== 'undefined' && edS.stand) || null,
+        attack: (typeof edS !== 'undefined' && edS.attack) || 1,
+        heavy: (typeof edS !== 'undefined' && edS.heavy) || 1,
+        hit: (typeof edS !== 'undefined' && edS.hit) || 0.95,
+        down: (typeof edS !== 'undefined' && edS.down) || null,
+        skillIds: (typeof edS !== 'undefined' && edS.skillIds) || ['cm01','cm02','cm03'],
+        _currentHp: (typeof edS !== 'undefined' && edS.hp) || 150,
+      },
+      enemy: {
+        id: opp.id,
+        name: sect.name + '·' + opp.name,
+        title: tierNames[opp.tier] || '普通',
+        level: opp.level,
+        tier: opp.tier,
+        maxHp: Math.round((40 + opp.level*8)*tierMult*0.7),
+        hp: Math.round((40 + opp.level*8)*tierMult*0.7),
+        atk: Math.round((5 + opp.level*1.0)*tierMult),
+        def: Math.round((2 + opp.level*0.5)*tierMult),
+        crit: Math.min(0.28, (5 + opp.level*0.12)/100),
+        dodge: Math.min(0.18, (3 + opp.level*0.06)/100),
+        maxMp: Math.round((30 + opp.level*4)*tierMult*0.6),
+        mp: Math.round((30 + opp.level*4)*tierMult*0.6),
+        speed: Math.round((5 + opp.level*0.08)*tierMult*10)/10,
+        speedN: Math.round((5 + opp.level*0.08)*tierMult*10)/10,
+        color: opp.tier === 'elite' ? '#ff8060' : opp.tier === 'major' ? '#ffd060' : '#a08060',
+        type: 'bandit',
+        skills: [],
+        drops: [],
+        _sectArena: true,
+        _sectId: sectId,
+        _oppIdx: oppIdx,
+        _reward: opp,
+      }
+    };
+    sessionStorage.setItem('wuxia_arena_battle_context', JSON.stringify(arenaContext));
+    sessionStorage.setItem('wuxia_arena_from_sect', 'true');
+    window.location.href = 'battle.html?mode=arena';
+  };
+
+  function _doSimpleArenaFight(sectId, oppIdx, npc){
+    const ed = edS || {};
+    const playerLevel = ed.level || 1;
+    const winRate = Math.max(0.22, Math.min(0.80,
+      0.50 + (playerLevel-npc.level)*0.035 + (ed.atk||0)*0.004 - (npc.atk||0)*0.0018
+    ));
+    const won = Math.random() < winRate;
+    _showArenaResult(won, sectId, oppIdx, npc);
+  }
+
+  function _showArenaResult(won, sectId, oppIdx, npc, fled){
+    const overlay = document.createElement('div');
+    overlay.className = 'sa-arena-result active';
+    const opponents = SECT_ARENA_OPPONENTS[sectId] || [];
+    const opp = opponents[oppIdx] || {};
+    var resultText;
+    if(won){
+      resultText = '你战胜了「' + npc.name + '」！<br>切磋中展现了精湛的' + ((npc.schoolTag||'')+'功夫'||'武功');
+    } else if(fled){
+      resultText = '你逃离了与「' + npc.name + '」的切磋<br>临阵脱逃，有失侠者风范！';
+    } else {
+      resultText = '你惜败于「' + npc.name + '」<br>再练些时日，下次一定能赢！';
+    }
+    overlay.innerHTML =
+      '<div class="sa-arena-result-box">' +
+        '<div class="sa-result-icon">' + (won ? '🏆' : '💫') + '</div>' +
+        '<div class="sa-result-text">' + resultText + '</div>' +
+        (won ? '<div class="sa-result-reward">🎁 贡献 +' + (opp.rewardContrib||10) + ' · 银两 +' + (opp.rewardSilver||30) + '</div>' : '') +
+        '<button class="sa-result-btn" onclick="this.closest(\'.sa-arena-result\').classList.remove(\'active\');setTimeout(function(){var e=document.querySelector(\'.sa-arena-result\');if(e)e.remove();},300)">确定</button>' +
+      '</div>';
+    document.body.appendChild(overlay);
+
+    if(won){
+      const ed = edS || {};
+      ed.sectContrib = (ed.sectContrib||0) + (opp.rewardContrib||10);
+      ed.silver = (ed.silver||0) + (opp.rewardSilver||30);
+      if(typeof saveGameState==='function') saveGameState();
+      try{ localStorage.setItem('wuxia_editor', JSON.stringify(ed)); }catch(e){}
+
+      // 记录今日击败
+      let defeatedToday = [];
+      try{ defeatedToday = JSON.parse(localStorage.getItem('wuxia_arena_defeated_'+sectId+'_'+_todayStr())||'[]'); }catch(e){}
+      if(!defeatedToday.includes(npc.id)){
+        defeatedToday.push(npc.id);
+        localStorage.setItem('wuxia_arena_defeated_'+sectId+'_'+_todayStr(), JSON.stringify(defeatedToday));
+      }
+      if(typeof checkSectRankUp==='function') checkSectRankUp(ed);
+
+      // 刷新
+      const sect = SECTS.find(function(s){return s.id===sectId;});
+      if(sect) renderArena(sect);
+    }
+  }
+
+  function _todayStr(){
+    var d = new Date();
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+
+  // ════════════════════════════════════════
+  //   🧪 炼丹房 — 门派专属配方合成
+  // ════════════════════════════════════════
+
+  // 门派专属配方（复用 crafting 系统的 CRAFT_RECIPES，加上门派特色）
+  const SECT_ALCHEMY_RECIPES = (function(){
+    var map = {};
+    if(typeof SECTS === 'undefined') return map;
+
+    // 通用基础丹药（所有有炼丹房的门派共享）
+    var commonRecipes = [
+      { id:'sect_craft_huoxue', name:'活血散', icon:'💊', desc:'恢复气血80',
+        materials:[{id:'item_herb_blood',qty:2}], result:{hp:80},
+        reqLv:1, exp:8 },
+      { id:'sect_craft_peiyuan', name:'培元散', icon:'🔵', desc:'恢复内力120',
+        materials:[{id:'item_herb_qi',qty:2}], result:{mp:120},
+        reqLv:1, exp:8 },
+      { id:'sect_craft_jiedu', name:'解毒散', icon:'🟢', desc:'解除中毒+气血40',
+        materials:[{id:'item_snake_gall',qty:1},{id:'item_herb_blood',qty:1}],
+        result:{detox:true,hp:40}, reqLv:5, exp:12 },
+      { id:'sect_craft_qisheng', name:'起生丸', icon:'🌟', desc:'大补气血250+内力80',
+        materials:[{id:'item_bear_paw',qty:1},{id:'item_herb_blood',qty:3}],
+        result:{hp:250,mp:80}, reqLv:10, exp:25 },
+    ];
+
+    // 门派特色配方
+    var specialRecipes = {
+      shaolin: [
+        { id:'sect_shaolin_jingang', name:'金刚护体丹', icon:'🛡', desc:'防御+15，持续1场战斗',
+          materials:[{id:'item_herb_blood',qty:3},{id:'item_bear_paw',qty:1}],
+          result:{buffDef:15,duration:1}, reqLv:15, exp:35 },
+        { id:'sect_shaolin_luohan', name:'罗汉益气丹', icon:'☸', desc:'气血全满+攻击临时+10',
+          materials:[{id:'item_herb_qi',qty:4},{id:'item_snake_gall',qty:1}],
+          result:{fullHp:true,buffAtk:10,duration:1}, reqLv:22, exp:50 },
+      ],
+      wudang: [
+        { id:'sect_wudang_taiji', name:'太极归元丹', icon:'☯', desc:'闪避+8%，持续1场战斗',
+          materials:[{id:'item_herb_qi',qty:3},{id:'item_herb_blood',qty:2}],
+          result:{buffDodge:8,duration:1}, reqLv:14, exp:30 },
+        ],
+      huashan: [
+        { id:'sect_huashan_jianqi', name:'聚气凝神丹', icon:'⚡', desc:'暴击+10%，持续1场战斗',
+          materials:[{id:'item_herb_blood',qty:3},{id:'item_snake_gall',qty:1}],
+          result:{buffCrit:10,duration:1}, reqLv:16, exp:32 },
+      ],
+      mingjiao: [
+        { id:'sect_mingjiao_shenghuo', name:'圣火焚心丹', icon:'🔥', desc:'攻击+12，持续1场战斗',
+          materials:[{id:'item_herb_blood',qty:4},{id:'item_bear_paw',qty:1}],
+          result:{buffAtk:12,duration:1}, reqLv:18, exp:38 },
+      ],
+      wudu: [
+        { id:'sect_wudu_gudu', name:'五毒蚀心丹', icon:'🐍', desc:'毒攻+20%，持续1场战斗',
+          materials:[{id:'item_snake_gall',qty:3},{id:'item_herb_blood',qty:2}],
+          result:{buffPoisonAtk:20,duration:1}, reqLv:16, exp:34 },
+      ],
+      tangmen: [
+        { id:'sect_tangmen_ansha', name:'唐门暗劲丹', icon:'🏹', desc:'速度+6+暴击+6%',
+          materials:[{id:'item_herb_qi',qty:3},{id:'item_snake_gall',qty:2}],
+          result:{buffSpd:6,buffCrit:6,duration:1}, reqLv:17, exp:33 },
+      ],
+      taohuadao: [
+        { id:'sect_taohua_yulu', name:'玉露回春丹', icon:'🌸', desc:'气血500+内力200',
+          materials:[{id:'item_herb_qi',qty:5},{id:'item_bear_paw',qty:2}],
+          result:{hp:500,mp:200}, reqLv:18, exp:42 },
+      ],
+      emei: [
+        { id:'sect_emei_jingshuang', name:'冰霜净世丹', icon:'❄', desc:'冰攻+15%，持续1场',
+          materials:[{id:'item_herb_blood',qty:3},{id:'item_snake_gall',qty:2}],
+          result:{buffIceAtk:15,duration:1}, reqLv:16, exp:34 },
+      ],
+      kongtong: [
+        { id:'sect_kongtong_qishang', name:'七伤狂暴丹', icon:'💥', desc:'攻击+18但防御-8',
+          materials:[{id:'item_bear_paw',qty:2},{id:'item_herb_blood',qty:3}],
+          result:{buffAtk:18,buffDef:-8,duration:1}, reqLv:20, exp:45 },
+      ],
+      kunlun: [
+        { id:'sect_kunlun_xueshan', name:'雪域金身丹', icon:'🏔', desc:'气血+150+防御+10',
+          materials:[{id:'item_bear_paw',qty:2},{id:'item_herb_qi',qty:4}],
+          result:{hp:150,buffDef:10,duration:1}, reqLv:18, exp:40 },
+      ],
+      xiaoyao: [
+        { id:'sect_xiaoyaolingwu', name:'凌波微步丹', icon:'🌀', desc:'速度+10+闪避+5%',
+          materials:[{id:'item_herb_qi',qty:4},{id:'item_snake_gall',qty:2}],
+          result:{buffSpd:10,buffDodge:5,duration:1}, reqLv:20, exp:44 },
+      ],
+      riyue: [
+        { id:'sect_riyue_kuihua', name:'葵花极速丹', icon:'☀', desc:'速度+15+暴击+8%',
+          materials:[{id:'item_bear_paw',qty:2},{id:'item_snake_gall',qty:3}],
+          result:{buffSpd:15,buffCrit:8,duration:1}, reqLv:25, exp:55 },
+      ],
+    };
+
+    SECTS.forEach(function(sect){
+      var recipes = commonRecipes.slice();
+      if(specialRecipes[sect.id]){
+        recipes = recipes.concat(specialRecipes[sect.id]);
+      }
+      map[sect.id] = recipes;
+    });
+    return map;
+  })();
+
+  function renderAlchemy(sect){
+    const el = qs('#sectAlchemyContent');
+    const feats = getSectFeatures(sect);
+    if(!feats.alchemy) return;
+
+    const ed = edS || {};
+    if(!isJoined){
+      el.innerHTML = '<div class="sb-board-empty">🧪 加入门派后方可使用炼丹房</div>';
+      return;
+    }
+
+    const recipes = SECT_ALCHEMY_RECIPES[sect.id] || [];
+    if(!recipes.length){
+      el.innerHTML = '<div class="sb-board-empty">🧪 本门炼丹房暂无可用配方……</div>';
+      return;
+    }
+
+    // 读取背包材料（简化检查）
+    var bag = [];
+    try{ bag = JSON.parse(localStorage.getItem('wuxia_bag')||'[]'); }catch(e){}
+
+    var hasMaterial = function(itemId){
+      if(!itemId) return false;
+      var item = bag.find(function(b){return b.id===itemId;});
+      return item && item.qty > 0;
+    };
+    var getMatQty = function(itemId){
+      var item = bag.find(function(b){return b.id===itemId;});
+      return item ? item.qty : 0;
+    };
+
+    const playerLv = ed.level || 1;
+
+    let html =
+      '<div class="sc-alchemy-header">' +
+        '<span class="sc-alchemy-title">🧪 ' + sect.name + ' · 炼丹房</span>' +
+        '<span class="sc-alchemy-balance">炼制等级 Lv' + playerLv + '</span>' +
+      '</div><div class="sc-recipe-list">';
+
+    recipes.forEach(function(r){
+      const locked = playerLv < (r.reqLv||1);
+      // 检查材料是否足够
+      let matsHtml = '';
+      let allMatsReady = true;
+      (r.materials||[]).forEach(function(m){
+        const qty = getMatQty(m.id);
+        const enough = qty >= m.qty;
+        if(!enough) allMatsReady = false;
+        matsHtml += '<span class="'+(enough?'has':'miss')+'">'+(m.name||m.id)+'×'+m.qty+(enough?'('+qty+')':'')+'</span> ';
+      });
+
+      html +=
+        '<div class="sc-recipe-item' + (locked?' sc-locked':'') + (!locked&&allMatsReady?' sc-craftable':'') + (locked||!allMatsReady?' sc-cant-craft':'') + '"' +
+        ' data-sect-id="' + sect.id + '"' +
+        ' data-recipe-id="' + r.id + '"' +
+        ' title="' + (locked?'需要Lv'+r.reqLv:(allMatsReady?'点击炼制':'材料不足')) + '">' +
+        '<div class="sc-recipe-icon">' + r.icon + '</div>' +
+        '<div class="sc-recipe-info">' +
+          '<div class="sc-recipe-name">' + r.name + (locked?' 🔒':'') + '</div>' +
+          '<div class="sc-recipe-desc">' + r.desc + '</div>' +
+          '<div class="sc-recipe-mats">材料：' + matsHtml + '</div>' +
+        '</div>' +
+        '<div class="sc-recipe-result"><div class="sc-recipe-exp">+' + r.exp + 'exp</div></div></div>';
+    });
+
+    html += '</div>';
+    el.innerHTML = html;
+
+    // 事件委托：点击炼制
+    qsa('.sc-recipe-item.sc-craftable').forEach(function(item){
+      item.addEventListener('click', function(){
+        var sid = this.getAttribute('data-sect-id');
+        var rid = this.getAttribute('data-recipe-id');
+        if(window._onAlchemyCraft) window._onAlchemyCraft(sid, rid);
+      });
+    });
+  }
+
+  window._onAlchemyCraft = function(sectId, recipeId){
+    const recipes = SECT_ALCHEMY_RECIPES[sectId] || [];
+    const r = recipes.find(function(x){return x.id===recipeId;});
+    if(!r) return;
+    var bag = [];
+    try{ bag = JSON.parse(localStorage.getItem('wuxia_bag')||'[]'); }catch(e){}
+
+    // 扣除材料
+    (r.materials||[]).forEach(function(m){
+      for(var i=0;i<bag.length;i++){
+        if(bag[i].id===m.id){
+          bag[i].qty -= m.qty;
+          if(bag[i].qty<=0) bag.splice(i,1);
+          break;
+        }
+      }
+    });
+    try{ localStorage.setItem('wuxia_bag', JSON.stringify(bag)); }catch(e){}
+
+    // 发放产物效果（简化：给银两/经验作为奖励）
+    const ed = edS || {};
+    // 给经验
+    if(typeof addExp === 'function'){
+      addExp(r.exp||0);
+    }
+    showToast('🧪 炼制成功：「' + r.name + '」！+' + (r.exp||0) + ' 经验','ok');
+    const sect = SECTS.find(function(s){return s.id===sectId;});
+    if(sect) renderAlchemy(sect);
+  };
+
+  // ════════════════════════════════════════
+  //   💰 藏宝阁 — 贡献兑换稀有道具/装备
+  // ════════════════════════════════════════
+
+  const SECT_TREASURY = (function(){
+    var map = {};
+
+    var commonItems = [
+      { id:'tr_exp_potion',  icon:'🧪', name:'精炼经验药水',     desc:'使用后获得100经验',           cost:20,  reqLv:1,  category:'消耗品' },
+      { id:'tr_hp_potion',   icon:'❤️', name:'上品止血散',       desc:'战斗中立即恢复200气血',         cost:15,  reqLv:1,  category:'消耗品' },
+      { id:'tr_mp_potion',   icon:'💙', name:'上品回气散',       desc:'战斗中立即恢复150内力',         cost:15,  reqLv:1,  category:'消耗品' },
+      { id:'tr_silver_box',  icon:'📦', name:'银两宝箱',         desc:'包含200~500银两',              cost:25,  reqLv:5,  category:'宝箱' },
+      { id:'tr_mat_box',     icon:'🎁', name:'材料礼包',         desc:'随机获得3种采集材料各×5',      cost:30,  reqLv:8,  category:'宝箱' },
+    ];
+
+    var rareItems = {
+      supreme: [
+        { id:'tr_sup_equip',  icon:'⚔️', name:'门派秘兵·残片',   desc:'可用于锻造门派专属武器部件',    cost:120, reqLv:25, category:'装备' },
+        { id:'tr_sup_manual', icon:'📜', name:'失传绝学残页',     desc:'记载了一招半式绝学',           cost:200, reqLv:35, category:'功法' },
+        { id:'tr_sup_title',  icon:'👑', name:'门派元老称谓',     desc:'永久称号，威慑力大幅提升',     cost:350, reqLv:45, category:'称号' },
+      ],
+      major: [
+        { id:'tr_maj_equip',  icon:'🗡️', name:'精钢武器胚',      desc:'可锻造为优质武器',              cost:80,  reqLv:20, category:'装备' },
+        { id:'tr_maj_mat',    icon:'💎', name:'稀有矿物包',       desc:'含铁矿×10+铜矿×5+银矿×2',      cost:60,  reqLv:15, category:'材料' },
+      ],
+    };
+
+    if(typeof SECTS !== 'undefined'){
+      SECTS.forEach(function(sect){
+        var items = commonItems.slice();
+        if(rareItems[sect.tier]){
+          items = items.concat(rareItems[sect.tier]);
+        }
+        map[sect.id] = items;
+      });
+    }
+    return map;
+  })();
+
+  function renderTreasury(sect){
+    const el = qs('#sectTreasuryContent');
+    const feats = getSectFeatures(sect);
+    if(!feats.treasury) return;
+
+    const ed = edS || {};
+    if(!isJoined){
+      el.innerHTML = '<div class="sb-board-empty">💰 加入门派后方可进入藏宝阁</div>';
+      return;
+    }
+
+    const items = SECT_TREASURY[sect.id] || [];
+    const contrib = ed.sectContrib || 0;
+    const playerLv = ed.level || 1;
+
+    if(!items.length){
+      el.innerHTML = '<div class="sb-board-empty">💰 藏宝阁暂无货物……</div>';
+      return;
+    }
+
+    // 按分类分组
+    var categories = {};
+    items.forEach(function(it){
+      if(!categories[it.category]) categories[it.category] = [];
+      categories[it.category].push(it);
+    });
+
+    var catIcons = {'消耗品':'🧪','宝箱':'📦','装备':'⚔️','功法':'📜','材料':'💎','称号':'👑'};
+    var order = ['消耗品','宝箱','装备','材料','功法','称号'];
+
+    let html =
+      '<div class="st-treasury-header">' +
+        '<span class="st-treasury-title">💰 ' + sect.name + ' · 藏宝阁</span>' +
+        '<span class="st-treasury-balance">贡献：<b>' + contrib + '</b></span>' +
+      '</div>';
+
+    order.forEach(function(cat){
+      if(!categories[cat]) return;
+      html += '<div class="st-treasury-cat">' + (catIcons[cat]||'📦') + ' ' + cat + '</div>';
+      categories[cat].forEach(function(it){
+        const locked = playerLv < (it.reqLv||0);
+        const canAfford = contrib >= it.cost;
+        html +=
+          '<div class="st-treasure-item' + (locked?' st-locked':'') + (!canAfford&&!locked?' st-cant-afford':'') + '" ' +
+          (locked ? '' : 'onclick="window._onTreasuryBuy && _onTreasuryBuy(\''+sect.id+'\',\''+it.id+'\')"') +
+          ' title="' + (locked?'需要Lv'+it.reqLv:(canAfford?'点击兑换':'贡献不足')) + '">' +
+          '<span class="st-treasure-icon">' + it.icon + '</span>' +
+          '<div class="st-treasure-info">' +
+            '<span class="st-treasure-name">' + it.name + (locked?' 🔒':'') + '</span>' +
+            '<span class="st-treasure-desc">' + it.desc + '</span>' +
+          '</div>' +
+          '<div class="st-treasure-price">' +
+            '<span class="st-treasure-cost">' + it.cost + '</span><br>' +
+            '<span class="st-treasure-curr">贡献</span>' +
+          '</div></div>';
+      });
+    });
+
+    el.innerHTML = html;
+  }
+
+  window._onTreasuryBuy = function(sectId, itemId){
+    const items = SECT_TREASURY[sectId] || [];
+    const it = items.find(function(x){return x.id===itemId;});
+    if(!it) return;
+    const ed = edS || {};
+    if((ed.sectContrib||0) < it.cost){
+      showToast('贡献不足！需要 '+it.cost,'warn');return;
+    }
+    // 扣贡献
+    ed.sectContrib -= it.cost;
+    // 发放奖励
+    if(itemId.indexOf('silver')>=0 || itemId.indexOf('box')>=0){
+      var silverGain = Math.floor(Math.random()*301)+200;
+      ed.silver = (ed.silver||0) + silverGain;
+      showToast('📦 获得「'+it.name+'」，开出 '+silverGain+' 银两！','ok');
+    } else if(itemId.indexOf('exp')>=0){
+      if(typeof addExp === 'function') addExp(100);
+      showToast('🧪 使用了「'+it.name+'」，+100经验！','ok');
+    } else if(itemId.indexOf('hp')>=0 || itemId.indexOf('mp')>=0){
+      showToast('🎁 获得「'+it.name+'」！已放入背包','ok');
+    } else {
+      showToast('🎁 兌换成功：「'+it.name+'」！','ok');
+    }
+    if(typeof saveGameState==='function') saveGameState();
+    try{ localStorage.setItem('wuxia_editor', JSON.stringify(ed)); }catch(e){}
+    const sect = SECTS.find(function(s){return s.id===sectId;});
+    if(sect) renderTreasury(sect);
+  };
+
+  // ════════════════════════════════════════
+  //   📢 公告栏 — 门派日常任务 + 悬赏
+  // ════════════════════════════════════════
+
+  const SECT_BOARD_DAILIES = [
+    { id:'daily_train',  icon:'🏋', name:'日常修炼',   desc:'在演武场完成一次切磋',               type:'arena',   rewardContrib:3,  rewardExp:20 },
+    { id:'daily_patrol', icon:'🛡', name:'巡山巡逻',   desc:'外出旅行并安全抵达一座城镇',             type:'travel',  rewardContrib:2,  rewardExp:15 },
+    { id:'daily_craft',  icon:'🔨', name:'协助炼丹',   desc:'在炼丹房完成一次炼制',                 type:'alchemy', rewardContrib:3,  rewardExp:25 },
+    { id:'daily_dungeon',icon:'⚔', name:'清理险地',   desc:'完成一次地下城探索（任意房间）',       type:'dungeon',rewardContrib:5,  rewardExp:40 },
+    { id:'daily_fish',   icon:'🎣', name:'采集物资',   desc:'钓鱼或采药获得一件素材',                type:'gather',  rewardContrib:2,  rewardExp:15 },
+    { id:'daily_social', icon:'💬', name:'同门交流',   desc:'与任意门派NPC对话或送礼',               type:'social',  rewardContrib:2,  rewardExp:10 },
+  ];
+
+  function renderBoard(sect){
+    const el = qs('#sectBoardContent');
+    const ed = edS || {};
+
+    // 公告栏对所有加入/未加入都可见（minor也有）
+    if(!isJoined){
+      el.innerHTML = '<div class="sb-board-empty">📢 加入「<b style="color:'+sect.color+'">' + sect.name + '</b>」后可接取门派日常</div>';
+      return;
+    }
+
+    // 读取今日已完成
+    let doneToday = [];
+    try{ doneToday = JSON.parse(localStorage.getItem('wuxia_board_done_'+sect.id+'_'+_todayStr())||'[]'); }catch(e){}
+
+    const feats = getSectFeatures(sect);
+    const now = new Date();
+    const timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+
+    let html =
+      '<div class="sb-board-header">' +
+        '<span class="sb-board-title">📢 ' + sect.name + ' · 公告栏</span>' +
+        '<span class="sb-board-time">' + timeStr + '</span>' +
+      '</div>';
+
+    // ── 日常任务 ──
+    html += '<div class="sb-daily-section"><div class="sb-daily-label">📋 今日日常</div>';
+
+    SECT_BOARD_DAILIES.forEach(function(daily){
+      const isDone = doneToday.includes(daily.id);
+
+      // 根据规模过滤一些高级日常
+      const hideMap = {alchemy:!feats.alchemy, dungeon:false, arena:!feats.arena};
+      if(hideMap[daily.type]){
+        // 规模不够的不显示该日常
+        return;
+      }
+
+      html +=
+        '<div class="sb-daily-card' + (isDone?' sb-done':'') + '">' +
+          '<div class="sb-daily-icon">' + daily.icon + '</div>' +
+          '<div class="sb-daily-info">' +
+            '<div class="sb-daily-name">' + daily.name + (isDone ? ' ✓' : '') + '</div>' +
+            '<div class="sb-daily-desc">' + daily.desc + '</div>' +
+          '</div>' +
+          '<div class="sb-daily-action">' +
+            (isDone ?
+              '<span class="sb-daily-status">✅ 已完成</span>' :
+              '<button class="sb-daily-btn" onclick="window._onClaimDaily && _onClaimDaily(\''+sect.id+'\',\''+daily.id+'\')">领取</button>'
+            ) +
+          '</div></div>';
+    });
+
+    html += '</div>'; // /daily-section
+
+    // ── 悬赏任务（仅 major/supreme）──
+    if(feats.missions){
+      html += '<div class="sb-bounty-section">';
+      // 从门派任务链取当前 active 任务作为悬赏提示
+      const chain = (typeof SECT_CHAINS!=='undefined') ? SECT_CHAINS[sect.id] : null;
+      if(chain && chain.chain){
+        const activeNode = chain.chain.find(function(n){
+          var progress = {};
+          if(typeof getSectChainProgress==='function') progress = getSectChainProgress();
+          var cp = (progress||{})[sect.id] || {};
+          var state = cp[n.id] || 'available';
+          return state==='active' || state==='available';
+        });
+        if(activeNode){
+          html +=
+            '<div class="st-treasury-cat" style="margin-top:12px">📜 当前悬赏</div>' +
+            '<div class="sb-daily-card" style="cursor:default;border-color:rgba(240,192,64,.2)">' +
+              '<div class="sb-daily-icon">' + (activeNode.icon||'📜') + '</div>' +
+              '<div class="sb-daily-info">' +
+                '<div class="sb-daily-name">' + activeNode.name + '</div>' +
+                '<div class="sb-daily-desc">' + (activeNode.desc||'前往要务页面查看详情') + '</div>' +
+              '</div>' +
+              '<div class="sb-daily-action">' +
+                '<button class="sb-daily-btn" onclick="switchTab(\'missions\')">查看详情</button>' +
+              '</div></div>';
+        } else {
+          html += '<div class="st-treasury-cat" style="margin-top:12px">📜 当前悬赏</div>' +
+            '<div class="sb-bounty-empty">暂无悬赏任务，请关注公告更新</div>';
+        }
+      }
+      html += '</div>'; // /bounty-section
+    }
+
+    el.innerHTML = html;
+  }
+
+  // 领取日常奖励
+  window._onClaimDaily = function(sectId, dailyId){
+    const daily = SECT_BOARD_DAILIES.find(function(d){return d.id===dailyId;});
+    if(!daily) return;
+
+    // 简化判定：直接领取（后续可以加具体条件检查）
+    let doneToday = [];
+    try{ doneToday = JSON.parse(localStorage.getItem('wuxia_board_done_'+sectId+'_'+_todayStr())||'[]'); }catch(e){}
+    if(doneToday.includes(dailyId)){
+      showToast('今天已经领取过了！','warn');return;
+    }
+
+    const ed = edS || {};
+    ed.sectContrib = (ed.sectContrib||0) + (daily.rewardContrib||0);
+    if(typeof addExp === 'function') addExp(daily.rewardExp||0);
+    else ed.exp = (ed.exp||0) + (daily.rewardExp||0);
+
+    doneToday.push(dailyId);
+    localStorage.setItem('wuxia_board_done_'+sectId+'_'+_todayStr(), JSON.stringify(doneToday));
+    if(typeof saveGameState==='function') saveGameState();
+    try{ localStorage.setItem('wuxia_editor', JSON.stringify(ed)); }catch(e){}
+
+    showToast('📋 日常完成！贡献+' + (daily.rewardContrib||0) + ' · 经验+' + (daily.rewardExp||0), 'ok');
+    const sect = SECTS.find(function(s){return s.id===sectId;});
+    if(sect) renderBoard(sect);
+  };
+
+  // ── 全局暴露的交互方法 ──
+
+  // 藏经阁购买功法
+  window._buySectManual = function(manualId){
+    if(typeof edS === 'undefined') return;
+    if(typeof MANUAL_DB === 'undefined') return;
+    const m = MANUAL_DB[manualId];
+    if(!m) return;
+    const price = m.price || 0;
+    if((edS.silver||0) < price){
+      showToast('银两不足！需要 ' + price + ' 两','warn');return;
+    }
+    // 扣银
+    edS.silver -= price;
+    // 加秘籍
+    if(typeof addManualToBag === 'function') addManualToBag(manualId);
+    // 存档
+    if(typeof saveGameState === 'function') saveGameState();
+    try{ localStorage.setItem('wuxia_editor', JSON.stringify(edS)); }catch(e){}
+    showToast('📜 获得「' + m.name + '」！','ok');
+    // 刷新藏经阁
+    const sect = SECTS.find(function(s){return s.id === currentSectId;});
+    if(sect) renderLibrary(sect);
+  };
+
+  // 接取门派任务
+  window._acceptSectMission = function(sectId, nodeId){
+    if(typeof SECT_CHAINS === 'undefined') return;
+    const chainData = SECT_CHAINS[sectId];
+    if(!chainData) return;
+    const node = chainData.chain.find(function(n){return n.id === nodeId;});
+    if(!node) return;
+
+    // 有叙事内容？弹窗展示
+    if(node.narrative && node.narrative.accept){
+      showNarrative(node.narrative.accept, function(){
+        doAcceptMission(sectId, nodeId, node);
+      });
+    } else {
+      doAcceptMission(sectId, nodeId, node);
+    }
+  };
+
+  function doAcceptMission(sectId, nodeId, node){
+    if(typeof setSectChainNodeState === 'function'){
+      setSectChainNodeState(sectId, nodeId, 'active');
+    }
+    // 发放前置奖励（如果有即时奖励的话——经验/贡献等在完成时发放）
+
+    // 根据任务类型处理
+    if(node.type === 'talk' && node.targetNpc){
+      // 对话类：标记完成后给奖励
+      showToast('已接取：「' + node.name + '」，请前往与相关NPC对话','ok');
+    } else if(node.type === 'travel' && node.targetCity){
+      showToast('已接取：「' + node.name + '」，请前往' + node.targetCity,'ok');
+    } else {
+      showToast('已接取：「' + node.name + '」','ok');
+    }
+    // 刷新任务列表
+    const sect = SECTS.find(function(s){return s.id === sectId;});
+    if(sect) renderMissions(sect);
+  }
+
+  // 叙事弹窗
+  function showNarrative(narr, onConfirm){
+    const overlay = qs('#scNarrativeOverlay');
+    if(!overlay) return;
+    qs('#scNarrScene').innerHTML = narr.scene || '';
+    qs('#scNarrLines').innerHTML = (narr.lines||[]).map(function(l){
+      return '<div class="sc-narrative-line">' + l + '</div>';
+    }).join('');
+
+    qs('#scNarrCancel').onclick = function(){ overlay.classList.remove('active'); };
+    qs('#scNarrConfirm').onclick = function(){
+      overlay.classList.remove('active');
+      if(onConfirm) onConfirm();
+    };
+    overlay.classList.add('active');
+  }
+
+  // 试炼配置（从 town.html 迁移）
+  // 注意：SECT_TRIAL_CFG 在 town.html 定义，这里需要重新定义或引用
+  // 为避免重复，我们在 town.html 的 _doSectTrial 中用 window 暴露，
+  // 这里也做同样的定义以保持独立可用性
+
+  // ── 试炼系统（从 town.html 迁移的核心逻辑）──
+  const SECT_TRIAL_CFG = {
+    supreme: { name:'三关试炼', desc:'需连续通过三道考验', rounds:3, baseLvl:50 },
+    major:   { name:'切磋考验', desc:'与门派长老切磋，证明实力',   rounds:1, baseLvl:30 },
+    minor:   { name:'入门试炼', desc:'击败一名弟子即可入门',       rounds:1, baseLvl:15 }
+  };
+
+  window._doSectTrial = function(sectId){
+    if(typeof SECTS === 'undefined') return;
+    const sect = SECTS.find(function(s){return s.id === sectId;});
+    if(!sect) return;
+    const ed = edS || {};
+    const playerSect = ed.sect || null;
+    const playerLevel = ed.level || 1;
+
+    if(playerSect === sectId){
+      showToast('你已经是「' + sect.name + '」的弟子了！','info');return;
+    }
+    if(ed.sectLeaveCooldown && ed.sectLeaveCooldown > Date.now()){
+      const remaining = Math.ceil((ed.sectLeaveCooldown - Date.now()) / 86400000);
+      showToast('🔒 需等待 ' + remaining + ' 天才能重新加入','warn');return;
+    }
+    if(playerLevel < 5){
+      showToast('🔒 需达到 Lv5 才能申请加入！','warn');return;
+    }
+    // 直接启动试炼
+    window._startSectTrial(sectId);
+  };
+
+  window._startSectTrial = function(sectId){
+    if(typeof SECTS === 'undefined') return;
+    const sect = SECTS.find(function(s){return s.id === sectId;});
+    if(!sect) return;
+    const cfg = SECT_TRIAL_CFG[sect.tier] || SECT_TRIAL_CFG.minor;
+    const playerLevel = (edS||{}).level || 1;
+
+    // 构建试炼对手
+    const opponentLv = Math.max(5, Math.round(playerLevel * (cfg.baseLvl / 20)));
+    const tierMult = {supreme:2.0,major:1.45,minor:1.15}[sect.tier]||1.2;
+    const trialNpc = {
+      id: 'sect_trial_' + sectId,
+      name: sect.name + '·考官',
+      level: opponentLv,
+      tier: sect.tier==='supreme'?'elite':(sect.tier==='major'?'major':'func'),
+      role:'fighter',
+      schoolTag:(sect.schools||[])[0]||'force',
+      maxHp: Math.round((40 + opponentLv*8)*tierMult*0.7),
+      atk: Math.round((5 + opponentLv*1.0)*tierMult),
+      def: Math.round((2 + opponentLv*0.5)*tierMult),
+      spd: Math.round((5 + opponentLv*0.08)*tierMult*10)/10,
+      crit: Math.min(28, Math.round(5 + opponentLv*0.12)),
+      dodge: Math.min(18, Math.round(3 + opponentLv*0.06)),
+      maxMp: Math.round((30 + opponentLv*4)*tierMult*0.6),
+    };
+
+    // 尝试打开切磋面板
+    if(typeof openRplFightPanel === 'function'){
+      window._tmpTrialNpc = {inst:trialNpc, sectId:sectId};
+      window._isSectTrialFight = true;
+      window._trialTargetSectId = sectId;
+      setTimeout(function(){
+        try{
+          openRplFightPanel(trialNpc.id, travelCurrentCity||(typeof WORLD_NODES!=='undefined'&&sect.city?sect.city:'kaifeng'));
+        }catch(e){
+          console.warn('[SectTrial] 切磋不可用，走简易判定', e);
+          _doSimpleSectTrial(sectId, trialNpc, cfg);
+        }
+      },300);
+    } else {
+      _doSimpleSectTrial(sectId, trialNpc, cfg);
+    }
+  };
+
+  function _doSimpleSectTrial(sectId, npc, cfg){
+    const sect = SECTS.find(function(s){return s.id===sectId;});
+    const ed = edS || {};
+    const playerLevel = ed.level || 1;
+    const winRate = Math.max(0.18, Math.min(0.85,
+      0.5 + (playerLevel-npc.level)*0.03 + (ed.atk||0)*0.005 - (npc.atk||0)*0.002
+    ));
+    if(Math.random() < winRate){
+      _onSectTrialSuccess(sectId);
+    } else {
+      const cn = cfg?cfg.name:'试炼';
+      showToast('你在' + cn + '中惜败……再练些时日吧。','error');
+    }
+  }
+
+  window._onSectTrialSuccess = function(sectId){
+    if(typeof SECTS === 'undefined') return;
+    const sect = SECTS.find(function(s){return s.id===sectId;});
+    if(!sect) return;
+    const ed = edS || {};
+    const oldSect = ed.sect || null;
+
+    if(oldSect && oldSect !== sectId){
+      _clearSectNpcRels(oldSect);
+    }
+
+    ed.sect = sectId;
+    if(!ed.sectContrib || ed.sectContrib < 0) ed.sectContrib = 0;
+    ed.sectRank = 'disciple';
+    if(typeof saveGameState === 'function') saveGameState();
+    try{ localStorage.setItem('wuxia_editor', JSON.stringify(ed)); }catch(e){}
+
+    const contribBonus = {supreme:50,major:30,minor:15}[sect.tier]||15;
+    ed.sectContrib = (ed.sectContrib||0) + contribBonus;
+    if(typeof checkSectRankUp === 'function') checkSectRankUp(ed);
+
+    const rankCfg = (typeof SECT_RANK_CFG !== 'undefined') ? SECT_RANK_CFG[ed.sectRank||'disciple'] : null;
+    const rankHint = rankCfg ? ' · '+rankCfg.icon+rankCfg.name : '';
+
+    showToast('🎉 成为「'+sect.name+'」弟子！贡献+'+contribBonus+rankHint,'ok');
+    isJoined = true;
+    currentSectId = sectId;
+
+    // 手动触发"门派已加入"提示（showTip 内部已遵守 once 规则）
+    if(typeof showTip === 'function'){
+      setTimeout(function(){ showTip('sect_join', TIPS_DB['sect_join']); }, 600);
+    }
+    if(typeof _tipMarkShown === 'function'){
+      setTimeout(function(){ _tipMarkShown('sect_join'); }, 600);
+    }
+
+    showHqView();
+  };
+
+  window._onSectLeaveClick = function(sectId){
+    if(typeof SECTS === 'undefined') return;
+    const sect = SECTS.find(function(s){return s.id===sectId;});
+    if(!sect) return;
+    const ed = edS || {};
+    if(ed.sect !== sectId) return;
+
+    if(confirm('确定要退出「'+sect.name+'】吗？\n\n退出后将清零贡献、清除门派NPC好感度，且7天内不能重新加入。')){
+      _doSectLeave(sectId);
+    }
+  };
+
+  function _doSectLeave(sectId){
+    if(typeof SECTS === 'undefined') return;
+    const sect = SECTS.find(function(s){return s.id===sectId;});
+    if(!sect) return;
+    const ed = edS || {};
+    const lostContrib = ed.sectContrib || 0;
+    ed.sectContrib = 0;
+    const cooldownMs = 7*86400000;
+    ed.sectLeaveCooldown = Date.now() + cooldownMs;
+    ed.sect = null;
+    ed.sectRank = null;
+    _clearSectNpcRels(sectId);
+    if(typeof saveGameState === 'function') saveGameState();
+    try{ localStorage.setItem('wuxia_editor', JSON.stringify(ed)); }catch(e){}
+    showToast('🚪 已退出「'+sect.name+'」，贡献 '+lostContrib+' 清零。7天内无法重新加入。','warn');
+    isJoined = false;
+    // 保持在当前门派总舵页面，刷新显示未加入状态
+    showHqView();
+  }
+
+  function _clearSectNpcRels(sectId){
+    if(typeof NPC_DB === 'undefined') return;
+    if(typeof npcState === 'undefined') return;
+    const toClear = Object.keys(NPC_DB).filter(function(k){return NPC_DB[k].sect===sectId;});
+    let cleared = 0;
+    toClear.forEach(function(npcId){
+      if(npcState.relations && npcState.relations[npcId]){ npcState.relations[npcId]=0; cleared++; }
+    });
+    if(cleared > 0 && typeof npcStateSave === 'function'){ npcStateSave(); }
+  }
+
+  // ── 启动 ──
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', sectInit);
+  } else {
+    sectInit();
+  }
+
+})();
+</script>
+
+</body>
+</html>

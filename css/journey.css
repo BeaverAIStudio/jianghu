@@ -1,0 +1,320 @@
+/* ══════════════════════════════════════
+   行路探索画面（journey）样式
+   data-journey.js 旅程系统专用
+   ══════════════════════════════════════ */
+
+.journey-overlay{
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  background:#000;z-index:9800;
+  display:flex;flex-direction:column;
+  animation:fadeIn .35s ease;
+  font-family:'Courier New',monospace;
+  overflow:hidden;
+}
+/* 顶部信息条 */
+.jny-topbar{
+  display:flex;align-items:center;gap:12px;padding:8px 16px;
+  background:rgba(0,20,10,.9);border-bottom:1px solid rgba(60,140,80,.25);
+  font-size:11px;color:rgba(160,220,180,.7);flex-shrink:0;
+  letter-spacing:.5px;flex-wrap:wrap;
+}
+.jny-from-to{font-size:13px;color:#a0ffc8;font-weight:700;letter-spacing:2px;flex:1;}
+.jny-horse-tag{background:rgba(0,40,20,.5);border:1px solid rgba(80,180,100,.3);border-radius:3px;padding:2px 8px;}
+.jny-stat{opacity:.6;}
+/* 行路跳过按钮 */
+.jny-skip-btn{
+  margin-left:auto;padding:4px 14px;border-radius:4px;cursor:pointer;font-size:11px;
+  background:rgba(0,50,25,.6);border:1px solid rgba(80,180,120,.4);
+  color:rgba(140,220,170,.8);letter-spacing:1px;transition:all .18s;
+}
+.jny-skip-btn:hover{background:rgba(0,80,40,.7);border-color:rgba(100,220,150,.7);color:#c0ffda;}
+/* ASCII场景画布 */
+.jny-scene{
+  flex:1;position:relative;overflow:hidden;
+  display:flex;flex-direction:column;justify-content:flex-end;
+  min-height:0;
+}
+.jny-ascii-canvas{
+  position:absolute;top:0;left:0;right:0;bottom:0;
+  overflow:hidden;
+}
+/* 天空层（粒子容器） */
+.jny-sky{
+  position:absolute;top:0;left:0;right:0;
+  height:45%;
+  overflow:hidden;
+  pointer-events:none;
+}
+.jny-sky-art{
+  position:absolute;
+  top:0;left:0;right:0;bottom:0;
+  font-family:'Courier New',monospace;
+  font-size:13px;line-height:1.55;
+  white-space:pre;
+  pointer-events:none;
+  overflow:hidden;
+}
+.jny-sky-body{
+  position:absolute;
+  font-family:'Courier New',monospace;
+  font-size:15px;line-height:1.3;
+  white-space:pre;
+  pointer-events:none;
+  text-shadow:0 0 10px currentColor, 0 0 22px currentColor;
+  z-index:3;
+}
+.jny-sky-clouds{
+  position:absolute;
+  top:0;left:0;
+  width:200%;
+  font-family:'Courier New',monospace;
+  font-size:13px;line-height:1.55;
+  white-space:pre;
+  pointer-events:none;
+  animation: jnyCloudDrift 35s linear infinite;
+  will-change:transform;
+}
+.jny-sky-fall{
+  position:absolute;
+  top:0; left:0;
+  width:100%; height:200%;
+  font-family:'Courier New',monospace;
+  font-size:13px;line-height:1.6;
+  white-space:pre;
+  pointer-events:none;
+  z-index:7;
+  will-change:transform;
+  opacity:0.6;
+  overflow:hidden;
+  animation: jnySkyFallScroll var(--fall-dur, 18s) linear infinite;
+}
+@keyframes jnyCloudDrift{ from{ transform:translateX(0); } to  { transform:translateX(-50%); } }
+@keyframes jnySkyFallScroll{
+  from{ transform:translateY(-50%)  translateX(0); }
+  to  { transform:translateY(0)     translateX(-3%); }
+}
+
+/* 地面层：视差滚动 */
+.jny-ground-wrap{
+  position:absolute;bottom:0;left:0;right:0;
+  height:38%; overflow:hidden;
+}
+.jny-ground-wrap::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(to bottom, transparent 0%, rgba(0,0,0,.25) 100%);
+  z-index:0;
+}
+.jny-horizon{
+  position:absolute; left:0;right:0;
+  bottom:28%; height:1px;
+  background:currentColor; opacity:.35; z-index:2;
+}
+.jny-bg-scroll{
+  position:absolute; bottom:28%; left:0;
+  width:200%; font-family:'Courier New',monospace;
+  font-size:12px;line-height:1; white-space:pre;
+  opacity:.45; will-change:transform; z-index:1;
+  animation: jnyBgScroll 18s linear infinite;
+}
+.jny-fg-scroll{
+  position:absolute; bottom:0; left:0;
+  width:200%; font-family:'Courier New',monospace;
+  font-size:11px;line-height:1.3; white-space:pre;
+  opacity:.55; will-change:transform; z-index:2;
+  animation: jnyFgScroll 8s linear infinite;
+}
+@keyframes jnyBgScroll{ from{ transform:translateX(0); } to  { transform:translateX(-50%); } }
+@keyframes jnyFgScroll{ from{ transform:translateX(0); } to  { transform:translateX(-50%); } }
+.jny-ground{ display:none; }
+
+/* 玩家角色动画 */
+.jny-player{
+  position:absolute;
+  bottom:10%;left:50%;transform:translateX(-50%) scaleX(-1);
+  z-index:6;pointer-events:none;
+  filter:drop-shadow(0 0 8px rgba(100,255,160,.25));
+  transition:left .1s;
+}
+.jnyA-part{
+  margin:0;padding:0;
+  font-family:'Courier New',Courier,monospace;
+  font-size:13px;line-height:1.3;
+  white-space:pre; display:block; text-align:left;
+}
+.jny-player .jnyA-head{ animation:jnyAHead 0.32s ease-in-out infinite; transform-origin:center bottom; }
+.jny-player .jnyA-body{ animation:jnyABody 0.32s ease-in-out infinite; animation-delay:-.05s; transform-origin:center bottom; }
+.jny-player .jnyA-horse{ animation:jnyAGallop 0.29s ease-in-out infinite; animation-delay:-.10s; transform-origin:center bottom; margin-top:-2px; }
+.jny-player .jnyA-foot{ animation:jnyFootBob 0.55s ease-in-out infinite alternate; }
+
+/* ── 人物动画（#jny-head 等 ID 驱动，与 JS buildJnyPlayerHTML 一致）── */
+#jnyPvWrap{ animation: jnyPvWalk 0.84s ease-in-out infinite; }
+#jny-head{ animation: jnyAHead 0.32s ease-in-out infinite; transform-origin:center bottom; }
+#jny-body{ animation: jnyABody 0.32s ease-in-out infinite; animation-delay:-.05s; transform-origin:center bottom; }
+#jny-horse{ animation: jnyAGallop 0.29s ease-in-out infinite; animation-delay:-.10s; transform-origin:center bottom; }
+#jny-legs{ animation: jnyFootBob 0.55s ease-in-out infinite alternate; }
+#jny-arm-l{ animation: jnyABody 0.32s ease-in-out infinite; animation-delay:-.16s; transform-origin:center bottom; }
+#jny-arm-r{ animation: jnyABody 0.32s ease-in-out infinite; animation-delay:-.22s; transform-origin:center bottom; }
+
+/* 步行动画 - 整体上下摆动 */
+@keyframes jnyPvWalk{ 
+  0%,100%{ transform:translateY(0) rotate(-.5deg); } 
+  50%{ transform:translateY(-6px) rotate(.5deg); } 
+}
+
+/* 步行交替动画类 */
+.pv-walk-a #jnyPvWrap{ animation-name: jnyPvWalkA; }
+.pv-walk-b #jnyPvWrap{ animation-name: jnyPvWalkB; }
+@keyframes jnyPvWalkA{ 0%,100%{ transform:translateY(0) rotate(-.3deg); } 50%{ transform:translateY(-5px) rotate(.3deg); } }
+@keyframes jnyPvWalkB{ 0%,100%{ transform:translateY(-3px) rotate(.3deg); } 50%{ transform:translateY(0) rotate(-.3deg); } }
+
+/* 头部摆动 */
+@keyframes jnyAHead{ 
+  0%,100%{ transform:translateY(0) rotate(-1deg); } 
+  50%{ transform:translateY(-2px) rotate(1deg); } 
+}
+
+/* 身体摆动 */
+@keyframes jnyABody{ 
+  0%,100%{ transform:translateY(0) scaleY(1); } 
+  50%{ transform:translateY(-1px) scaleY(1.02); } 
+}
+
+/* 马匹奔跑 */
+@keyframes jnyAGallop{ 
+  0%,100%{ transform:translateY(0) scaleY(1); } 
+  25%{ transform:translateY(-3px) scaleY(1.03); } 
+  50%{ transform:translateY(0) scaleY(1); } 
+  75%{ transform:translateY(-2px) scaleY(1.02); } 
+}
+
+/* 腿部踏步 */
+@keyframes jnyFootBob{ 
+  0%{ transform:translateY(0); } 
+  100%{ transform:translateY(-3px); } 
+}
+
+/* 进度条 */
+.jny-progress-wrap{
+  position:absolute;bottom:0;left:0;right:0;
+  background:rgba(0,10,5,.85);border-top:1px solid rgba(60,140,80,.2);
+  padding:6px 14px 8px;z-index:10;
+}
+.jny-prog-label{ display:flex;justify-content:space-between;align-items:center; font-size:10px;color:rgba(140,200,160,.6);margin-bottom:4px; }
+.jny-prog-bar{ height:4px;background:rgba(0,30,15,.8);border-radius:2px;overflow:hidden; }
+.jny-prog-fill{ height:100%;background:linear-gradient(90deg,#40a060,#80ffc0);border-radius:2px;transition:width .4s ease; }
+
+/* 叙事文字行 */
+.jny-narr-wrap{ position:absolute;bottom:52px;left:0;right:0;z-index:8; padding:0 14px;pointer-events:none; }
+.jny-narr-line{ font-size:11px;color:rgba(180,230,200,.75);letter-spacing:.5px;line-height:1.7; text-shadow:0 1px 4px rgba(0,0,0,.8); animation:jnyFadeSlide .5s ease forwards; padding:1px 0; }
+@keyframes jnyFadeSlide{ from{opacity:0;transform:translateY(4px);} to{opacity:1;transform:translateY(0);} }
+
+/* 事件中断卡 */
+.jny-event-card{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  background:rgba(2,12,8,.97);border:1px solid rgba(80,200,120,.35);
+  border-radius:10px;padding:20px 22px 16px;max-width:360px;width:88%;
+  text-align:center;z-index:20;box-shadow:0 0 30px rgba(0,80,40,.4);
+  animation:jnyCardIn .3s cubic-bezier(.175,.885,.32,1.275) forwards;
+}
+@keyframes jnyCardIn{ from{opacity:0;transform:translate(-50%,-50%) scale(.85);} to{opacity:1;transform:translate(-50%,-50%) scale(1);} }
+.jny-ev-icon{font-size:32px;margin-bottom:6px;}
+.jny-ev-title{font-size:16px;font-weight:900;color:#a0f8d0;letter-spacing:3px;margin-bottom:6px;}
+.jny-ev-desc{font-size:11px;color:rgba(200,210,200,.7);line-height:1.8;margin-bottom:10px;}
+.jny-ev-result{font-size:11px;color:rgba(255,210,80,.8);background:rgba(60,40,0,.35);padding:4px 10px;border-radius:4px;margin-bottom:12px;}
+.jny-ev-choices{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+.jny-choice-btn{ padding:7px 16px;background:rgba(30,80,50,.4);border:1px solid rgba(80,200,120,.35); color:#80f0b0;border-radius:6px;cursor:pointer;font-size:11px;letter-spacing:1px; transition:all .18s;font-family:inherit; }
+.jny-choice-btn:hover{background:rgba(50,120,70,.5);border-color:rgba(100,240,150,.6);}
+.jny-choice-btn.bad{border-color:rgba(200,60,60,.4);color:#ff9090;}
+.jny-choice-btn.bad:hover{background:rgba(80,20,20,.5);}
+
+/* 抵达闪光 */
+.jny-arrive-flash{ position:absolute;top:0;left:0;right:0;bottom:0; background:rgba(120,255,180,.12);z-index:15; animation:jnyArrive .8s ease forwards; pointer-events:none; }
+@keyframes jnyArrive{ 0%{opacity:1;} 100%{opacity:0;} }
+
+/* 日夜覆盖层 */
+.jny-sky-tint{ position:absolute;top:0;left:0;right:0;bottom:0; pointer-events:none;z-index:1; transition:background .8s ease; }
+
+/* 远景山峰 */
+.jny-mountains{
+  position:absolute; left:0; bottom:38%; width:200%;
+  font-family:'Courier New',monospace; font-size:15px; line-height:1.25;
+  white-space:pre; overflow:hidden; letter-spacing:1px;
+  opacity:.22; transition:color .8s ease; pointer-events:none; z-index:2;
+  text-align:left; animation: jnyMtnScroll 28s linear infinite; will-change:transform;
+}
+@keyframes jnyMtnScroll{ from{ transform:translateX(0); } to  { transform:translateX(-50%); } }
+
+/* ── 旅途事件弹窗 ── */
+.travel-ev-overlay{
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,.65);z-index:9900;
+  display:flex;align-items:center;justify-content:center;
+  animation:fadeIn .2s ease;
+}
+.travel-ev-popup{
+  max-width:420px;width:90%;padding:28px 28px 22px;
+  background:linear-gradient(135deg,rgba(4,3,12,.99),rgba(8,6,20,.99));
+  border:1px solid rgba(80,160,100,.3);border-radius:14px;
+  text-align:center; box-shadow:0 0 40px rgba(0,80,40,.4);
+}
+.travel-ev-popup.ev-good  {border-color:rgba(80,200,100,.4);}
+.travel-ev-popup.ev-great {border-color:rgba(255,215,0,.5);box-shadow:0 0 40px rgba(120,80,0,.4);}
+.travel-ev-popup.ev-bad   {border-color:rgba(200,60,60,.4);box-shadow:0 0 40px rgba(100,0,0,.4);}
+.ev-icon{font-size:40px;margin-bottom:8px;animation:bounce .4s ease;}
+.ev-title{font-size:18px;font-weight:900;color:#a0f8d0;letter-spacing:3px;margin-bottom:8px;}
+.ev-desc{font-size:12px;color:rgba(200,210,200,.7);line-height:1.8;margin-bottom:10px;}
+.ev-result{font-size:11px;color:rgba(255,210,80,.7);background:rgba(60,40,0,.3);padding:4px 12px;border-radius:4px;margin-bottom:10px;}
+.ev-arriving{font-size:11px;color:rgba(140,200,160,.5);margin-bottom:14px;letter-spacing:1px;}
+.ev-travel-meta{font-size:11px;color:rgba(160,200,170,.5);margin-top:8px;padding-top:8px;border-top:1px solid rgba(80,160,100,.15);}
+.ev-btn{
+  padding:8px 24px;background:rgba(40,100,60,.4);border:1px solid rgba(80,200,120,.4);
+  color:#80f0b0;border-radius:6px;cursor:pointer;font-size:12px;letter-spacing:2px;
+  transition:all .18s;
+}
+.ev-btn:hover{background:rgba(60,140,80,.6);border-color:rgba(100,240,150,.6);}
+
+/* fadeIn 复用（如果页面未定义） */
+@keyframes fadeIn{ from{opacity:0;} to{opacity:1;} }
+
+/* ── 日志面板：半透明叠在场景上 ── */
+.jny-log-panel{
+  position:absolute;
+  top:60px;right:12px;
+  width:220px;max-height:calc(100% - 120px);
+  background:rgba(0,12,6,.72);
+  border:1px solid rgba(60,160,100,.3);
+  border-radius:10px;
+  backdrop-filter:blur(4px);
+  -webkit-backdrop-filter:blur(4px);
+  z-index:15;
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+.jny-log-title{
+  padding:8px 12px 6px;
+  font-size:11px;color:rgba(160,220,180,.7);
+  letter-spacing:2px;
+  border-bottom:1px solid rgba(60,160,100,.2);
+  flex-shrink:0;
+}
+.jny-log-body{
+  flex:1;overflow-y:auto;
+  padding:8px 10px;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(60,160,100,.3) transparent;
+}
+.jny-log-body::-webkit-scrollbar{width:4px;}
+.jny-log-body::-webkit-scrollbar-thumb{background:rgba(60,160,100,.3);border-radius:2px;}
+.jny-log-line{
+  font-size:11px;line-height:1.6;
+  padding:2px 0;
+  border-bottom:1px solid rgba(60,140,80,.08);
+  animation:jnyFadeSlide .4s ease;
+}
+.jny-log-narr{ color:rgba(200,220,200,.7); }
+.jny-log-day{ color:rgba(120,200,180,.8);font-weight:600; }
+.jny-log-event-good{ color:rgba(80,220,140,.9); }
+.jny-log-event-great{ color:#ffd060; }
+.jny-log-event-bad{ color:rgba(255,100,100,.85); }
+.jny-log-event-normal{ color:rgba(180,200,180,.7); }
+.jny-log-arrive{ color:#80ffc0;font-weight:700; }
