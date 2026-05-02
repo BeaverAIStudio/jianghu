@@ -3293,7 +3293,7 @@ function checkWin(){
       const enemyType = loser._enemyType || loser.type || '';
       const isHumanoid = !['beast','ghost'].includes(enemyType);
       if(isHumanoid){
-      const equipDropRates = { func: 0.08, major: 0.18, elite: 0.35 };
+      const equipDropRates = { func: 0.15, major: 0.30, elite: 0.50 };
       const eqTier = loser.tier || loser._npcTier || 'func';
       const equipDropChance = equipDropRates[eqTier] || 0.25;
       if(Math.random() < equipDropChance){
@@ -3340,7 +3340,7 @@ function checkWin(){
         ],
         bandit: [
           { id:'item_copper_coin',  chance:1.0, minQty:8, maxQty:20 },
-          { id:'item_crude_blade',  chance:0.12, minQty:1, maxQty:1 },
+          { id:'item_crude_blade',  chance:0.25, minQty:1, maxQty:1 },
           { id:'item_bandit_token', chance:0.08, minQty:1, maxQty:1 },
         ],
         spirit: [
@@ -3355,7 +3355,7 @@ function checkWin(){
         ],
         humanoid: [
           { id:'item_copper_coin', chance:1.0, minQty:5, maxQty:18 },
-          { id:'item_crude_blade',  chance:0.10, minQty:1, maxQty:1 },
+          { id:'item_crude_blade',  chance:0.20, minQty:1, maxQty:1 },
         ],
       };
       // 复用上面第2457行已声明的 enemyType 变量
