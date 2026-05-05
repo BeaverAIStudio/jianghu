@@ -605,6 +605,24 @@ const REALM_QI_SOURCES = {
 function _initRealm(){
   if(typeof edS === 'undefined') return;
   if(!edS.realm){
+    // 先尝试从存档恢复，避免用默认值覆盖玩家已突破的境界
+    try {
+      const candidates = [
+        localStorage.getItem('wuxia_editor'),
+        localStorage.getItem('wuxia_player_profile'),
+        localStorage.getItem('wuxia_player_progress'),
+      ];
+      for(const raw of candidates){
+        if(!raw) continue;
+        const data = JSON.parse(raw);
+        if(data && data.realm && typeof data.realm.realm === 'number'){
+          edS.realm = data.realm;
+          console.log('[_initRealm] 从存档恢复境界:', JSON.stringify(edS.realm));
+          return;
+        }
+      }
+    } catch(e) {}
+    // 所有存档均无境界数据，使用默认值
     edS.realm = { realm:0, phase:0, qi:0 };
   }
 }

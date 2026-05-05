@@ -1746,6 +1746,23 @@ function cpEquipWeapon(instId){
     edS.armsLocked = false;
   }
   bagSave();
+  // ★ 改造（2026-05-05）：统一调用 refreshEquippedStats()，缓存全部属性
+  if (typeof refreshEquippedStats === 'function') {
+    refreshEquippedStats();
+  } else if (typeof getTotalStats === 'function') {
+    const newStats = getTotalStats();
+    edS.maxHp = newStats.hp;
+    edS.maxMp = newStats.mp;
+    edS.equippedMaxHp = newStats.hp;
+    edS.equippedMaxMp = newStats.mp;
+  }
+  // 同步保存到 wuxia_editor，确保形象变更持久化
+  if (typeof editorSave === 'function') editorSave();
+  else if (typeof saveGameState === 'function') saveGameState();
+  // ★ 修复（2026-05-05）：同时同步到权威源 wuxia_player_profile，防止刷新后装备状态丢失
+  if (typeof WuxiaSave !== 'undefined' && typeof WuxiaSave.saveProfile === 'function') {
+    WuxiaSave.saveProfile(edS);
+  }
   cpRefreshWeaponSelector();
   edRenderPartOpts('arms');
   edRefreshPreview();
@@ -1874,6 +1891,23 @@ function cpEquipCostume(instId){
   }
   // 清空叠加层（不再使用）
   edS.cosOverlay = { body:'', head:'' };
+  // ★ 改造（2026-05-05）：统一调用 refreshEquippedStats()，缓存全部属性
+  if (typeof refreshEquippedStats === 'function') {
+    refreshEquippedStats();
+  } else if (typeof getTotalStats === 'function') {
+    const newStats = getTotalStats();
+    edS.maxHp = newStats.hp;
+    edS.maxMp = newStats.mp;
+    edS.equippedMaxHp = newStats.hp;
+    edS.equippedMaxMp = newStats.mp;
+  }
+  // 保存形象变更到 wuxia_editor
+  if (typeof editorSave === 'function') editorSave();
+  else if (typeof saveGameState === 'function') saveGameState();
+  // ★ 修复（2026-05-05）：同时同步到权威源 wuxia_player_profile，防止刷新后装备状态丢失
+  if (typeof WuxiaSave !== 'undefined' && typeof WuxiaSave.saveProfile === 'function') {
+    WuxiaSave.saveProfile(edS);
+  }
   cpRefreshCostumeSelector();
   edRefreshPreview();
 }
@@ -1921,6 +1955,8 @@ function edSel(k,i){
     }
   }
   edRenderPartOpts(k); edRefreshPreview();
+  if (typeof editorSave === 'function') editorSave();
+  else if (typeof saveGameState === 'function') saveGameState();
 }
 
 function edCustom(k){
@@ -1932,6 +1968,8 @@ function edCustom(k){
   // 取消预设高亮
   document.querySelectorAll(`#po-${k} .part-opt`).forEach(o=>o.classList.remove('sel'));
   edRefreshPreview();
+  if (typeof editorSave === 'function') editorSave();
+  else if (typeof saveGameState === 'function') saveGameState();
 }
 
 // ── 头像框选择 ─────────────────────────────────────────────────────────
@@ -2133,9 +2171,15 @@ function _titleUnlockHint(tid) {
   } catch(e) { return t.achId; }
 }
 
-// ════════════════════════════════════════════════
-//  初始化
-// ════════════════════════════════════════════════
-if (typeof renderGallery === 'function') renderGallery();
-if (typeof resetFight === 'function') resetFight();
+// ════════════════════════════════════════════════════════════════════════
+//  初始化（仅在有 galleryWrap 时执行，避免 sect.html 等页面干扰）
+// ════════════════════════════════════════════════════════════════════════
+if (typeof document !== 'undefined') {
+  if (document.getElementById('galleryWrap') && typeof renderGallery === 'function') {
+    try { renderGallery(); } catch(e) { console.warn('[editor] renderGallery error:', e); }
+  }
+  if (document.getElementById('fL') && typeof resetFight === 'function') {
+    try { resetFight(); } catch(e) { console.warn('[editor] resetFight error:', e); }
+  }
+}
 

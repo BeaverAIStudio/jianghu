@@ -5084,6 +5084,42 @@ function getSectChainProgress(sectId) {
   return state[sectId];
 }
 
+// 兼容 sect.html renderMissions 的 per-node 状态查询
+// 返回 { [nodeId]: 'done'|'active'|'available'|'locked' }
+function getSectChainNodeStates(sectId) {
+  const state = getSectChainState();
+  const sectData = state[sectId];
+  if (!sectData) return {};
+  const chain = (typeof SECT_CHAINS !== 'undefined' && SECT_CHAINS[sectId]) ? SECT_CHAINS[sectId].chain : [];
+  const result = {};
+  const currentStep = sectData.currentStep || 0;
+  const completed = !!sectData.completed;
+  chain.forEach(function(node, idx) {
+    if (completed || idx < currentStep) result[node.id] = 'done';
+    else if (idx === currentStep) result[node.id] = 'active';
+    else result[node.id] = 'locked';
+  });
+  return result;
+}
+
+// 设置单个节点的状态（供 sect.html doAcceptMission 使用）
+// 通过 currentStep 定位：active 节点对应 currentStep 位置
+function setSectChainNodeState(sectId, nodeId, newState) {
+  const state = getSectChainState();
+  if (!state[sectId]) state[sectId] = { currentStep: 0, completed: false };
+  const sectData = state[sectId];
+  const chain = (typeof SECT_CHAINS !== 'undefined' && SECT_CHAINS[sectId]) ? SECT_CHAINS[sectId].chain : [];
+  if (newState === 'active') {
+    const idx = chain.findIndex(function(n) { return n.id === nodeId; });
+    if (idx >= 0) sectData.currentStep = idx;
+  } else if (newState === 'done') {
+    const idx = chain.findIndex(function(n) { return n.id === nodeId; });
+    if (idx >= 0) sectData.currentStep = idx + 1;
+    if (sectData.currentStep >= chain.length) sectData.completed = true;
+  }
+  saveSectChainState(state);
+}
+
 function getCurrentSectChainQuest(sectId) {
   const sectChain = SECT_CHAINS[sectId];
   if (!sectChain) return null;

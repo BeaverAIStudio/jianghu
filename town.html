@@ -3362,6 +3362,123 @@ html, body {
 .da-level-req  { font-size: 10px; color: rgba(200,184,144,.45); margin-top: 1px; }
 .da-level-check { font-size: 13px; color: #80e080; margin-left: auto; }
 
+/* ══════════════════════════════════════
+   招式面板（townOpenSkills）
+══════════════════════════════════════ */
+.sk-panel { user-select: none; }
+.sk-tabs { display: flex; gap: 4px; margin-bottom: 12px; flex-wrap: wrap; }
+.sk-tab {
+  flex: 1; min-width: 70px; padding: 7px 6px; text-align: center;
+  background: rgba(255,255,255,.04); border: 1px solid rgba(240,192,96,.12);
+  border-radius: 8px; color: rgba(200,180,120,.55); font-size: 12px;
+  cursor: pointer; transition: all .2s; font-family: inherit;
+}
+.sk-tab.active {
+  background: rgba(240,192,96,.1); border-color: rgba(240,192,96,.35);
+  color: #f0c060; font-weight: bold;
+}
+.sk-tab:hover:not(.active) { background: rgba(255,255,255,.07); }
+/* 门派筛选条 */
+.sk-filter { display: flex; gap: 3px; margin-bottom: 10px; flex-wrap: wrap; }
+.sk-filter-btn {
+  padding: 3px 8px; font-size: 10px; border-radius: 4px; cursor: pointer;
+  background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08);
+  color: rgba(180,160,120,.5); transition: all .15s; font-family: inherit;
+}
+.sk-filter-btn.active {
+  background: rgba(240,192,96,.12); border-color: rgba(240,192,96,.3);
+  color: #f0c060;
+}
+/* 装备槽位 */
+.sk-slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px,1fr)); gap: 8px; margin-bottom: 14px; }
+.sk-slot {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 10px 4px; border-radius: 10px; text-align: center;
+  background: rgba(255,255,255,.03); border: 1px dashed rgba(240,192,96,.15);
+  min-height: 76px; position: relative; transition: all .2s;
+}
+.sk-slot.filled {
+  background: linear-gradient(135deg,rgba(30,25,18,.95),rgba(20,18,14,.98));
+  border: 1px solid rgba(240,192,96,.2); border-style: solid;
+}
+.sk-slot .sk-slot-icon { font-size: 22px; margin-bottom: 3px; }
+.sk-slot .sk-slot-name { font-size: 10px; color: #d0b880; line-height: 1.2; }
+.sk-slot .sk-slot-school { font-size: 9px; margin-top: 2px; opacity: .6; }
+.sk-slot .sk-slot-empty { font-size: 10px; color: rgba(180,160,120,.3); }
+.sk-slot .sk-unequip-btn {
+  position: absolute; top: 2px; right: 2px; background: rgba(200,60,60,.25);
+  border: 1px solid rgba(200,60,60,.3); border-radius: 4px; color: #e06060;
+  font-size: 9px; cursor: pointer; padding: 1px 5px; font-family: inherit;
+}
+.sk-slot .sk-unequip-btn:hover { background: rgba(200,60,60,.45); }
+/* 技能卡片列表 */
+.sk-list { display: flex; flex-direction: column; gap: 6px; }
+.sk-card {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 10px;
+  background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.06);
+  transition: background .15s;
+}
+.sk-card:hover { background: rgba(255,255,255,.05); }
+.sk-card.locked { opacity: .35; }
+.sk-card .sk-card-icon { font-size: 20px; flex-shrink: 0; width: 28px; text-align: center; }
+.sk-card .sk-card-info { flex: 1; min-width: 0; }
+.sk-card .sk-card-name { font-size: 13px; color: #e8d8b0; font-weight: bold; }
+.sk-card .sk-card-meta { display: flex; align-items: center; gap: 6px; margin-top: 2px; flex-wrap: wrap; }
+.sk-card .sk-card-school { font-size: 10px; }
+.sk-card .sk-card-type {
+  font-size: 9px; padding: 1px 5px; border-radius: 3px;
+  background: rgba(255,255,255,.05); color: rgba(200,180,120,.5);
+}
+.sk-card .sk-card-desc {
+  font-size: 10px; color: rgba(200,180,120,.4); margin-top: 3px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.sk-card .sk-card-stats {
+  font-size: 9px; color: rgba(180,160,120,.35); margin-top: 2px;
+  display: flex; gap: 8px;
+}
+.sk-card .sk-card-stats span { white-space: nowrap; }
+.sk-card .sk-card-actions { flex-shrink: 0; }
+.sk-equip-btn, .sk-unequip-btn2 {
+  padding: 5px 12px; border-radius: 6px; font-size: 11px; cursor: pointer;
+  border: 1px solid; transition: all .15s; font-family: inherit;
+}
+.sk-equip-btn {
+  background: rgba(60,160,80,.1); border-color: rgba(60,160,80,.3); color: #80d890;
+}
+.sk-equip-btn:hover { background: rgba(60,160,80,.2); }
+.sk-equip-btn.equipped {
+  background: rgba(240,192,96,.1); border-color: rgba(240,192,96,.3); color: #f0c060;
+}
+.sk-equip-btn:disabled {
+  background: rgba(255,255,255,.02); border-color: rgba(255,255,255,.05);
+  color: rgba(180,160,120,.25); cursor: not-allowed;
+}
+.sk-unequip-btn2 {
+  background: rgba(200,60,60,.1); border-color: rgba(200,60,60,.25); color: #e08080;
+}
+.sk-unequip-btn2:hover { background: rgba(200,60,60,.2); }
+/* 熟练度区域 */
+.sk-prof-section { margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.06); }
+.sk-prof-title { font-size: 11px; color: #c080ff; margin-bottom: 8px; }
+.sk-prof-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-size: 10px; }
+.sk-prof-name { width: 36px; text-align: right; color: rgba(200,180,100,.7); flex-shrink: 0; }
+.sk-prof-bar { flex: 1; height: 4px; background: rgba(255,255,255,.06); border-radius: 2px; overflow: hidden; }
+.sk-prof-fill { height: 100%; background: linear-gradient(90deg,#8060c0,#c080ff); border-radius: 2px; transition: width .4s; }
+.sk-prof-tier { width: 50px; color: rgba(180,160,100,.6); font-size: 9px; }
+.sk-prof-mult { width: 34px; text-align: center; font-size: 9px; }
+/* 空状态 */
+.sk-empty { text-align: center; padding: 30px 0; color: rgba(180,160,120,.3); font-size: 12px; }
+.sk-empty small { display: block; margin-top: 6px; font-size: 10px; }
+/* 说明提示 */
+.sk-tip {
+  margin-top: 10px; padding: 8px 10px; border-radius: 8px;
+  background: rgba(255,200,80,.05); border: 1px solid rgba(255,200,80,.08);
+  font-size: 10px; color: rgba(200,180,120,.4); line-height: 1.5;
+}
+.sk-tip b { color: rgba(240,192,96,.6); }
+
 </style>
 </head>
 <body>
@@ -3479,6 +3596,7 @@ html, body {
     <button class="town-footer-btn" onclick="townOpenBag()">☐ 背包</button>
     <button class="town-footer-btn" id="townQuestBtn" onclick="townOpenQuests()">! 任务<span id="townQuestBadge"></span></button>
     <button class="town-footer-btn" onclick="townOpenAchievements()">🏆 成就</button>
+    <button class="town-footer-btn" onclick="townOpenSkills()">⚔️ 招式</button>
     <button class="town-footer-btn" id="townJianghuBtn" onclick="townOpenJianghuPanel()">📖 江湖录<span id="townJhBadge" style="display:none;color:#ff8060;font-size:10px;margin-left:2px"></span></button>
     <button id="townExitBtn" onclick="townShowExitDir()">▶ 出城闯江湖</button>
     <button class="town-footer-btn sound-toggle-btn" onclick="SoundFX.toggleMute()" title="点击静音">♪</button>
@@ -3559,7 +3677,8 @@ html, body {
 <script src="js/data-equip.js"></script>
 <script src="js/data-world.js?v=332"></script>
 <script src="js/data-scenes.js"></script>
-<script src="js/data-sects.js"></script>
+<script src="js/lang-zh-sects.js"></script>
+  <script src="js/data-sects.js"></script>
 <!-- npc-portraits.js 必须在 data-enemies.js 之前（敌人字符画生成依赖） -->
 <script src="js/npc-portraits.js?v=337"></script>
 <script src="js/data-enemies.js"></script>
@@ -3576,9 +3695,15 @@ html, body {
 <script src="js/npc-data-sects.js?v=330"></script>
 <script src="js/npc-data-misc.js?v=334"></script>
 <script src="js/npc-data-map.js?v=332"></script>
-<script src="js/npc-logic.js?v=368"></script>
+<script src="js/npc-logic.js?v=369"></script>
+<script>
+(function(){
+  npcStateLoad();
+  console.log('[town] npcState加载完成, relations=', JSON.stringify(npcState.relations));
+})();
+</script>
 <script src="js/npc-skills.js?v=330"></script>
-<script src="js/npc-combat.js?v=331"></script>
+<script src="js/npc-combat.js?v=335"></script>
 <script src="js/jianghu.js?v=331"></script>
 <script src="js/achievements.js?v=2"></script>
 <script src="js/npc-requests.js?v=1"></script>
@@ -3613,8 +3738,8 @@ html, body {
 <script src="js/chiptune-bgm.js?v=2"></script>
 <script src="js/minigame-sounds.js?v=102"></script>
 <script src="js/data-chars.js"></script>
-<script src="js/battle-cinematic.js?v=100"></script>
-<script src="js/battle.js?v=2"></script>
+<script src="js/battle-cinematic.js?v=101"></script>
+<script src="js/battle.js?v=26"></script>
 <script src="js/level-system.js"></script>
 <script src="js/realm-system.js"></script>
 <script src="js/karma-system.js"></script>
@@ -3634,7 +3759,9 @@ html, body {
 <script src="js/ui-pages.js"></script>
 <script src="js/data-procedural-quests.js"></script>
 <script src="js/quest-procedural.js"></script>
+<script src="js/wuxia-save.js?v=5"></script>
 <script src="js/editor.js?v=7"></script>
+  <script src="js/total-stats.js"></script>
 <script>
 if(typeof initProceduralQuestSystem==='function'){window.addEventListener('load',()=>setTimeout(initProceduralQuestSystem,500));}
 if(typeof initEncounterSystem==='function'){initEncounterSystem();}
@@ -3885,13 +4012,12 @@ function townEnterDungeon(dungeonId) {
         edS.mp = _mp;
       }
       var _edRaw = localStorage.getItem('wuxia_editor');
-      if(_edRaw){
-        var _edD = JSON.parse(_edRaw);
-        _edD.hp = edS.hp;
-        _edD.mp = edS.mp;
-        localStorage.setItem('wuxia_editor', JSON.stringify(_edD));
-        console.log('[townEnterDungeon] 同步 HP/MP 到存档:', edS.hp, '/', edS.maxHp);
+      if (typeof WuxiaSave !== 'undefined' && WuxiaSave.saveProfile) {
+        WuxiaSave.saveProfile(edS);
+      } else {
+        localStorage.setItem('wuxia_editor', JSON.stringify(edS));
       }
+      console.log('[townEnterDungeon] 同步 HP/MP 到存档:', edS.hp, '/', edS.maxHp, 'MP:', edS.mp, '/', edS.maxMp);
     }catch(e){ console.warn('[townEnterDungeon] 存档同步失败:', e); }
   }
 
@@ -4149,6 +4275,97 @@ function _tickerShow(el) {
 // ══════════════════════════════════════
 // 初始化
 // ══════════════════════════════════════
+
+// ═══════════════════════════════════
+// 处理从战斗返回的奖励（从 sessionStorage 读取）
+// ═══════════════════════════════════
+function handleBattleResultFromSession() {
+  let result = null;
+  try {
+    const dungeonResult = sessionStorage.getItem('wuxia_dungeon_battle_result');
+    if (dungeonResult) {
+      result = JSON.parse(dungeonResult);
+      sessionStorage.removeItem('wuxia_dungeon_battle_result');
+      sessionStorage.removeItem('wuxia_dungeon_from_battle');
+      console.log('[handleBattleResultFromSession] 读取地下城战斗结果:', result);
+    }
+  } catch(e) { console.warn('[handleBattleResultFromSession] 读取地下城战斗结果失败:', e); }
+
+  if (!result) {
+    try {
+      const arenaResult = sessionStorage.getItem('wuxia_arena_battle_result');
+      if (arenaResult) {
+        result = JSON.parse(arenaResult);
+        sessionStorage.removeItem('wuxia_arena_battle_result');
+        sessionStorage.removeItem('wuxia_arena_from_battle');
+        console.log('[handleBattleResultFromSession] 读取擂台战斗结果:', result);
+      }
+    } catch(e) { console.warn('[handleBattleResultFromSession] 读取擂台战斗结果失败:', e); }
+  }
+
+  if (!result) return;
+  if (!result.won) { console.log('[handleBattleResultFromSession] 战斗失败，无奖励'); return; }
+
+  console.log('[handleBattleResultFromSession] 处理战斗奖励:', result);
+
+  // ── 同步背包：battle.js 已通过 bagSave() 把掉落装备写入 wuxia_bag ──
+  try {
+    const _latestBag = JSON.parse(localStorage.getItem('wuxia_bag') || '[]');
+    if (typeof edS !== 'undefined' && edS) {
+      const _oldCount = (edS.bag||[]).length;
+      edS.bag = _latestBag;
+      console.log('[handleBattleResultFromSession] 同步背包: 旧', _oldCount, '件 → 新', edS.bag.length, '件');
+    }
+  } catch(e) { console.warn('[handleBattleResultFromSession] 背包同步失败:', e); }
+
+  // ── 同步境界 ──
+  if (typeof loadRealmState === 'function') {
+    try { loadRealmState(); } catch(e) { console.warn('[handleBattleResultFromSession] 境界同步失败:', e); }
+  }
+
+  // ── 从 wuxia_player_progress 读取最新经验值 ──
+  try {
+    const progressRaw = localStorage.getItem('wuxia_player_progress');
+    if (progressRaw && typeof edS !== 'undefined' && edS) {
+      const progress = JSON.parse(progressRaw);
+      if (progress.totalExp !== undefined) {
+        edS.totalExp = progress.totalExp;
+        edS.level = progress.level || edS.level || 1;
+        console.log('[handleBattleResultFromSession] 同步经验:', progress.totalExp, '等级:', edS.level);
+      }
+    }
+  } catch(e) { console.warn('[handleBattleResultFromSession] 经验同步失败:', e); }
+
+  // ── 添加银两 ──
+  if (result.silver && result.silver > 0) {
+    if (typeof addSilver === 'function') {
+      addSilver(result.silver);
+    } else if (typeof SilverManager !== 'undefined') {
+      SilverManager.add(result.silver);
+    } else if (typeof edS !== 'undefined' && edS) {
+      edS.silver = (edS.silver || 0) + result.silver;
+    }
+    console.log('[handleBattleResultFromSession] 获得银两:', result.silver);
+  }
+
+  // ── 刷新经验条显示 ──
+  if (typeof renderPlayerExpBar === 'function') {
+    try { renderPlayerExpBar(); } catch(e) {}
+  }
+
+  // ── 保存 ──
+  if (typeof edS !== 'undefined' && edS) {
+    try {
+      if (typeof WuxiaSave !== 'undefined' && WuxiaSave.saveProfile) {
+        WuxiaSave.saveProfile(edS);
+      } else {
+        localStorage.setItem('wuxia_editor', JSON.stringify(edS));
+      }
+    } catch(e) { console.warn('[handleBattleResultFromSession] 保存失败:', e); }
+  }
+
+  console.log('[handleBattleResultFromSession] 战斗结果处理完成');
+}
 function townInit() {
   townClearAudio();
 
@@ -4157,89 +4374,31 @@ function townInit() {
 
   travelLoad();
 
-
-  // 加载角色数据（edS）— 从 localStorage 恢复名字、等级、气血等
-  if (typeof edS !== 'undefined') {
-    // 优先从 wuxia_bag 恢复背包（事件奖励等物品通过 bagSave() 保存到此处）
-    const bagFromStorage = (typeof bagLoad === 'function') ? bagLoad() : null;
-    if (bagFromStorage && bagFromStorage.length > 0) {
-      edS.bag = bagFromStorage;
-      console.log('[townInit] 从 wuxia_bag 恢复背包:', bagFromStorage.length, '件物品');
-    }
-    
-    const edRaw = localStorage.getItem('wuxia_editor');
-    if (edRaw) {
-      try {
-        const edData = JSON.parse(edRaw);
-        // edS.weaponId / edS.costumeId 是只读 getter，不能用 Object.assign 覆盖
-        const getterKeys = [];
-        const desc = Object.getOwnPropertyDescriptors(edS);
-        for (const k of Object.keys(desc)) {
-          if (typeof desc[k].get === 'function' && typeof desc[k].set !== 'function') getterKeys.push(k);
-        }
-        for (const [k, v] of Object.entries(edData)) {
-          // 跳过 bag，因为已经从 wuxia_bag 恢复
-          if (k === 'bag') continue;
-          // 跳过 level 和 totalExp，因为这些从 wuxia_player_progress 读取（最实时）
-          if (k === 'level' || k === 'totalExp') continue;
-          if (!getterKeys.includes(k)) edS[k] = v;
-        }
-      } catch(e) { console.warn('[townInit] wuxia_editor parse error:', e); }
-    }
-    // 独立恢复玩家档案（确保 name 可靠读取）
-    const profileRaw = localStorage.getItem('wuxia_player_profile');
-    if (profileRaw) {
-      try {
-        const profile = JSON.parse(profileRaw);
-        if (profile.name) edS.name = profile.name;
-        // 也从 profile 恢复血量（优先于 wuxia_editor）
-        if (profile.hp !== undefined) edS.hp = profile.hp;
-        if (profile.maxHp !== undefined) edS.maxHp = profile.maxHp;
-        if (profile.mp !== undefined) edS.mp = profile.mp;
-        if (profile.maxMp !== undefined) edS.maxMp = profile.maxMp;
-        // 注意：经验和等级从 wuxia_player_progress 恢复（最实时），不在此处恢复
-        console.log('[townInit] 从 wuxia_player_profile 恢复:', 'HP:', edS.hp, '/', edS.maxHp);
-      } catch(e) { console.warn('[townInit] wuxia_player_profile parse error:', e); }
-    }
-    
-    // 从 wuxia_player_progress 恢复经验和等级（战斗系统主要存档点，最实时）
-    const progressRaw = localStorage.getItem('wuxia_player_progress');
-    if (progressRaw) {
-      try {
-        const progress = JSON.parse(progressRaw);
-        // 优先使用 progress 中的经验值（battle.js 的 addPlayerExp 保存到这里）
-        if (progress.totalExp !== undefined) {
-          edS.totalExp = progress.totalExp;
-        }
-        if (progress.level !== undefined) {
-          edS.level = progress.level;
-        }
-        console.log('[townInit] 从 wuxia_player_progress 恢复:', 'Exp:', progress.totalExp, 'Lv:', progress.level);
-      } catch(e) { console.warn('[townInit] wuxia_player_progress parse error:', e); }
-    }
-
-    // ── 境界系统初始化 ─────────────────────────
-    try { if(typeof loadRealmState === 'function'){ loadRealmState(); console.log('[townInit] 境界已加载:', getRealmFullName()); } } catch(e) { console.warn('[townInit] realm init err:', e); }
-
-    // ── 善恶值初始化 ─────────────────────────
-    try { if(typeof loadKarmaState === 'function'){ loadKarmaState(); console.log('[townInit] 善恶已加载:', getKarmaShortName()); } } catch(e) { console.warn('[townInit] karma init err:', e); }
-
-    // ── 提示系统检查（首次触发各系统时显示引导）──
-    try { if(typeof checkTips === 'function') checkTips(); } catch(e) { console.warn('[townInit] checkTips err:', e); }
-    
-    // 同步 edS.hp/mp 到 travelPlayerState（确保医馆/状态栏判断正确）
-    if (typeof edS !== 'undefined' && edS.hp !== undefined && edS.maxHp) {
-      const hpPercent = Math.max(0, Math.min(100, Math.round((edS.hp / edS.maxHp) * 100)));
-      travelPlayerState.hp = hpPercent;
-      console.log('[townInit] 同步血量到 travelPlayerState:', hpPercent + '%');
-    }
-    if (typeof edS !== 'undefined' && edS.mp !== undefined && edS.maxMp && edS.maxMp > 0) {
-      const mpPercent = Math.max(0, Math.min(100, Math.round((edS.mp / edS.maxMp) * 100)));
-      travelPlayerState.mp = mpPercent;
-      console.log('[townInit] 同步内力到 travelPlayerState:', mpPercent + '%');
-    }
-    travelSave();
+  // ── 统一存档初始化（使用 WuxiaSave，替代零散的 localStorage 读取）──
+  if (typeof edS !== 'undefined' && typeof WuxiaSave !== 'undefined') {
+    WuxiaSave.initPage(edS);
   }
+
+  // ── 处理从战斗返回的奖励（必须在 initPage 之后）──
+  if(typeof handleBattleResultFromSession === 'function') handleBattleResultFromSession();
+
+  // 同步 edS.hp/mp 到 travelPlayerState（确保医馆/状态栏判断正确）
+  if (typeof edS !== 'undefined' && edS.hp !== undefined && edS.maxHp) {
+    const hpPercent = Math.max(0, Math.min(100, Math.round((edS.hp / edS.maxHp) * 100)));
+    travelPlayerState.hp = hpPercent;
+    console.log('[townInit] 同步血量到 travelPlayerState:', hpPercent + '%');
+  }
+  if (typeof edS !== 'undefined' && edS.mp !== undefined && edS.maxMp && edS.maxMp > 0) {
+    const mpPercent = Math.max(0, Math.min(100, Math.round((edS.mp / edS.maxMp) * 100)));
+    travelPlayerState.mp = mpPercent;
+    console.log('[townInit] 同步内力到 travelPlayerState:', mpPercent + '%');
+  }
+  travelSave();
+
+  // ── 系统初始化 ──
+  try { if(typeof loadRealmState === 'function'){ loadRealmState(); console.log('[townInit] 境界已加载:', getRealmFullName()); } } catch(e) {}
+  try { if(typeof loadKarmaState === 'function'){ loadKarmaState(); console.log('[townInit] 善恶已加载:', getKarmaShortName()); } } catch(e) {}
+  try { if(typeof checkTips === 'function') checkTips(); } catch(e) {}
 
   // ── URL 参数优先：?city=suzhou 覆盖存档里的当前城市 ──
   // 刷新页面时 URL 代表玩家真实所在城市，应以此为准
@@ -4575,19 +4734,48 @@ function townRefreshStatus() {
     }
   }
 
-  // 气血：优先读 edStats() 计算的最大值，当前值取 edS.hp（百分比换算）
-  const calcMaxHp = (typeof edStats === 'function') ? edStats().hp : 150;
-  const maxHp = (typeof edS !== 'undefined' && edS.maxHp) || calcMaxHp;
-  const hp = (typeof edS !== 'undefined' && edS.hp) || maxHp;
-  document.getElementById('tsbHpBar').style.width = Math.max(0, Math.min(100, Math.round(hp / Math.max(1, maxHp) * 100))) + '%';
-  document.getElementById('tsbHpVal').textContent = Math.round(hp) + '/' + maxHp;
+  // ★ 修复（2026-05-05）：每次刷新 town 状态栏时重新计算总值（含门派/情缘/宠物/境界/天赋/强化/词条）
+  // ★ 改造（2026-05-05）：统一调用 refreshEquippedStats() 缓存所有属性
+  let totalMaxHp, totalMaxMp;
+  if (typeof refreshEquippedStats === 'function') {
+    const ts = refreshEquippedStats();
+    totalMaxHp = ts.hp;
+    totalMaxMp = ts.mp;
+  } else if (typeof getTotalStats === 'function') {
+    const ts = getTotalStats();
+    totalMaxHp = ts.hp;
+    totalMaxMp = ts.mp;
+  } else {
+    totalMaxHp = (typeof edS !== 'undefined' && edS.equippedMaxHp > 0) ? edS.equippedMaxHp : 150;
+    totalMaxMp = (typeof edS !== 'undefined' && edS.equippedMaxMp > 0) ? edS.equippedMaxMp : 100;
+  }
+  const displayMaxHp = totalMaxHp;   // UI 显示用总值
+  const displayMaxMp = totalMaxMp;
+  const hp = (typeof edS !== 'undefined' && edS.hp) || totalMaxHp;
+  const mp = (typeof edS !== 'undefined' && edS.mp) || totalMaxMp;
+  // 同步更新 equippedMaxHp/Mp，确保存档与实际一致
+  if (typeof edS !== 'undefined') {
+    if (totalMaxHp !== edS.equippedMaxHp) {
+      console.log('[town statusbar] equippedMaxHp:', edS.equippedMaxHp, '→', totalMaxHp);
+      edS.equippedMaxHp = totalMaxHp;
+      edS.maxHp = totalMaxHp;
+    }
+    if (totalMaxMp !== edS.equippedMaxMp) {
+      console.log('[town statusbar] equippedMaxMp:', edS.equippedMaxMp, '→', totalMaxMp);
+      edS.equippedMaxMp = totalMaxMp;
+      edS.maxMp = totalMaxMp;
+    }
+    // 异步保存，避免阻塞 UI
+    if (typeof WuxiaSave !== 'undefined' && WuxiaSave.saveProfile) {
+      setTimeout(() => { try { WuxiaSave.saveProfile(edS); } catch(_){} }, 100);
+    }
+  }
+  document.getElementById('tsbHpBar').style.width = Math.max(0, Math.min(100, Math.round(hp / Math.max(1, displayMaxHp) * 100))) + '%';
+  document.getElementById('tsbHpVal').textContent = Math.round(hp) + '/' + Math.round(displayMaxHp);
 
-  // 内力：同上逻辑
-  const calcMaxMp = (typeof edStats === 'function') ? edStats().mp : 100;
-  const maxMp = (typeof edS !== 'undefined' && edS.maxMp) || calcMaxMp;
-  const mp = (typeof edS !== 'undefined' && edS.mp) || maxMp;
-  document.getElementById('tsbMpBar').style.width = Math.max(0, Math.min(100, Math.round(mp / Math.max(1, maxMp) * 100))) + '%';
-  document.getElementById('tsbMpVal').textContent = Math.round(mp) + '/' + maxMp;
+  // MP 显示（totalMaxMp 已在上方计算，含所有加成）
+  document.getElementById('tsbMpBar').style.width = Math.max(0, Math.min(100, Math.round(mp / Math.max(1, displayMaxMp) * 100))) + '%';
+  document.getElementById('tsbMpVal').textContent = Math.round(mp) + '/' + Math.round(displayMaxMp);
 
   const energy = (typeof travelPlayerState !== 'undefined' ? travelPlayerState.energy : undefined) || 100;
   document.getElementById('tsbEngBar').style.width = Math.min(100, Math.round(energy)) + '%';
@@ -5211,6 +5399,7 @@ function townDoExit(destId) {
     }
     // 保存
     if (typeof saveGameState === 'function') saveGameState();
+    else if (typeof WuxiaSave !== 'undefined' && WuxiaSave.saveProfile) WuxiaSave.saveProfile(edS);
     else localStorage.setItem('wuxia_editor', JSON.stringify(edS));
 
     // ② 恢复精力：每天恢复10点，上限120
@@ -5299,8 +5488,8 @@ function _onTownArrival(destId, fromId, days) {
     const oldDate = formatWuxiaDate(edS);
     advanceWuxiaDate(edS, travelDays);
     console.log('[_onTownArrival] 推进时间：', oldDate, '→', formatWuxiaDate(edS));
-    // 保存到 localStorage
-    try { localStorage.setItem('wuxia_editor', JSON.stringify(edS)); } catch(e) {}
+    // 保存到统一存档系统
+    try { if (typeof WuxiaSave !== 'undefined' && WuxiaSave.saveProfile) WuxiaSave.saveProfile(edS); else localStorage.setItem('wuxia_editor', JSON.stringify(edS)); } catch(e) {}
   }
 
   // ── 门派地点：直接跳转 sect.html ──
@@ -5509,6 +5698,267 @@ function townModalClose(e) {
   townRefreshStatus(); // 关闭modal后刷新状态栏
   const progressAfter = JSON.parse(localStorage.getItem('wuxia_player_progress') || '{}');
   console.log('[townModalClose] 关闭后 - edS.level:', edS?.level, 'edS.totalExp:', edS?.totalExp, 'progress.level:', progressAfter.level, 'progress.totalExp:', progressAfter.totalExp);
+}
+
+// ═══════════════════════════════════════════════
+//  招式面板（townOpenSkills）
+// ═══════════════════════════════════════════════
+var _skTab = 'equipped';       // 当前Tab: equipped / learned / all
+var _skSchoolFilter = 'all';   // 门派筛选（总谱Tab用）
+
+function townOpenSkills() {
+  if (typeof SKILL_LIB === 'undefined') { townToast('招式数据加载中…'); return; }
+  _skTab = 'equipped';
+  _skSchoolFilter = 'all';
+  townModalOpen('⚔️ 招式', _skBuildHtml());
+  if (typeof playAudio === 'function') playAudio('bag_open');
+}
+
+/* ── 构建 HTML ── */
+function _skBuildHtml() {
+  var learned = _skGetLearned();
+  var equipped = _skGetEquipped();
+  var maxSlots = _skGetTotalSlots();
+  var allSkills = _skGetAllSkills();
+
+  var tabs = '<div class="sk-tabs">';
+  tabs += '<button class="sk-tab' + (_skTab==='equipped'?' active':'') + '" onclick="_skSwitchTab(\'equipped\')">已装备 ' + equipped.length + '/' + maxSlots + '</button>';
+  tabs += '<button class="sk-tab' + (_skTab==='learned'?' active':'') + '" onclick="_skSwitchTab(\'learned\')">已学会 ' + learned.size + '</button>';
+  tabs += '<button class="sk-tab' + (_skTab==='all'?' active':'') + '" onclick="_skSwitchTab(\'all\')">招式总谱</button>';
+  tabs += '</div>';
+
+  var body = '';
+  if (_skTab === 'equipped') body = _skRenderEquipped(equipped, maxSlots, learned);
+  else if (_skTab === 'learned') body = _skRenderLearned(learned, equipped);
+  else body = _skRenderAll(allSkills, learned, equipped);
+
+  // 底部熟练度区域
+  body += _skBuildProficiency();
+
+  return '<div class="sk-panel">' + tabs + body + '</div>';
+}
+
+function _skSwitchTab(tab) {
+  _skTab = tab;
+  if (tab !== 'all') _skSchoolFilter = 'all';
+  townModalOpen('⚔️ 招式', _skBuildHtml());
+}
+
+/* ── 渲染：已装备 ── */
+function _skRenderEquipped(equipped, maxSlots, learned) {
+  var html = '<div class="sk-slots">';
+  for (var i = 0; i < maxSlots; i++) {
+    var sid = equipped[i];
+    if (sid) {
+      var sk = _skGetById(sid);
+      if (sk) {
+        var c = _skSchoolColor(sk.school);
+        html += '<div class="sk-slot filled">';
+        html += '<button class="sk-unequip-btn" onclick="_skDoUnequip(\'' + sid + '\')">×</button>';
+        html += '<div class="sk-slot-icon">' + (sk.icon||'🥋') + '</div>';
+        html += '<div class="sk-slot-name">' + sk.name + '</div>';
+        html += '<div class="sk-slot-school" style="color:' + c + '">' + (sk.school||'通用') + '</div>';
+        html += '</div>';
+      } else {
+        html += '<div class="sk-slot"><div class="sk-slot-empty">未知招式</div></div>';
+      }
+    } else {
+      html += '<div class="sk-slot"><div class="sk-slot-empty">空槽 ' + (i+1) + '</div></div>';
+    }
+  }
+  html += '</div>';
+  html += '<div class="sk-tip"><b>💡 说明</b>：已装备的招式会在战斗卡牌中随机出现，每10级解锁一个额外槽位。</div>';
+  return html;
+}
+
+/* ── 渲染：已学会 ── */
+function _skRenderLearned(learned, equipped) {
+  var ids = Array.from(learned);
+  if (ids.length === 0) return '<div class="sk-empty">尚未学会任何招式<small>通过出身事件、秘籍学习、门派拜师可获得新招式</small></div>';
+
+  var html = '<div class="sk-list">';
+  for (var i = 0; i < ids.length; i++) {
+    var sid = ids[i];
+    var sk = _skGetById(sid);
+    if (!sk) continue;
+    var isEq = equipped.indexOf(sid) !== -1;
+    html += _skCardHtml(sk, true, isEq);
+  }
+  html += '</div>';
+  return html;
+}
+
+/* ── 渲染：招式总谱 ── */
+function _skRenderAll(allSkills, learned, equipped) {
+  // 门派筛选条
+  var schools = ['all'];
+  var seen = {};
+  for (var i = 0; i < allSkills.length; i++) {
+    var s = allSkills[i].school || '通用';
+    if (!seen[s]) { seen[s] = true; schools.push(s); }
+  }
+  var labels = {all:'全部',sword:'剑系',buddha:'佛系',tao:'道系',force:'力系',shadow:'暗系',poison:'毒系',ice:'冰系',fire:'火系',thunder:'雷系',wind:'风系',holy:'圣系',common:'通用'};
+  var filterHtml = '<div class="sk-filter">';
+  for (var i = 0; i < schools.length; i++) {
+    var sv = schools[i];
+    filterHtml += '<button class="sk-filter-btn' + (_skSchoolFilter===sv?' active':'') + '" onclick="_skFilterSchool(\'' + sv + '\')">' + (labels[sv]||sv) + '</button>';
+  }
+  filterHtml += '</div>';
+
+  var filtered = _skSchoolFilter === 'all' ? allSkills : allSkills.filter(function(s){ return (s.school||'通用') === _skSchoolFilter; });
+
+  var html = '<div style="font-size:11px;color:rgba(200,180,120,.4);margin-bottom:8px">已学会 ' + learned.size + ' / ' + allSkills.length + ' 种</div>';
+  html += filterHtml;
+  html += '<div class="sk-list">';
+  for (var i = 0; i < filtered.length; i++) {
+    var sk = filtered[i];
+    var isL = learned.has(sk.id);
+    var isEq = isL && equipped.indexOf(sk.id) !== -1;
+    html += _skCardHtml(sk, isL, isEq);
+  }
+  html += '</div>';
+  return html;
+}
+
+function _skFilterSchool(school) {
+  _skSchoolFilter = school;
+  townModalOpen('⚔️ 招式', _skBuildHtml());
+}
+
+/* ── 技能卡片 HTML ── */
+function _skCardHtml(sk, isLearned, isEquipped) {
+  var c = _skSchoolColor(sk.school);
+  var typeLabel = (typeof SKT !== 'undefined' && SKT[sk.type]) ? SKT[sk.type].label : (sk.type||'');
+  var typeColor = (typeof SKT !== 'undefined' && SKT[sk.type]) ? SKT[sk.type].color : '#a0a0a0';
+  var stats = [];
+  if (sk.multiplier) stats.push('<span>伤害×' + sk.multiplier.toFixed(1) + '</span>');
+  if (sk.cd) stats.push('<span>CD ' + sk.cd + '回合</span>');
+  if (sk.mpCost) stats.push('<span>内力 ' + sk.mpCost + '</span>');
+  if (sk.hits && sk.hits > 1) stats.push('<span>' + sk.hits + '连击</span>');
+
+  var html = '<div class="sk-card' + (isLearned?'':' locked') + '">';
+  html += '<div class="sk-card-icon">' + (sk.icon||'🥋') + '</div>';
+  html += '<div class="sk-card-info">';
+  html += '<div class="sk-card-name">' + sk.name + (isLearned?'':' 🔒') + '</div>';
+  html += '<div class="sk-card-meta">';
+  html += '<span class="sk-card-school" style="color:' + c + '">' + (sk.school||'通用') + '</span>';
+  html += '<span class="sk-card-type" style="color:' + typeColor + ';border-color:' + typeColor + '30">' + typeLabel + '</span>';
+  html += '</div>';
+  html += '<div class="sk-card-desc">' + (sk.desc||'暂无描述') + '</div>';
+  if (stats.length) html += '<div class="sk-card-stats">' + stats.join('') + '</div>';
+  html += '</div>';
+  html += '<div class="sk-card-actions">';
+  if (isLearned) {
+    if (isEquipped) {
+      html += '<button class="sk-equip-btn equipped" onclick="_skDoUnequip(\'' + sk.id + '\')">卸下</button>';
+    } else {
+      html += '<button class="sk-equip-btn" onclick="_skDoEquip(\'' + sk.id + '\')">装备</button>';
+    }
+  } else {
+    html += '<button class="sk-equip-btn" disabled>未学会</button>';
+  }
+  html += '</div></div>';
+  return html;
+}
+
+/* ── 装备 / 卸下 ── */
+function _skDoEquip(skillId) {
+  var learned = _skGetLearned();
+  if (!learned.has(skillId)) { townToast('尚未学会此招式'); return; }
+  var equipped = _skGetEquipped();
+  if (equipped.indexOf(skillId) !== -1) { townToast('此招式已装备'); return; }
+  var maxSlots = _skGetTotalSlots();
+  if (equipped.length >= maxSlots) { townToast('招式槽位已满（' + maxSlots + ' 个）'); return; }
+  equipped.push(skillId);
+  _skSaveEquipped(equipped);
+  townToast('✅ 装备成功');
+  // 同步到 edS
+  if (typeof edS !== 'undefined') { edS.equippedSkills = equipped; }
+  townModalOpen('⚔️ 招式', _skBuildHtml());
+}
+
+function _skDoUnequip(skillId) {
+  var equipped = _skGetEquipped();
+  equipped = equipped.filter(function(id){ return id !== skillId; });
+  _skSaveEquipped(equipped);
+  townToast('已卸下');
+  if (typeof edS !== 'undefined') { edS.equippedSkills = equipped; }
+  townModalOpen('⚔️ 招式', _skBuildHtml());
+}
+
+/* ── 熟练度区域 ── */
+function _skBuildProficiency() {
+  if (typeof getProfDisplay !== 'function') return '';
+  var schools = (typeof ALL_SCHOOLS !== 'undefined') ? ALL_SCHOOLS : ['剑系','佛系','道系','力系','暗系','毒系','冰系','火系','雷系','风系','圣系','通用'];
+  var rows = '';
+  for (var i = 0; i < schools.length; i++) {
+    var d = getProfDisplay(schools[i]);
+    if (d.val === 0 && d.tierIdx === 0) continue;
+    var mc = d.mult >= 1.5 ? '#ffd060' : d.mult >= 1.3 ? '#c8a840' : d.mult >= 1.1 ? '#a0c880' : '#808080';
+    rows += '<div class="sk-prof-row">';
+    rows += '<div class="sk-prof-name">' + schools[i] + '</div>';
+    rows += '<div class="sk-prof-bar"><div class="sk-prof-fill" style="width:' + d.pct + '%"></div></div>';
+    rows += '<div class="sk-prof-tier" style="color:' + mc + '">' + d.tierName + ' ' + d.val + (d.nextMin ? '/' + d.nextMin : '') + '</div>';
+    rows += '<div class="sk-prof-mult" style="color:' + mc + '">×' + d.mult.toFixed(2) + '</div>';
+    rows += '</div>';
+  }
+  if (!rows) return '';
+  return '<div class="sk-prof-section"><div class="sk-prof-title">📖 武学熟练度</div>' + rows + '</div>';
+}
+
+/* ── 数据辅助函数 ── */
+function _skGetAllSkills() {
+  if (typeof SKILL_LIB === 'undefined') return [];
+  var arr = [];
+  var keys = Object.keys(SKILL_LIB);
+  for (var i = 0; i < keys.length; i++) {
+    var list = SKILL_LIB[keys[i]];
+    for (var j = 0; j < list.length; j++) arr.push(list[j]);
+  }
+  return arr;
+}
+function _skGetById(id) {
+  if (typeof SKILL_LIB === 'undefined') return null;
+  var keys = Object.keys(SKILL_LIB);
+  for (var i = 0; i < keys.length; i++) {
+    var list = SKILL_LIB[keys[i]];
+    for (var j = 0; j < list.length; j++) {
+      if (list[j].id === id) return list[j];
+    }
+  }
+  return null;
+}
+function _skGetLearned() {
+  try {
+    var p = JSON.parse(localStorage.getItem('wuxia_player_progress') || '{}');
+    return new Set(p.learnedSkills || []);
+  } catch(e) { return new Set(); }
+}
+function _skGetEquipped() {
+  try {
+    var p = JSON.parse(localStorage.getItem('wuxia_player_progress') || '{}');
+    return p.equippedSkills || [];
+  } catch(e) { return []; }
+}
+function _skSaveEquipped(ids) {
+  try {
+    var p = JSON.parse(localStorage.getItem('wuxia_player_progress') || '{}');
+    p.equippedSkills = ids.slice(0, _skGetTotalSlots());
+    localStorage.setItem('wuxia_player_progress', JSON.stringify(p));
+  } catch(e) {}
+}
+function _skGetTotalSlots() {
+  var lvl = 1;
+  try {
+    var p = JSON.parse(localStorage.getItem('wuxia_player_progress') || '{}');
+    lvl = p.level || 1;
+  } catch(e) {}
+  if (typeof edS !== 'undefined' && edS.level) lvl = edS.level;
+  return 5;
+}
+function _skSchoolColor(school) {
+  var m = {sword:'#40b0ff',buddha:'#f0c040',tao:'#60e8e8',force:'#f86060',shadow:'#a080c0',poison:'#88cc40',ice:'#80d8ff',fire:'#ff8820',thunder:'#a0e8ff',wind:'#a0ffa0',holy:'#ffe8a0',common:'#a0a0a0'};
+  return m[school] || '#a0a0a0';
 }
 
 // ═══════════ 内联马厩/驿站辅助函数（绕过 travel-render.js 缓存问题）══════════
@@ -6064,7 +6514,7 @@ window._buyMount = function(mountId, price, name){
       // ★ 写入 edS.horseId，让旅行系统读取 HORSE_BREEDS 并播放对应动画 ★
       if(typeof edS !== 'undefined' && m){
         edS.horseId = m.breedKey;
-        try { localStorage.setItem('wuxia_editor', JSON.stringify(edS)); } catch(e){}
+        try { if (typeof WuxiaSave !== 'undefined' && WuxiaSave.saveProfile) WuxiaSave.saveProfile(edS); else localStorage.setItem('wuxia_editor', JSON.stringify(edS)); } catch(e){}
       }
 
       // 同时写 localStorage 坐骑记录供租马路径兼容
@@ -6088,7 +6538,7 @@ window._equipOwnedMount = function(mountId){
   // ★ 写入 edS.horseId 让旅行动画生效 ★
   if(typeof edS !== 'undefined'){
     edS.horseId = m.breedKey;
-    try { localStorage.setItem('wuxia_editor', JSON.stringify(edS)); } catch(e){}
+    try { if(typeof WuxiaSave !== 'undefined' && WuxiaSave.saveProfile) WuxiaSave.saveProfile(edS); else localStorage.setItem('wuxia_editor', JSON.stringify(edS)); } catch(e){}
   }
   
   // 同时写 localStorage 兼容
@@ -6353,7 +6803,7 @@ window._doSectTrial = function(sectId) {
 
   var _stBtnSt = isOk ? 'flex:1;background:linear-gradient(135deg,#c8961e80,#f0b42880);border-color:#dcaa3280;color:#fff8e0;font-weight:bold' : 'flex:1;background:linear-gradient(135deg,#99969680,#b4b4b480);border-color:#c8c8c880;color:#fff8e0;font-weight:bold';
   var _stBtnTxt = isOk ? '进入门派总舵' : '继续修炼';
-  var _stBtnClk = '_closeSectTrial()' + (isOk ? ';window.location.href="sect.html?sect="+ encodeURIComponent("' + (sect?sect.id:'') + '")' : '');
+  var _stBtnClk = isOk ? ('_closeSectTrial();_goSectHq(\'' + (sect?sect.id:'') + '\')') : '_closeSectTrial()';
   document.getElementById('sectTrialFooter').innerHTML = '<button id="stConfirmBtn" style="'+_stBtnSt+'" onclick="'+_stBtnClk+'">'+_stBtnTxt+'</button>';
 
   overlay.classList.add('active');
@@ -6384,6 +6834,12 @@ function _createSectTrialOverlay(){
 window._closeSectTrial = function() {
   const el = document.getElementById('sectTrialOverlay');
   if (el) el.classList.remove('active');
+};
+
+// ── 跳转门派总舵（避免 onclick 中的双引号转义问题）──
+window._goSectHq = function(sectId) {
+  if (!sectId) return;
+  window.location.href = 'sect.html?sect=' + encodeURIComponent(sectId);
 };
 
 // ── 执行试炼战斗 ──
@@ -6418,32 +6874,10 @@ window._startSectTrial = function(sectId) {
     maxMp: Math.round((30 + opponentLv * 4) * tierMult * 0.6),
   };
 
-  // 尝试用现有战斗系统打开切磋面板
-  if (typeof openRplFightPanel === 'function') {
-    // 用临时 NPC 注册进入切磋系统
-    if (typeof window._tmpTrialNpc === 'undefined') window._tmpTrialNpc = null;
-    window._tmpTrialNpc = { inst: trialNpc, sectId: sectId };
-
-    // 覆写战斗结果回调以检测试炼胜负
-    _origOnFightEnd = window._onRplFightEnd || null;
-
-    // 打开切磋面板（传入临时构造的NPC实例）
-    setTimeout(() => {
-      try {
-        openRplFightPanel(trialNpc.id, (typeof travelCurrentCity !== 'undefined') ? travelCurrentCity : (
-          typeof WORLD_NODES !== 'undefined' && sect.city ? sect.city : 'kaifeng'
-        ));
-        // 标记这是试炼战斗
-        if (typeof window !== 'undefined') window._isSectTrialFight = true;
-        window._trialTargetSectId = sectId;
-      } catch(e) {
-        console.warn('[SectTrial] 切磋面板不可用，走简易判定', e);
-        _doSimpleSectTrial(sectId, trialNpc, cfg);
-      }
-    }, 300);
-  } else {
-    _doSimpleSectTrial(sectId, trialNpc, cfg);
-  }
+  // 门派试炼直接使用简化判定
+  // openRplFightPanel 是替代者NPC战斗系统，不适用于临时试炼对手
+  console.log('[SectTrial] 开始门派试炼，对手等级:', opponentLv);
+  _doSimpleSectTrial(sectId, trialNpc, cfg);
 };
 
 // ── 简易试炼判定（无战斗UI时的降级方案）──
@@ -6483,11 +6917,6 @@ window._onSectTrialSuccess = function(sectId) {
   if (!edS.sectContrib || edS.sectContrib < 0) edS.sectContrib = 0;
   // 初始化阶级
   edS.sectRank = 'disciple';
-  // 存档
-  if (typeof saveGameState === 'function') saveGameState();
-  else if (typeof localStorage !== 'undefined') {
-    try { localStorage.setItem('wuxia_editor', JSON.stringify(edS)); } catch(e){}
-  }
 
   // ── 入门赠送门派回令 ──
   if (typeof consumableBagAdd === 'function') {
@@ -6505,6 +6934,28 @@ window._onSectTrialSuccess = function(sectId) {
   edS.sectContrib = (edS.sectContrib || 0) + contribBonus;
   // 阶级检测（入门时从0开始，+contrib后可能直接到精英）
   if(typeof checkSectRankUp === 'function') checkSectRankUp(edS);
+
+  // ★ 修复：直接写入所有存档键，确保 sect/sectRank/sectContrib 被持久化
+  try {
+    ['wuxia_player_profile','wuxia_save','wuxia_editor'].forEach(function(key){
+      try {
+        var data = JSON.parse(localStorage.getItem(key) || '{}');
+        data.sect = sectId;
+        data.sectRank = edS.sectRank;
+        data.sectContrib = edS.sectContrib;
+        localStorage.setItem(key, JSON.stringify(data));
+      } catch(e2){ console.warn('[sectTrial] town写入 '+key+' 失败:', e2); }
+    });
+    console.log('[sectTrial] town已直接写入 sect='+sectId+' 到所有存档键');
+  } catch(e){ console.warn('[sectTrial] town直接写存档失败:', e); }
+
+  // 存档（确保其他字段也同步）
+  if (typeof saveGameState === 'function') saveGameState();
+  else if (typeof WuxiaSave !== 'undefined' && WuxiaSave.saveProfile) WuxiaSave.saveProfile(edS);
+  else if (typeof localStorage !== 'undefined') {
+    try { localStorage.setItem('wuxia_editor', JSON.stringify(edS)); } catch(e){}
+  }
+
   const rankCfg = (typeof SECT_RANK_CFG !== 'undefined') ? SECT_RANK_CFG[edS.sectRank||'disciple'] : null;
   const rankHint = rankCfg ? ` · ${rankCfg.icon}${rankCfg.name}` : '';
   const contribHint = `⚔️ 入门贡献 +${contribBonus}（当前：${edS.sectContrib}）${rankHint}`;
@@ -6559,7 +7010,7 @@ function _showSectTrialResult(success, sect, msgHtml) {
 
   var _stBtnSt2 = isOk ? 'flex:1;background:linear-gradient(135deg,#c8961e80,#f0b42880);border-color:#dcaa3280;color:#fff8e0;font-weight:bold' : 'flex:1;background:linear-gradient(135deg,#99969680,#b4b4b480);border-color:#c8c8c880;color:#fff8e0;font-weight:bold';
   var _stBtnTxt2 = isOk ? '进入门派总舵' : '继续修炼';
-  var _stBtnClk2 = '_closeSectTrial()' + (isOk ? ';window.location.href="sect.html?sect="+ encodeURIComponent("' + (sect?sect.id:'') + '")' : '');
+  var _stBtnClk2 = isOk ? ('_closeSectTrial();_goSectHq(\'' + (sect?sect.id:'') + '\')') : '_closeSectTrial()';
   document.getElementById('sectTrialFooter').innerHTML = '<button id="stConfirmBtn" style="'+_stBtnSt2+'" onclick="'+_stBtnClk2+'">'+_stBtnTxt2+'</button>';
 
   overlay.classList.add('active');
@@ -6669,6 +7120,7 @@ window._doSectLeave = function(sectId) {
 
   // 存档
   if (typeof saveGameState === 'function') saveGameState();
+  else if (typeof WuxiaSave !== 'undefined' && WuxiaSave.saveProfile) WuxiaSave.saveProfile(edS);
   else if (typeof localStorage !== 'undefined') {
     try { localStorage.setItem('wuxia_editor', JSON.stringify(edS)); } catch(e){}
   }
@@ -6809,6 +7261,7 @@ window._onSectContribBuy = function(sectId, itemId) {
     }
     edS.sectContrib -= 10;
     if (typeof saveGameState === 'function') saveGameState();
+    else if (typeof WuxiaSave !== 'undefined' && WuxiaSave.saveProfile) WuxiaSave.saveProfile(edS);
     else if (typeof localStorage !== 'undefined') {
       try { localStorage.setItem('wuxia_editor', JSON.stringify(edS)); } catch(e){}
     }
@@ -6847,6 +7300,7 @@ window._onSectContribBuy = function(sectId, itemId) {
   // 扣点
   edS.sectContrib -= item.cost;
   if (typeof saveGameState === 'function') saveGameState();
+  else if (typeof WuxiaSave !== 'undefined' && WuxiaSave.saveProfile) WuxiaSave.saveProfile(edS);
   else if (typeof localStorage !== 'undefined') {
     try { localStorage.setItem('wuxia_editor', JSON.stringify(edS)); } catch(e){}
   }
@@ -7203,11 +7657,11 @@ function bagUseConsumable(itemId){
       // 同步 edS 绝对值
       if(typeof edS !== 'undefined'){
         edS.hp = Math.min(realMaxHp, Math.round(realMaxHp * travelPlayerState.hp / 100));
-        // 持久化写入 wuxia_editor 存档
-        try{
-          var _eRaw = localStorage.getItem('wuxia_editor');
-          if(_eRaw){ var _eD=JSON.parse(_eRaw); _eD.hp=edS.hp; localStorage.setItem('wuxia_editor',JSON.stringify(_eD)); }
-        }catch(e){}
+        // 持久化写入统一存档
+      try{
+        if(typeof WuxiaSave !== 'undefined' && WuxiaSave.saveProfile) WuxiaSave.saveProfile(edS);
+        else { var _eRaw = localStorage.getItem('wuxia_editor'); if(_eRaw){ var _eD=JSON.parse(_eRaw); _eD.hp=edS.hp; localStorage.setItem('wuxia_editor',JSON.stringify(_eD)); } }
+      }catch(e){}
       }
     }
     msgs.push('❤ 气血+' + eff.hp);
@@ -7219,9 +7673,10 @@ function bagUseConsumable(itemId){
       travelPlayerState.mp = Math.min(100, (travelPlayerState.mp||0) + mpPct);
       if(typeof edS !== 'undefined'){
         edS.mp = Math.min(realMaxMp, Math.round(realMaxMp * travelPlayerState.mp / 100));
+        // 持久化写入统一存档
         try{
-          var _eRaw2 = localStorage.getItem('wuxia_editor');
-          if(_eRaw2){ var _eD2=JSON.parse(_eRaw2); _eD2.mp=edS.mp; localStorage.setItem('wuxia_editor',JSON.stringify(_eD2)); }
+          if(typeof WuxiaSave !== 'undefined' && WuxiaSave.saveProfile) WuxiaSave.saveProfile(edS);
+          else { var _eRaw2 = localStorage.getItem('wuxia_editor'); if(_eRaw2){ var _eD2=JSON.parse(_eRaw2); _eD2.mp=edS.mp; localStorage.setItem('wuxia_editor',JSON.stringify(_eD2)); } }
         }catch(e){}
       }
     }
@@ -7597,6 +8052,68 @@ function _bagBuildAvatarHtml(col) {
 }
 
 
+// 构建属性明细展开面板（显示每项加成来源）
+function _bagBuildBreakdownHtml(totalHp, totalAtk, totalDef, totalMp, totalCrit, totalDodge, totalSpd) {
+  const bd = edS.equippedBreakdown;
+  if (!bd) return '';
+  // 来源中文名映射
+  const SRC_NAMES = {
+    base: '基础', equipment: '装备', affix: '词条', enhance: '强化',
+    pet: '宠物', sect: '门派', realm: '境界', talent: '天赋',
+    romance: '情缘', sworn: '结义'
+  };
+  const SRC_COLORS = {
+    base: '#c0b090', equipment: '#60b8ff', affix: '#c080f0', enhance: '#f0a050',
+    pet: '#60e090', sect: '#ff8866', realm: '#aaddff', talent: '#ffd060',
+    romance: '#ff88aa', sworn: '#88ccff'
+  };
+  // 要展示的属性
+  const attrs = [
+    { key: 'hp', label: '气血', total: totalHp, pct: false },
+    { key: 'atk', label: '攻击', total: totalAtk, pct: false },
+    { key: 'def', label: '防御', total: totalDef, pct: false },
+    { key: 'mp', label: '内力', total: totalMp, pct: false },
+    { key: 'crit', label: '暴击', total: totalCrit, pct: true },
+    { key: 'dodge', label: '闪避', total: totalDodge, pct: true },
+    { key: 'spd', label: '速度', total: totalSpd, pct: false },
+  ];
+  let rows = '';
+  attrs.forEach(attr => {
+    if (attr.total == null || attr.total === 0) return;
+    let parts = [];
+    Object.keys(SRC_NAMES).forEach(src => {
+      const val = bd[src] ? bd[src][attr.key] : 0;
+      if (!val || val === 0) return;
+      const color = SRC_COLORS[src] || '#aaa';
+      const displayVal = attr.pct ? Math.round(val * 100) : Math.round(val * 100) / 100;
+      // 如果是百分比属性且来源也是百分比格式
+      let textVal;
+      if (attr.pct) {
+        // crit/dodge 在 breakdown 里存的是小数
+        textVal = (val * 100).toFixed(val === Math.round(val) ? 0 : 1);
+        textVal = '+' + textVal + '%';
+      } else {
+        textVal = '+' + (Number.isInteger(val) ? val : val.toFixed(1));
+      }
+      parts.push(`<span style="color:${color};font-size:10px">${SRC_NAMES[src]}${textVal}</span>`);
+    });
+    if (parts.length === 0) return;
+    const displayTotal = attr.pct ? attr.total + '%' : attr.total;
+    rows += `<div style="display:flex;align-items:center;padding:1px 0;gap:4px;flex-wrap:wrap">`
+      + `<span style="color:#d0c8b0;font-size:10px;min-width:24px;text-align:right">${attr.label}</span>`
+      + `<span style="color:#f0e0c0;font-size:10px;min-width:30px">${displayTotal}</span>`
+      + `<span style="font-size:10px">=</span>`
+      + `<span style="color:#c0b090;font-size:10px">${bd.base ? (attr.pct ? Math.round(bd.base[attr.key] * 100) + '%' : (bd.base[attr.key] || 0)) : '0'}</span>`
+      + parts.join(' ')
+      + `</div>`;
+  });
+  if (!rows) return '';
+  return `<div style="margin:4px 0;padding:4px 6px;background:rgba(0,0,0,.25);border-radius:4px;border-left:2px solid rgba(200,180,120,.2)">
+    <div style="font-size:9px;color:rgba(200,180,120,.5);margin-bottom:2px;letter-spacing:1px">▼ 属性明细</div>
+    ${rows}
+  </div>`;
+}
+
 // 构建角色信息（名字+称号+属性网格+装备摘要）
 function _bagBuildInfoHtml(col) {
   const name = edS.name || '侠客';
@@ -7606,35 +8123,22 @@ function _bagBuildInfoHtml(col) {
   let st = {};
   if (typeof edStats === 'function') st = edStats();
   else st = { hp: 100, atk: 15, def: 10, mp: 100, crit: 10, dodge: 8, spd: 8 };
-  // 装备加成
+  // ★ 改造（2026-05-05）：使用 edS 缓存的全属性值（含所有加成），不再手动累加装备
+  // 装备引用（装备摘要展示仍需要）
   const wep = edS.weaponId ? WEAPONS.find(w => w.id === edS.weaponId) : null;
   const cos = edS.costumeId ? COSTUMES.find(c => c.id === edS.costumeId) : null;
-  const cosHp = cos ? (cos.hpBonus || 0) : 0;
-  const cosAtk = cos ? (cos.atkBonus || 0) : 0;
-  const cosDef = cos ? (cos.defBonus || 0) : 0;
-  const cosMp = cos ? (cos.mpBonus || 0) : 0;
-  const cosSpd = cos ? (cos.speedBonus || 0) : 0;
-  const cosCrit = cos ? (cos.critBonus || 0) : 0;
-  const cosDodge = cos ? (cos.dodgeBonus || 0) : 0;
-  const wepAtk = wep ? (wep.atkBonus || 0) : 0;
-  const wepHp = wep ? (wep.hpBonus || 0) : 0;
-  const wepDef = wep ? (wep.defBonus || 0) : 0;
-  const wepMp = wep ? (wep.mpBonus || 0) : 0;
-  const wepSpd = wep ? (wep.speedBonus || 0) : 0;
-  const wepCrit = wep ? Math.round((wep.critBonus || 0) * 100) : 0;
-  const wepDodge = wep ? (wep.dodgeBonus || 0) : 0;
-  const totalHp = st.hp + cosHp + wepHp;
-  const totalAtk = st.atk + cosAtk + wepAtk;
-  const totalDef = st.def + cosDef + wepDef;
-  const totalMp = st.mp + cosMp + wepMp;
-  const totalCrit = Math.min(75, (Number(st.crit) || 0) + (Number(cosCrit) || 0) + (Number(wepCrit) || 0));
-  const totalDodge = Math.min(50, (Number(st.dodge) || 0) + (Number(cosDodge) || 0) + (Number(wepDodge) || 0));
-  const totalSpd = st.spd + cosSpd + wepSpd;
-  const hasEquip = !!(wep || cos);
+  const totalHp   = edS.equippedMaxHp  || (st.hp + (cos ? cos.hpBonus : 0) + (wep ? wep.hpBonus : 0));
+  const totalAtk  = edS.equippedAtk    || (st.atk + (cos ? cos.atkBonus : 0) + (wep ? wep.atkBonus : 0));
+  const totalDef  = edS.equippedDef    || (st.def + (cos ? cos.defBonus : 0) + (wep ? wep.defBonus : 0));
+  const totalMp   = edS.equippedMaxMp  || (st.mp + (cos ? cos.mpBonus : 0) + (wep ? wep.mpBonus : 0));
+  const totalCrit = edS.equippedCrit   != null ? Math.min(75, Math.round(edS.equippedCrit * 100)) : Math.min(75, (Number(st.crit) || 0) + (Number(cos ? cos.critBonus : 0) || 0) + (Number(wep ? Math.round((wep.critBonus || 0) * 100) : 0) || 0));
+  const totalDodge = edS.equippedDodge != null ? Math.min(50, Math.round(edS.equippedDodge * 100)) : Math.min(50, (Number(st.dodge) || 0) + (Number(cos ? cos.dodgeBonus : 0) || 0) + (Number(wep ? wep.dodgeBonus : 0) || 0));
+  const totalSpd  = edS.equippedSpd    || (st.spd + (cos ? cos.speedBonus : 0) + (wep ? wep.speedBonus : 0));
+  const hasEquip = !!(wep || cos || edS.equippedAtk);
   const fmt = (base, total, pct) => {
     if (!hasEquip) return pct ? `${base}%` : `${base}`;
     const diff = total - base;
-    const sign = diff > 0 ? `<small style="color:#6f6">+${diff}</small>` : diff < 0 ? `<small style="color:#f66">${diff}</small>` : '';
+    const sign = diff > 0 ? `<small style="color:#6f6">（+${diff}）</small>` : diff < 0 ? `<small style="color:#f66">（${diff}）</small>` : '';
     return pct ? `${total}%${sign}` : `${total}${sign}`;
   };
   // 出身（edS.origin 可能是对象或字符串，兼容处理）
@@ -7686,8 +8190,9 @@ function _bagBuildInfoHtml(col) {
       <div class="bag-stat-cell"><div class="bsc-val">${fmt(st.mp, totalMp, false)}</div><div class="bsc-lbl">内力</div></div>
       <div class="bag-stat-cell"><div class="bsc-val">${fmt(st.crit, totalCrit, true)}</div><div class="bsc-lbl">暴击</div></div>
       <div class="bag-stat-cell"><div class="bsc-val">${fmt(st.dodge, totalDodge, true)}</div><div class="bsc-lbl">闪避</div></div>
-      ${(hasEquip && (wepSpd || cosSpd)) ? `<div class="bag-stat-cell"><div class="bsc-val">${fmt(st.spd, totalSpd, false)}</div><div class="bsc-lbl">速度</div></div>` : ''}
+      ${totalSpd > 0 ? `<div class="bag-stat-cell"><div class="bsc-val">${fmt(st.spd, totalSpd, false)}</div><div class="bsc-lbl">速度</div></div>` : ''}
     </div>
+    ${_bagBuildBreakdownHtml(totalHp, totalAtk, totalDef, totalMp, totalCrit, totalDodge, totalSpd)}
     <div class="bag-equip-summary">
       <div class="bag-equip-slot">
         <span class="bag-equip-slot-icon" style="color:${wepRarColor || 'rgba(200,180,120,.3)'}">${wep ? wepIcon : '⚔'}</span>
@@ -7799,7 +8304,7 @@ function bagAllocPrimary(key, delta) {
       var editor = JSON.parse(editorRaw);
       editor.primaryPts = edS.primaryPts;
       editor.freePoints = edS.freePoints;
-      localStorage.setItem('wuxia_editor', JSON.stringify(editor));
+      try { if(typeof WuxiaSave !== 'undefined' && WuxiaSave.saveProfile) WuxiaSave.saveProfile(editor); else localStorage.setItem('wuxia_editor', JSON.stringify(editor)); } catch(e){}
     }
   }catch(e){}
   
@@ -8062,10 +8567,7 @@ function _bagRenderItemHtml(inst) {
     actionButtons = `${isEquip
       ? `<div class="bag-action-btn unequip" onclick="townBagEquip('${inst.type}',null)">卸下</div>`
       : `<div class="bag-action-btn equip" onclick="townBagEquip('${inst.type}','${inst.instId}')">装备</div>`}
-    ${inst.identified === false && inst.type !== 'accessory'
-      ? `<div class="bag-action-btn identify" onclick="identifyInst('${inst.instId}')">鉴定</div>`
-      : ''}
-    ${(inst.type === 'accessory' && typeof CG !== 'undefined' && CG.squad && CG.squad.length > 0)
+    ${inst.type === 'accessory' && typeof CG !== 'undefined' && CG.squad && CG.squad.length > 0
       ? `<div class="bag-action-btn drop" style="opacity:.4;cursor:not-allowed" title="笼中有蛐蛐，请先移出">丢弃</div>`
       : `<div class="bag-action-btn drop" onclick="townBagDrop('${inst.instId}')">丢弃</div>`}`;
   } else {
@@ -8209,12 +8711,38 @@ function townBagEquip(type, instId) {
   } else if (type === 'accessory') {
     edS.accessoryInstId = instId || null;
     bagSave();
+    // ★ 改造（2026-05-05）：统一调用 refreshEquippedStats()，缓存全部属性
+    if (typeof refreshEquippedStats === 'function') {
+      refreshEquippedStats();
+    } else if (typeof getTotalStats === 'function') {
+      const newStats = getTotalStats();
+      edS.maxHp = newStats.hp;
+      edS.maxMp = newStats.mp;
+      edS.equippedMaxHp = newStats.hp;
+      edS.equippedMaxMp = newStats.mp;
+    }
+    if (typeof WuxiaSave !== 'undefined' && WuxiaSave.saveProfile) {
+      WuxiaSave.saveProfile(edS);
+    }
     _bagRefreshPanel();
     return;
   } else {
     if (typeof cpEquipCostume === 'function') cpEquipCostume(instId);
   }
   bagSave();
+  // ★ 改造（2026-05-05）：装备切换后统一调用 refreshEquippedStats()，缓存全部属性
+  if (typeof refreshEquippedStats === 'function') {
+    refreshEquippedStats();
+  } else if (typeof getTotalStats === 'function') {
+    const newStats = getTotalStats();
+    edS.maxHp = newStats.hp;
+    edS.maxMp = newStats.mp;
+    edS.equippedMaxHp = newStats.hp;
+    edS.equippedMaxMp = newStats.mp;
+  }
+  if (typeof WuxiaSave !== 'undefined' && WuxiaSave.saveProfile) {
+    WuxiaSave.saveProfile(edS);
+  }
   // 刷新面板（字符画+属性+装备+列表全刷新）
   _bagRefreshPanel();
   if (typeof playAudio === 'function') playAudio('bag_equip');
@@ -8367,17 +8895,16 @@ var _bagDecorExpanded = { aura: true, frame: false, title: false };
 function _bagDecorSetAura(idx) {
   if (!edS.parts) edS.parts = {};
   edS.parts.aura = idx;
-  edSave();
-  // 更新头像预览区的气场 + 边框 + 称号牌
+  // ★ 修复（2026-05-06）：用 saveGameState 统一保存，覆盖所有存档键
+  try { if (typeof saveGameState === 'function') saveGameState(); } catch(e) {}
   _bagDecorRefreshAvatar();
-  // 只更新装饰面板的选中状态，不重新渲染整个面板（保留展开状态）
   _bagDecorUpdateSelection();
 }
 
 // 换头像框
 function _bagDecorSetFrame(fid) {
   edS.equippedFrame = fid;
-  edSave();
+  try { if (typeof saveGameState === 'function') saveGameState(); } catch(e) {}
   _bagDecorRefreshAvatar();
   _bagDecorUpdateSelection();
 }
@@ -8385,7 +8912,7 @@ function _bagDecorSetFrame(fid) {
 // 换称号牌
 function _bagDecorSetTitle(tid) {
   edS.equippedTitlePlate = tid;
-  edSave();
+  try { if (typeof saveGameState === 'function') saveGameState(); } catch(e) {}
   _bagDecorRefreshAvatar();
   _bagDecorUpdateSelection();
 }
@@ -9897,7 +10424,7 @@ function _doFreeCamp() {
   // ── 推进1天（与客栈住宿对等的代价）──
   if (typeof edS !== 'undefined' && typeof advanceWuxiaDate === 'function') {
     advanceWuxiaDate(edS, 1);
-    try { localStorage.setItem('wuxia_editor', JSON.stringify(edS)); } catch(e) {}
+    try { if(typeof WuxiaSave !== 'undefined' && WuxiaSave.saveProfile) WuxiaSave.saveProfile(edS); else localStorage.setItem('wuxia_editor', JSON.stringify(edS)); } catch(e) {}
   }
 
   // ── 每日消耗（按比例扣减饱食/口渴，参考travel.js）──
@@ -9914,42 +10441,13 @@ function _doFreeCamp() {
   // ── 恢复精力与内力（低于客栈，但免费）──
   travelPlayerState.energy = Math.min(100, (travelPlayerState.energy||100) + 40);
   travelPlayerState.hp     = Math.min(100, (travelPlayerState.hp||100) + 10);
-  // ── 恢复内力（露营免费，恢复40%内力）──
+  // ── 恢复内力与气血（露营免费，恢复40%内力，10%气血）──
   if (typeof edS !== 'undefined') {
     const maxMp = edS.maxMp || 100;
     edS.mp = Math.min(maxMp, Math.round(maxMp * 0.4));
-    try { localStorage.setItem('wuxia_editor', JSON.stringify(edS)); } catch(e) {}
-    const profileRaw = localStorage.getItem('wuxia_player_profile');
-    if (profileRaw) {
-      try {
-        const profile = JSON.parse(profileRaw);
-        profile.mp = edS.mp;
-        profile.maxMp = edS.maxMp;
-        localStorage.setItem('wuxia_player_profile', JSON.stringify(profile));
-      } catch(e) {}
-    }
-  }
-  // 同步 edS 血量
-  if (typeof edS !== 'undefined') {
     const maxHp = edS.maxHp || 100;
     edS.hp = Math.min(maxHp, Math.round(maxHp * travelPlayerState.hp / 100));
-    try {
-      const edRaw = localStorage.getItem('wuxia_editor');
-      if (edRaw) {
-        const edData = JSON.parse(edRaw);
-        edData.hp = edS.hp;
-        localStorage.setItem('wuxia_editor', JSON.stringify(edData));
-      }
-      const profileRaw = localStorage.getItem('wuxia_player_profile');
-      if (profileRaw) {
-        const profile = JSON.parse(profileRaw);
-        profile.hp = edS.hp;
-        profile.maxHp = edS.maxHp;
-        profile.totalExp = edS.totalExp || 0;
-        profile.level = edS.level || 1;
-        localStorage.setItem('wuxia_player_profile', JSON.stringify(profile));
-      }
-    } catch(e) {}
+    try { if(typeof WuxiaSave !== 'undefined' && WuxiaSave.saveProfile) WuxiaSave.saveProfile(edS); else localStorage.setItem('wuxia_editor', JSON.stringify(edS)); } catch(e) {}
   }
 
   travelSave();

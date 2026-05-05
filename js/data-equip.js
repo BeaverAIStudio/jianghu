@@ -1348,7 +1348,9 @@ const RARITY_TIER_WEIGHT = {
 };
 
 function rollAffixes(rarity){
-  const [minC, maxC] = RARITY_AFFIX_COUNT[rarity] || [0,0];
+  const cfg = RARITY_AFFIX_COUNT[rarity];
+  if(!cfg){ console.warn('[rollAffixes] unknown rarity:', rarity); return []; }
+  const [minC, maxC] = cfg;
   if(maxC === 0) return [];
   
   // 获取黄历信息
@@ -1489,10 +1491,19 @@ function identifyInst(instId){
   const tpl = inst.type==='weapon'
     ? WEAPONS.find(w=>w.id===inst.templateId)
     : COSTUMES.find(c=>c.id===inst.templateId);
-  if(!tpl) return;
+  if(!tpl) {
+    showFloatTip('⚠️ 装备模板数据异常，无法鉴定！');
+    return;
+  }
   inst.affixes   = rollAffixes(tpl.rarity);
   inst.identified = true;
   bagSave();
+  // 同步到 wuxia_editor，确保战斗系统能读取到鉴定后的词条
+  if (typeof editorSave === 'function') {
+    editorSave();
+  } else if (typeof saveGameState === 'function') {
+    saveGameState();
+  }
   renderBagPanel();
   // 如果当前装备正是这件，刷新捏脸工坊装备栏
   if(typeof edS !== 'undefined' && (edS.weaponInstId === instId || edS.costumeInstId === instId)){

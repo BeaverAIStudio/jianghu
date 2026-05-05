@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 
 <html lang="zh-CN">
 
@@ -4280,19 +4280,27 @@ body.big-shake{animation:bigShake .55s ease;}
 <!-- 依赖脚本 -->
 
 <script src="js/data-pets.js?v=1"></script>
+<script src="js/manuals.js?v=2"></script>
   <script src="js/data-skills.js?v=6"></script>
 
 <script src="js/data-chars.js?v=6"></script>
 
 <script src="js/achievements.js?v=7"></script>
 
-<script src="js/npc-portraits.js?v=6"></script>
+<script src="js/npc-portraits.js?v=337"></script>
 <script src="js/npc-data-capital.js?v=337"></script>
 <script src="js/npc-data-central.js?v=337"></script>
 <script src="js/npc-data-sects.js?v=330"></script>
 <script src="js/npc-data-misc.js?v=334"></script>
 <script src="js/npc-data-map.js?v=332"></script>
-<script src="js/npc-combat.js?v=332"></script>
+<script src="js/npc-logic.js?v=369"></script>
+<script>
+(function(){
+  npcStateLoad();
+  console.log('[battle] npcState加载完成, relations=', JSON.stringify(npcState.relations));
+})();
+</script>
+<script src="js/npc-combat.js?v=335"></script>
 
 <script src="js/data-enemies.js?v=6"></script>
 
@@ -4311,18 +4319,19 @@ body.big-shake{animation:bigShake .55s ease;}
 
 <script src="js/icon-ascii.js?v=6"></script>
 
-
+<!-- 统一存档系统（必须在 editor.js 之前加载，确保 WuxiaSave API 可用） -->
+<script src="js/wuxia-save.js?v=5"></script>
 
 <script src="js/editor.js?v=7"></script>
 
 <!-- 战斗演出动画（BOSS登场+普通对峙） -->
-<script src="js/battle-cinematic.js?v=100"></script>
+<script src="js/battle-cinematic.js?v=101"></script>
 
 <!-- 师徒/结拜（战斗加成：攻防/暴击/经验/增援） -->
 <script src="js/master-apprentice.js?v=100"></script>
 <script src="js/sworn-brother.js?v=100"></script>
 
-<script src="js/battle.js?v=23"></script>
+<script src="js/battle.js?v=26"></script>
 
 <!-- BOSS专属战斗机制（阶段变化/蓄力/狂暴） -->
 <script src="js/battle-boss.js?v=1"></script>
@@ -4418,6 +4427,20 @@ function goBack() {
     return;
   }
 
+  // ★ 修复（2026-05-05）：门派试炼独立处理（不依赖 battleMode）
+  //   startBattleInNewPage 会设置 battleContext，导致 battleMode 被强制改为 'npc'，
+  //   下面的 arena 分支走不到，试炼结果永远不会写入。
+  if (sessionStorage.getItem('wuxia_sect_trial')) {
+    try {
+      const sectTrialResult = { won: false, timestamp: Date.now(), sectId: sessionStorage.getItem('wuxia_sect_trial'), fled: true };
+      sessionStorage.setItem('wuxia_sect_trial_result', JSON.stringify(sectTrialResult));
+      sessionStorage.removeItem('wuxia_sect_trial');
+      const returnUrl = sessionStorage.getItem('sectTrial_returnUrl') || 'sect.html';
+      sessionStorage.setItem('battleReturnUrl', returnUrl);
+      console.log('[goBack] 门派试炼逃跑，结果已写入:', JSON.stringify(sectTrialResult));
+    } catch(e) { console.warn('[goBack] sect trial error:', e); }
+  }
+
   // ⚠ arena 模式：战斗中途返回 → 算逃跑/判负，写 won:false 结果
   if (typeof battleMode !== 'undefined' && battleMode === 'arena') {
     try {
@@ -4431,10 +4454,30 @@ function goBack() {
         resultObj.reward = arenaCtx.enemy._reward;
       }
       sessionStorage.setItem('wuxia_arena_battle_result', JSON.stringify(resultObj));
+
+      // ★ 门派试炼：额外保存结果（sect.html 会读取）
+      if (sessionStorage.getItem('wuxia_sect_trial')) {
+        const sectTrialResult = { won: playerWon, timestamp: Date.now(), sectId: sessionStorage.getItem('wuxia_sect_trial') };
+        sessionStorage.setItem('wuxia_sect_trial_result', JSON.stringify(sectTrialResult));
+        sessionStorage.removeItem('wuxia_sect_trial');
+        // ★ 修复：试炼应跳回 sect.html，让 _checkSectTrialResult() 处理结果
+        const returnUrl = sessionStorage.getItem('sectTrial_returnUrl') || 'sect.html';
+        sessionStorage.setItem('battleReturnUrl', returnUrl);
+      }
       sessionStorage.setItem('wuxia_arena_from_battle', 'true');
-      sessionStorage.setItem('battleReturnUrl', 'town.html');
+      // 若未设置返回地址（非试炼），默认跳城镇
+      if (!sessionStorage.getItem('battleReturnUrl')) {
+        // ★ 修复（2026-05-06）：门派演武场战斗结束应返回门派页面，而非城镇
+        if (resultObj.sectArena && resultObj.sectId) {
+          sessionStorage.setItem('battleReturnUrl', 'sect.html?sect=' + resultObj.sectId);
+        } else {
+          sessionStorage.setItem('battleReturnUrl', 'town.html');
+        }
+      }
     } catch(e) { console.warn('[goBack] arena result error:', e); }
-    battleNavigateTo('town.html');
+    // 使用 battleReturnUrl，而非硬编码 town.html
+    const goBackUrl = sessionStorage.getItem('battleReturnUrl') || 'town.html';
+    battleNavigateTo(goBackUrl);
     return;
   }
 
@@ -4580,13 +4623,27 @@ function _setupCheckWinOverride() {
 
       sessionStorage.setItem('wuxia_arena_battle_result', JSON.stringify(resultObj));
 
+      // ★ 门派试炼：额外保存结果（sect.html 会读取）
+      if (sessionStorage.getItem('wuxia_sect_trial')) {
+        const trialSectId = sessionStorage.getItem('wuxia_sect_trial');
+        const sectTrialResult = { won: playerWon, timestamp: Date.now(), sectId: trialSectId };
+        sessionStorage.setItem('wuxia_sect_trial_result', JSON.stringify(sectTrialResult));
+        sessionStorage.removeItem('wuxia_sect_trial');
+        // ★ 修复：试炼胜利/失败后跳回 sect.html，让 _checkSectTrialResult() 处理结果
+        const _sectReturnUrl = sessionStorage.getItem('sectTrial_returnUrl') || ('sect.html?sect=' + trialSectId);
+        sessionStorage.setItem('battleReturnUrl', _sectReturnUrl);
+      }
+
       sessionStorage.setItem('wuxia_arena_from_battle', 'true');
 
-      // 门派演武场返回城镇（城镇Tab内有门派页面）
-      if (resultObj.sectArena) {
-        sessionStorage.setItem('battleReturnUrl', 'town.html');
-      } else {
-        sessionStorage.setItem('battleReturnUrl', 'town.html');
+      // 若未设置返回地址（非试炼），默认跳城镇
+      if (!sessionStorage.getItem('battleReturnUrl')) {
+        // ★ 修复（2026-05-06）：门派演武场战斗结束应返回门派页面，而非城镇
+        if (resultObj.sectArena && resultObj.sectId) {
+          sessionStorage.setItem('battleReturnUrl', 'sect.html?sect=' + resultObj.sectId);
+        } else {
+          sessionStorage.setItem('battleReturnUrl', 'town.html');
+        }
       }
 
 
@@ -4597,6 +4654,22 @@ function _setupCheckWinOverride() {
 
       setTimeout(() => { patchWinLayerForArena(playerWon); }, 100);
 
+    }
+
+    // ══ 门派试炼（独立处理，不依赖 battleMode）══
+    // ★ 修复（2026-05-05）：sect.html 试炼通过 startBattleInNewPage 发起，
+    //   会设置 battleContext，导致 battle.html 防御性检查把 battleMode 强制改为 'npc'，
+    //   上面的 arena 分支永远不会执行。因此这里独立检查 wuxia_sect_trial。
+    if (sessionStorage.getItem('wuxia_sect_trial')) {
+      try {
+        const hpValue = (typeof window.lHp === 'number') ? window.lHp : 0;
+        const playerWon = hpValue > 0;
+        const trialSectId = sessionStorage.getItem('wuxia_sect_trial');
+        const sectTrialResult = { won: playerWon, timestamp: Date.now(), sectId: trialSectId };
+        sessionStorage.setItem('wuxia_sect_trial_result', JSON.stringify(sectTrialResult));
+        console.log('[checkWin] 门派试炼结果已写入:', JSON.stringify(sectTrialResult));
+        // 不要在这里清除 wuxia_sect_trial，goBack 可能还需要
+      } catch(e) { console.warn('[checkWin] 门派试炼结果写入失败:', e); }
     }
 
   };
@@ -4713,17 +4786,19 @@ function patchWinLayerForArena(playerWon) {
 
 
 
-// 从擂台战斗返回：清理状态，返回城镇
+// 从擂台战斗返回：清理状态，跳转到 battleReturnUrl（门派试炼时为 sect.html）
 
 function returnFromArenaBattle() {
 
+  // 保留 wuxia_sect_trial_result 不清除 —— sect.html 的 _checkSectTrialResult() 需要读取
   sessionStorage.removeItem('wuxia_arena_battle_result');
 
   sessionStorage.removeItem('wuxia_arena_from_battle');
 
+  const _returnUrl = sessionStorage.getItem('battleReturnUrl') || 'town.html';
   sessionStorage.removeItem('battleReturnUrl');
 
-  battleNavigateTo('town.html');
+  battleNavigateTo(_returnUrl);
 
 }
 
@@ -4761,9 +4836,19 @@ function syncHpToSave() {
 
   const currentMp = (currentMpVal !== null) ? Math.max(0, Math.round(currentMpVal)) : 0;
 
-  const maxHp = LH.maxHp || 100;
-
-  const maxMp = LH.maxMp || 100;
+  // ★ 修复（2026-05-05）：脏值保护，防止时间戳被写入存档
+  // 优先用 LH._maxHpFull（calcFinalStats 计算的正确总值），其次用 LH.maxHp
+  // 如果 LH.maxHp 超过 9999，视为脏值，丢弃并使用 equippedMaxHp
+  const _MAX_STAT = 9999;
+  const _srcMaxHp = (LH._maxHpFull > 0 && LH._maxHpFull <= _MAX_STAT * 10) ? LH._maxHpFull : LH.maxHp;
+  const _srcMaxMp = (LH._maxMpFull > 0 && LH._maxMpFull <= _MAX_STAT * 10) ? LH._maxMpFull : LH.maxMp;
+  const maxHp = (_srcMaxHp > 0 && _srcMaxHp <= _MAX_STAT) ? _srcMaxHp
+    : ((typeof edS !== 'undefined' && edS.equippedMaxHp > 0 && edS.equippedMaxHp <= _MAX_STAT) ? edS.equippedMaxHp : 150);
+  const maxMp = (_srcMaxMp > 0 && _srcMaxMp <= _MAX_STAT) ? _srcMaxMp
+    : ((typeof edS !== 'undefined' && edS.equippedMaxMp > 0 && edS.equippedMaxMp <= _MAX_STAT) ? edS.equippedMaxMp : 100);
+  // 额外保护：如果当前血量/内力超过对应上限的 10 倍，视为脏值
+  const safeHp = (currentHp > 0 && currentHp <= maxHp * 10) ? currentHp : maxHp;
+  const safeMp = (currentMp >= 0 && currentMp <= maxMp * 10) ? currentMp : maxMp;
 
   
 
@@ -4779,11 +4864,11 @@ function syncHpToSave() {
 
       const data = JSON.parse(profileSave);
 
-      data.hp = currentHp;
+      data.hp = safeHp;
 
       data.maxHp = maxHp;
 
-      data.mp = currentMp;
+      data.mp = safeMp;
 
       data.maxMp = maxMp;
 
@@ -4813,11 +4898,11 @@ function syncHpToSave() {
 
       const data = JSON.parse(save);
 
-      data.hp = currentHp;
+      data.hp = safeHp;
 
       data.maxHp = maxHp;
 
-      data.mp = currentMp;
+      data.mp = safeMp;
 
       data.maxMp = maxMp;
 
@@ -4837,11 +4922,13 @@ function syncHpToSave() {
 
       if (data.state) {
 
-        // travelPlayerState.hp 是百分比，需要转换
+        // travelPlayerState.hp/mp 是百分比，需要转换
 
         const hpPercent = maxHp > 0 ? Math.round((currentHp / maxHp) * 100) : 100;
 
         data.state.hp = hpPercent;
+        const mpPercent = maxMp > 0 ? Math.round((currentMp / maxMp) * 100) : 100;
+        data.state.mp = mpPercent;
 
       }
 
@@ -4861,11 +4948,11 @@ function syncHpToSave() {
 
       const data = JSON.parse(editorSave);
 
-      data.hp = currentHp;
+      data.hp = safeHp;
 
       data.maxHp = maxHp;
 
-      data.mp = currentMp;
+      data.mp = safeMp;
 
       data.maxMp = maxMp;
 
@@ -4879,17 +4966,16 @@ function syncHpToSave() {
 
     // 5. 保存到 sessionStorage 供地下城页面读取（键名与dungeon.html保持一致）
 
-    sessionStorage.setItem('wuxia_dungeon_player_hp', currentHp);
+    sessionStorage.setItem('wuxia_dungeon_player_hp', safeHp);
 
     sessionStorage.setItem('wuxia_dungeon_player_maxhp', maxHp);
 
-    sessionStorage.setItem('wuxia_dungeon_player_mp', currentMp);
+    sessionStorage.setItem('wuxia_dungeon_player_mp', safeMp);
 
     sessionStorage.setItem('wuxia_dungeon_player_maxmp', maxMp);
 
-    
 
-    console.log('[syncHpToSave] 状态已保存 - HP:', currentHp, '/', maxHp, 'MP:', currentMp, '/', maxMp);
+    console.log('[syncHpToSave] 状态已保存 - HP:', safeHp, '/', maxHp, 'MP:', safeMp, '/', maxMp);
 
     
 
@@ -4989,6 +5075,30 @@ window.onload = function() {
   // ── 启动战斗 BGM ──
   if(typeof BgmManager !== 'undefined') BgmManager.play('battle');
 
+  // ── 初始化玩家数据（从 localStorage 加载存档到 edS）──
+  if (typeof WuxiaSave !== 'undefined' && typeof WuxiaSave.initPage === 'function' && typeof edS !== 'undefined') {
+    WuxiaSave.initPage(edS);
+    console.log('[battle.html] edS 已初始化:', edS.name, 'Lv.'+edS.level, 'HP:'+edS.hp+'/'+edS.maxHp);
+  }
+
+  // ══════════════════════════════════════════════════════
+  //  ★ 统一玩家数值读取 ★
+  //  所有模式都从这里读，不再各读各的
+  // ══════════════════════════════════════════════════════
+  let _playerStats = null;
+  (function initPlayerStats(){
+    if (typeof WuxiaSave !== 'undefined' && typeof WuxiaSave.getPlayerStats === 'function') {
+      _playerStats = WuxiaSave.getPlayerStats();
+      console.log('[battle.html] 统一玩家数值:', _playerStats.name, 'Lv.'+_playerStats.level,
+        'HP:'+_playerStats.hp+'/'+_playerStats.maxHp, 'MP:'+_playerStats.mp+'/'+_playerStats.maxMp);
+    } else if (typeof edS !== 'undefined') {
+      _playerStats = Object.assign({}, edS);
+      console.log('[battle.html] getPlayerStats 不可用，回退到 edS');
+    } else {
+      console.error('[battle.html] 无法获取玩家数值！');
+    }
+  })();
+
   // 从URL参数获取配置
 
 
@@ -5043,27 +5153,52 @@ window.onload = function() {
 
     if (savedHp !== null && savedHp !== '') {
 
-      window._dungeonPlayerHp = parseInt(savedHp, 10);
-
-      console.log('[battle.html] Loaded dungeon player HP:', window._dungeonPlayerHp);
+      let _hp = parseInt(savedHp, 10);
+      // ★ 修复（2026-05-05）：验证数值合法性，NaN 或超出范围则丢弃
+      if (isNaN(_hp) || _hp < 0 || _hp > 99999) {
+        console.warn('[battle.html] savedHp 脏值已丢弃:', savedHp);
+        sessionStorage.removeItem('wuxia_dungeon_player_hp');
+      } else {
+        window._dungeonPlayerHp = _hp;
+        console.log('[battle.html] Loaded dungeon player HP:', window._dungeonPlayerHp);
+      }
 
     }
 
     if (savedMp !== null && savedMp !== '') {
 
-      window._dungeonPlayerMp = parseInt(savedMp, 10);
+      let _mp = parseInt(savedMp, 10);
+      // ★ 修复（2026-05-05）：验证数值合法性，NaN 或超出范围则丢弃
+      if (isNaN(_mp) || _mp < 0 || _mp > 99999) {
+        console.warn('[battle.html] savedMp 脏值已丢弃:', savedMp);
+        sessionStorage.removeItem('wuxia_dungeon_player_mp');
+      } else {
+        window._dungeonPlayerMp = _mp;
+      }
 
     }
 
     if (savedMaxHp !== null && savedMaxHp !== '') {
 
-      window._dungeonPlayerMaxHp = parseInt(savedMaxHp, 10);
+      let _mhp = parseInt(savedMaxHp, 10);
+      if (isNaN(_mhp) || _mhp <= 0 || _mhp > 99999) {
+        console.warn('[battle.html] savedMaxHp 脏值已丢弃:', savedMaxHp);
+        sessionStorage.removeItem('wuxia_dungeon_player_maxhp');
+      } else {
+        window._dungeonPlayerMaxHp = _mhp;
+      }
 
     }
 
     if (savedMaxMp !== null && savedMaxMp !== '') {
 
-      window._dungeonPlayerMaxMp = parseInt(savedMaxMp, 10);
+      let _mmp = parseInt(savedMaxMp, 10);
+      if (isNaN(_mmp) || _mmp <= 0 || _mmp > 99999) {
+        console.warn('[battle.html] savedMaxMp 脏值已丢弃:', savedMaxMp);
+        sessionStorage.removeItem('wuxia_dungeon_player_maxmp');
+      } else {
+        window._dungeonPlayerMaxMp = _mmp;
+      }
 
     }
 
@@ -5129,29 +5264,22 @@ window.onload = function() {
 
         }
 
-        // 从存档同步玩家当前血量
-
+        // 从存档同步玩家当前血量（arena 模式）
         if (typeof edS !== 'undefined' && edS.hp != null) {
-
           LH._currentHp = edS.hp;
-
-          LH.maxHp = edS.maxHp || LH.maxHp || 100;
-
-          LH.maxMp = edS.maxMp || LH.maxMp || 100;
-
         }
+
+        // ★ 跟背包页面用完全相同的函数：edStats() 设置基础值
+        initLHStats();
 
         resetFight();
 
-        // 覆盖 resetFight 的满血
-
+        // 应用当前血量
         if (typeof LH._currentHp === 'number') {
-
           window.lHp = LH._currentHp;
-
           updateBars();
-
         }
+        updateMpBars();
 
       }
 
@@ -5190,11 +5318,22 @@ window.onload = function() {
   }
 
   
-
-  // ══ NPC 切磋模式（battleContext，无 mode 参数时） ══
-  // startBattleInNewPage() 写入 sessionStorage('battleContext')，town → NPC 动手走此路径
-  if (!mode && !dungeonReturnUrl) {
+  
+  // ══ 防御性检查：如果 battleContext 存在，说明是NPC实战或地下城，
+  //   此时若 battleMode 误设为 arena，则强制修正为 npc。
+  //   ★ 修复（2026-05-05）：门派试炼会同时设置 battleContext 和 battleMode=arena，
+  //      但 arena 模式的正确 context 是 wuxia_arena_battle_context，
+  //      所以只有当 arena context 不存在时，才修正 battleMode。
+  const _hasArenaCtx = !!sessionStorage.getItem('wuxia_arena_battle_context');
+  if (sessionStorage.getItem('battleContext') && battleMode === 'arena' && !_hasArenaCtx) {
+    console.warn('[battle.html] 检测到异常：battleContext 存在但 arena context 不存在，battleMode 强制修正为 npc');
     battleMode = 'npc';
+  }
+
+  // ══ NPC 实战模式（battleContext，无 mode 参数时） ══
+  // startBattleInNewPage() 写入 sessionStorage('battleContext')，town → NPC 动手走此路径
+  if (!mode && !dungeonReturnUrl || battleMode === 'npc') {
+    if (!battleMode) battleMode = 'npc';
     try {
       const rawCtx = sessionStorage.getItem('battleContext');
       console.log('[battle.html] rawCtx exists:', !!rawCtx, 'length:', rawCtx?.length);
@@ -5215,22 +5354,29 @@ window.onload = function() {
           const _npcHp = sessionStorage.getItem('wuxia_dungeon_player_hp');
           const _npcMaxHp = sessionStorage.getItem('wuxia_dungeon_player_maxhp');
           if (_npcHp && LH) {
-            const maxHp = _npcMaxHp ? parseInt(_npcMaxHp, 10) : (LH.maxHp || 100);
-            LH.maxHp = maxHp; LH._maxHpFull = maxHp;
-            LH._currentHp = Math.min(parseInt(_npcHp, 10), maxHp);
+            const _hpVal = parseInt(_npcHp, 10);
+            // ★ 修复（2026-05-05）：防止脏值被写入 LH._currentHp
+            if (isNaN(_hpVal) || _hpVal < 0 || _hpVal > 99999) {
+              console.warn('[battle.html] _npcHp 脏值已丢弃:', _npcHp);
+              sessionStorage.removeItem('wuxia_dungeon_player_hp');
+            } else {
+              LH._currentHp = Math.min(_hpVal, LH.maxHp || 100);
+            }
           }
           const _npcMp = sessionStorage.getItem('wuxia_dungeon_player_mp');
-          const _npcMaxMp = sessionStorage.getItem('wuxia_dungeon_player_maxmp');
           if (_npcMp && LH) {
-            const maxMp = _npcMaxMp ? parseInt(_npcMaxMp, 10) : (LH.maxMp || 100);
-            LH.maxMp = maxMp; LH._maxMpFull = maxMp;
-            LH._currentMp = Math.min(parseInt(_npcMp, 10), maxMp);
+            const _mpVal = parseInt(_npcMp, 10);
+            // ★ 修复（2026-05-05）：防止脏值（>99999）被写入 LH._currentMp
+            if (isNaN(_mpVal) || _mpVal < 0 || _mpVal > 99999) {
+              console.warn('[battle.html] _npcMp 脏值已丢弃:', _npcMp);
+              sessionStorage.removeItem('wuxia_dungeon_player_mp');
+            } else {
+              LH._currentMp = Math.min(_mpVal, LH.maxMp || 150);
+            }
           }
-          // 返回地址
-          dungeonReturnUrl = bCtx.returnUrl || 'town.html';
-          // NPC 切磋结果标记
-          window._pendingBattleCallback = true;
-          console.log('[battle.html] NPC battle mode loaded. Return:', dungeonReturnUrl, 'Player:', LH.name, 'Enemy:', RH.name);
+          // ★ 跟背包页面用完全相同的函数：edStats() 设置基础值（必须在 resetFight 前）
+          initLHStats();
+          resetFight();
         }
       }
     } catch(e) {
@@ -5275,107 +5421,72 @@ window.onload = function() {
 
   
 
-  // 地下城模式：先应用保存的玩家血量，再初始化战斗
+  // ═══════════════════════════════════════════════════════
+  //  ⭐ 统一初始化 LH 属性（跟背包页面用完全相同的计算方式）
+  // ═══════════════════════════════════════════════════════
+  //   基础值 = edStats()       → 对应 LH.maxHp / LH.maxMp
+  //   总值   = getTotalStats() → 由 calcFinalStats() 写入 LH._maxHpFull / LH._maxMpFull
+  //   不管什么模式、不管之前被设成什么，这里一律强制覆盖
+  // ═══════════════════════════════════════════════════════
+  function initLHStats() {
+    if (!LH || LH.id !== 'cp_self') return;
+    // ★ 改造（2026-05-05）：从 edS 缓存读取所有属性（已含所有加成）
+    const _MAX_STAT = 9999;
+    if (typeof edS !== 'undefined') {
+      const eqHp = (edS.equippedMaxHp > 0 && edS.equippedMaxHp <= _MAX_STAT) ? edS.equippedMaxHp : null;
+      const eqMp = (edS.equippedMaxMp > 0 && edS.equippedMaxMp <= _MAX_STAT) ? edS.equippedMaxMp : null;
+      if (eqHp && LH.maxHp !== eqHp) LH.maxHp = eqHp;
+      if (eqMp && LH.maxMp !== eqMp) LH.maxMp = eqMp;
+      // ★ 新增：从缓存写入攻击/防御/暴击/闪避/速度（已含全部加成）
+      if (edS.equippedAtk != null)   LH.atk     = edS.equippedAtk;
+      if (edS.equippedDef != null)   LH.def     = edS.equippedDef;
+      if (edS.equippedCrit != null)  LH.crit    = edS.equippedCrit;
+      if (edS.equippedDodge != null) LH.dodge   = edS.equippedDodge;
+      if (edS.equippedSpd != null)   LH.speedN  = edS.equippedSpd;
+    }
+  }
 
+  // 地下城模式：先应用保存的玩家血量，再初始化战斗
   if (mode === 'dungeon') {
 
-    console.log('[battle.html] Dungeon mode init. _dungeonPlayerHp:', window._dungeonPlayerHp, '_dungeonPlayerMaxHp:', window._dungeonPlayerMaxHp);
+    // 读取 sessionStorage 中保存的战斗前血量/内力
+    const _sHp   = sessionStorage.getItem('wuxia_dungeon_player_hp');
+    const _sMp   = sessionStorage.getItem('wuxia_dungeon_player_mp');
+    const _sMaxHp = sessionStorage.getItem('wuxia_dungeon_player_maxhp');
+    const _sMaxMp = sessionStorage.getItem('wuxia_dungeon_player_maxmp');
 
-    console.log('[battle.html] Before setup - LH.maxHp:', LH.maxHp, 'LH.name:', LH.name);
+    // 有效性检查
+    const hasValidHp   = _sHp   !== null && !isNaN(parseInt(_sHp,  10));
+    const hasValidMp   = _sMp   !== null && !isNaN(parseInt(_sMp,  10));
+    const hasValidMaxHp = _sMaxHp !== null && !isNaN(parseInt(_sMaxHp, 10));
+    const hasValidMaxMp = _sMaxMp !== null && !isNaN(parseInt(_sMaxMp, 10));
 
-    
+    // ★ 跟背包页面用完全相同的函数：基础值 = edStats()
+    initLHStats();
 
-    // 检查保存的血量是否有效（必须是数字且不是NaN）
-
-    const hasValidHp = typeof window._dungeonPlayerHp === 'number' && !isNaN(window._dungeonPlayerHp);
-
-    const hasValidMaxHp = typeof window._dungeonPlayerMaxHp === 'number' && !isNaN(window._dungeonPlayerMaxHp);
-
-    console.log('[battle.html] Has valid HP:', hasValidHp, 'Has valid maxHP:', hasValidMaxHp);
-
-    
-
-    // 先设置LH的最大血量（必须在resetFight之前）
-
-    if (hasValidHp) {
-
-      // 使用保存的maxHp（优先）或edS.maxHp
-
-      const maxHp = hasValidMaxHp ? window._dungeonPlayerMaxHp : ((typeof edS !== 'undefined' ? edS.maxHp : null) || LH.maxHp || 100);
-
-      const maxMp = (typeof window._dungeonPlayerMaxMp === 'number' && !isNaN(window._dungeonPlayerMaxMp)) ? window._dungeonPlayerMaxMp : ((typeof edS !== 'undefined' ? edS.maxMp : null) || LH.maxMp || 100);
-
-      
-
-      console.log('[battle.html] Calculated maxHp:', maxHp, 'maxMp:', maxMp);
-
-      
-
-      // 关键：在resetFight之前设置LH的最大血量
-
-      LH.maxHp = maxHp;
-
-      LH._maxHpFull = maxHp;
-
-      LH.maxMp = maxMp;
-
-      LH._maxMpFull = maxMp;
-
-      
-
-      console.log('[battle.html] Set LH.maxHp before resetFight:', LH.maxHp);
-
-    }
-
-    
-
-    // 然后调用resetFight（此时LH.maxHp已经是正确的值）
-
-    console.log('[battle.html] Dungeon mode: calling resetFight');
-
+    // 调用 resetFight → calcFinalStats() 会计算正确总值到 _maxHpFull / _maxMpFull
     resetFight();
 
-    console.log('[battle.html] After resetFight - lHp:', lHp, 'window.lHp:', window.lHp);
-
-    
-
-    // 最后覆盖resetFight设置的满血，应用保存的当前血量
-
-    if (hasValidHp) {
-
-      const maxHp = LH.maxHp;
-
-      const maxMp = LH.maxMp;
-
-      
-
-      console.log('[battle.html] Applying saved HP. window._dungeonPlayerHp:', window._dungeonPlayerHp, 'maxHp:', maxHp);
-
-      
-
-      // 应用保存的当前血量（覆盖resetFight设置的满血）
-
-      lHp = Math.min(window._dungeonPlayerHp, maxHp);
-
-      window.lHp = lHp;
-
-      const hasValidMp = typeof window._dungeonPlayerMp === 'number' && !isNaN(window._dungeonPlayerMp);
-
-      if (hasValidMp) {
-
-        lMp = Math.min(window._dungeonPlayerMp, maxMp);
-
-        window.lMp = lMp;
-
-      }
-
-      console.log('[battle.html] Applied dungeon player HP/MP:', window.lHp, '/', maxHp, ', MP:', window.lMp, '/', maxMp);
-
-      updateBars();
-
-      updateMpBars();
-
+    // 用保存的当前血量/内力覆盖 resetFight 的满血设置（按比例换算到新总值）
+    if (hasValidHp && hasValidMaxHp && LH._maxHpFull > 0) {
+      const hpRatio = parseInt(_sHp, 10) / parseInt(_sMaxHp, 10);
+      lHp = Math.min(LH._maxHpFull, Math.max(0, Math.round(hpRatio * LH._maxHpFull)));
+    } else {
+      lHp = (typeof edS !== 'undefined' && edS.hp != null) ? edS.hp : LH.maxHp;
     }
+    if (hasValidMp && hasValidMaxMp && LH._maxMpFull > 0) {
+      const mpRatio = parseInt(_sMp, 10) / parseInt(_sMaxMp, 10);
+      // ★ 修复（2026-05-05）：clamp 比例到 [0, 1]，防止 sessionStorage 脏值导致 lMp 溢出
+      const clampedRatio = Math.min(1, Math.max(0, mpRatio));
+      lMp = Math.round(clampedRatio * LH._maxMpFull);
+    } else {
+      lMp = (typeof edS !== 'undefined' && edS.mp != null) ? edS.mp : (LH.maxMp || 150);
+    }
+
+    window.lHp = lHp; window.lMp = lMp;
+    updateBars(); updateMpBars();
+    console.log('[battle.html] Dungeon done: lHp='+lHp+'/'+LH._maxHpFull, 'lMp='+lMp+'/'+LH._maxMpFull);
+
 
   } else {
 
@@ -5394,93 +5505,35 @@ window.onload = function() {
     const _hasMaxHp2 = _savedMaxHp2 !== null && _savedMaxHp2 !== '' && !isNaN(parseInt(_savedMaxHp2, 10));
 
     if (_hasHp2 && LH) {
-
-      const maxHp = _hasMaxHp2 ? parseInt(_savedMaxHp2, 10) : (LH.maxHp || 100);
-
-      const maxMp = (_savedMaxMp2 !== null && _savedMaxMp2 !== '' && !isNaN(parseInt(_savedMaxMp2, 10)))
-        ? parseInt(_savedMaxMp2, 10) : (LH.maxMp || 100);
-
-      LH.maxHp = maxHp;
-
-      LH._maxHpFull = maxHp;
-
-      LH.maxMp = maxMp;
-
-      LH._maxMpFull = maxMp;
-
       resetFight();
+      // ★ 修复（2026-05-05）：防止脏值进入比例计算，clamp 比例到 [0, 1]
+      const _rawHp2 = parseInt(_savedHp2, 10);
+      const _hpVal2 = (_rawHp2 > 99999) ? 0 : _rawHp2;
+      const _denomHp = _hasMaxHp2 ? parseInt(_savedMaxHp2, 10) : (LH._maxHpFull || 100);
+      const hpRatio = Math.min(1, Math.max(0, _hpVal2 / _denomHp));
+      lHp = Math.round(hpRatio * LH._maxHpFull);
+      if (_savedMp2 !== null && _savedMp2 !== '' && !isNaN(parseInt(_savedMp2, 10))) {
+        const _rawMp2 = parseInt(_savedMp2, 10);
+        const _mpVal2 = (_rawMp2 > 99999) ? 0 : _rawMp2;
+        const _denomMp = (_savedMaxMp2 !== null && _savedMaxMp2 !== '' && !isNaN(parseInt(_savedMaxMp2, 10))) ? parseInt(_savedMaxMp2, 10) : (LH._maxMpFull || 150);
+        const mpRatio = Math.min(1, Math.max(0, _mpVal2 / _denomMp));
 
-      lHp = Math.min(parseInt(_savedHp2, 10), maxHp);
-
-      window.lHp = lHp;
-
-      const _hasMp2 = _savedMp2 !== null && _savedMp2 !== '' && !isNaN(parseInt(_savedMp2, 10));
-
-      if (_hasMp2) {
-
-        lMp = Math.min(parseInt(_savedMp2, 10), maxMp);
-
-        window.lMp = lMp;
-
+        lMp = Math.round(mpRatio * LH._maxMpFull);
       }
-
-      console.log('[battle.html] Non-dungeon mode: HP from sessionStorage:', lHp, '/', maxHp);
-
-      updateBars();
-
-      updateMpBars();
+      window.lHp = lHp; window.lMp = lMp;
+      updateBars(); updateMpBars();
+      console.log('[battle.html] Normal (session): lHp='+lHp+'/'+LH._maxHpFull+' lMp='+lMp+'/'+LH._maxMpFull);
 
     } else if (typeof edS !== 'undefined' && LH) {
-
-      const savedMaxHp = edS.maxHp || LH.maxHp || 100;
-
-      const savedHp = edS.hp || savedMaxHp;
-
-      const savedMaxMp = edS.maxMp || LH.maxMp || 100;
-
-      const savedMp = edS.mp || savedMaxMp;
-
-      
-
-      // 设置最大血量
-
-      LH.maxHp = savedMaxHp;
-
-      LH._maxHpFull = savedMaxHp;
-
-      LH.maxMp = savedMaxMp;
-
-      LH._maxMpFull = savedMaxMp;
-
-      
-
-      console.log('[battle.html] Non-dungeon mode: Loading HP from edS:', savedHp, '/', savedMaxHp);
-
-      
-
-      // 调用resetFight
-
+      // ★ 修复（2026-05-05）：edS.hp/edS.mp 脏值检查
+      const _edHp = (typeof edS.hp === 'number' && edS.hp >= 0 && edS.hp <= 99999) ? edS.hp : (LH.maxHp || 100);
+      const _edMp = (typeof edS.mp === 'number' && edS.mp >= 0 && edS.mp <= 99999) ? edS.mp : (LH.maxMp || 150);
       resetFight();
-
-      
-
-      // 覆盖resetFight设置的满血，应用保存的当前血量
-
-      lHp = Math.min(savedHp, savedMaxHp);
-
-      window.lHp = lHp;
-
-      lMp = Math.min(savedMp, savedMaxMp);
-
-      window.lMp = lMp;
-
-      
-
-      console.log('[battle.html] Applied saved HP/MP:', lHp, '/', savedMaxHp, ', MP:', lMp, '/', savedMaxMp);
-
-      updateBars();
-
-      updateMpBars();
+      lHp = Math.min(_edHp, LH.maxHp);
+      lMp = Math.min(_edMp, LH.maxMp);
+      window.lHp = lHp; window.lMp = lMp;
+      updateBars(); updateMpBars();
+      console.log('[battle.html] Normal (edS): lHp='+lHp+'/'+LH._maxHpFull+' lMp='+lMp+'/'+LH._maxMpFull);
 
     } else {
 
@@ -6341,20 +6394,15 @@ function buildEnemyCharForBattle(enemy) {
 
   
 
-  // 生成称号（优先使用 battle.js 的 generateEnemyTitle）
-
+  // 生成称号（arena 模式直接用传入的 title，其他模式用 generateEnemyTitle）
   let enemyTitle;
-
-  if (typeof generateEnemyTitle === 'function') {
-
+  if (battleMode === 'arena' && enemy.title) {
+    enemyTitle = enemy.title;
+  } else if (typeof generateEnemyTitle === 'function') {
     enemyTitle = generateEnemyTitle(enemy);
-
   } else {
-
     // 降级：使用简单的等级格式
-
     enemyTitle = (enemy.icon || '⚔') + ' Lv' + enemy.level;
-
   }
 
   
@@ -6435,7 +6483,7 @@ function buildEnemyCharForBattle(enemy) {
     _enemyData: { ...enemy, drops: mergedDrops },
 
     // 保留原始标记（门派演武场等需要）
-    ...(enemy._sectArena ? { _sectArena: true, _sectId: enemy._sectId, _oppIdx: enemy._oppIdx, _reward: enemy._reward } : {}),
+    ...(enemy._sectArena ? { _sectArena: true, _sectId: enemy._sectId, _npcId: enemy._npcId, _oppIdx: enemy._oppIdx, _reward: enemy._reward } : {}),
 
   };
 

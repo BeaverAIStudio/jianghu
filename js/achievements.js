@@ -1220,7 +1220,8 @@ function _showAchJianghuEvent(event, ach) {
         position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
         background: linear-gradient(135deg, rgba(30,25,20,0.98), rgba(40,35,30,0.98));
         border: 2px solid ${color}; border-radius: 16px; padding: 20px;
-        max-width: 320px; width: 90%; z-index: 10000;
+        max-width: min(320px, 90vw); width: auto; z-index: 10000;
+        box-sizing: border-box;
         box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 30px ${color}40;
         animation: achEventPop 0.4s ease-out;
       `;
@@ -1259,9 +1260,14 @@ function _showAchJianghuEvent(event, ach) {
 }
 
 function _applyAchJianghuReward(event) {
-  // 应用奖励
-  if (event.result.silver && typeof addSilver === 'function') {
-    addSilver(event.result.silver);
+  // 优先使用统一存档 API 发放银两
+  if (event.result.silver) {
+    if (typeof WuxiaSave !== 'undefined' && typeof WuxiaSave.syncSilver === 'function') {
+      const cur = (typeof getSilver === 'function') ? getSilver() : 0;
+      WuxiaSave.syncSilver(cur + event.result.silver);
+    } else if (typeof addSilver === 'function') {
+      addSilver(event.result.silver);
+    }
   }
   if (event.result.exp && typeof addPlayerExp === 'function') {
     addPlayerExp(event.result.exp, '成就奖励');
@@ -1306,25 +1312,32 @@ function _applyAchievementReward(ach) {
   const silverMatch = text.match(/银两[×x+](\d+)/);
   if (silverMatch) {
     const amt = parseInt(silverMatch[1]);
-    if (typeof addSilver === 'function') addSilver(amt);
+    // 统一使用 addSilver，它会处理内存更新和 WuxiaSave 同步
+    if (typeof addSilver === 'function') {
+      addSilver(amt);
+    }
   }
 
   // 声望/声誉
   const repMatch = text.match(/声望[×x+](\d+)/);
   if (repMatch) {
     const amt = parseInt(repMatch[1]);
-    if (typeof travelPlayerState !== 'undefined') {
-      travelPlayerState.reputation = Math.min(200, (travelPlayerState.reputation || 100) + amt);
-      if (typeof travelSave === 'function') travelSave();
+    // 统一使用 changeReputation，它会处理内存更新和存档
+    if (typeof changeReputation === 'function') {
+      changeReputation(amt);
     }
-    if (typeof changeReputation === 'function') changeReputation(amt);
   }
 
   // 经验
   const expMatch = text.match(/经验[×x+](\d+)/);
   if (expMatch) {
     const amt = parseInt(expMatch[1]);
-    if (typeof addExp === 'function') addExp(amt);
+    // 统一使用 addExp 或 addPlayerExp
+    if (typeof addPlayerExp === 'function') {
+      addPlayerExp(amt, '成就奖励');
+    } else if (typeof addExp === 'function') {
+      addExp(amt);
+    }
   }
 
   // 内力上限
@@ -2009,7 +2022,7 @@ function _showUnlockToast(ach){
     </div>
   `;
   toast.style.cssText = `
-    position:fixed;top:-120px;right:16px;left:auto;transform:none;
+    position:fixed;top:60px;right:16px;left:auto;transform:none;
     z-index:99999;padding:0;
     pointer-events:auto;font-family:'Courier New',monospace;
     animation:achSlideRight .5s cubic-bezier(.2,.8,.4,1) forwards;
@@ -2107,7 +2120,7 @@ function _showLegendaryPopup(ach){
   `;
 
   overlay.style.cssText = `
-    position:fixed;inset:0;z-index:999998;
+    position:fixed;top:0;left:0;width:100%;height:100%;z-index:999998;
     display:flex;align-items:center;justify-content:center;
     animation:achFadeIn .4s ease forwards;
     font-family:'Courier New',monospace;
@@ -2151,7 +2164,7 @@ window._showAchLore = function(achId){
     </div>
   `;
   overlay.style.cssText = `
-    position:fixed;inset:0;z-index:999999;
+    position:fixed;top:0;left:0;width:100%;height:100%;z-index:999999;
     display:flex;align-items:center;justify-content:center;
     animation:achFadeIn .3s ease forwards;
     font-family:'Courier New',monospace;
@@ -2160,7 +2173,6 @@ window._showAchLore = function(achId){
 };
 
 /**
- * 检查某分类是否全部解锁，若是则触发大师成就
  */
 const _CAT_MASTER_MAP = {
   battle: 'ach_master_battle',
@@ -2320,9 +2332,9 @@ function townOpenAchievements(){
   to   { right:16px;   opacity:1; transform:scale(1); }
 }
 .ach-toast-inner {
-  border-radius:12px;padding:14px 18px;min-width:260px;max-width:300px;
+  border-radius:12px;padding:14px 18px;min-width:260px;max-width:min(300px,calc(100vw - 32px));width:auto;
   border-width:1px;border-style:solid;
-  backdrop-filter:blur(12px);
+  backdrop-filter:blur(12px);box-sizing:border-box;
 }
 .ach-toast-header {
   font-size:11px;font-weight:700;letter-spacing:2px;
@@ -2361,7 +2373,7 @@ function townOpenAchievements(){
 }
 .ach-legend-card {
   position:relative;z-index:1;
-  width:min(360px,90vw);
+  width:min(360px,90vw);box-sizing:border-box;
   border-radius:16px;border-width:2px;border-style:solid;
   padding:28px 24px 22px;text-align:center;
   animation:achCardIn .5s cubic-bezier(.2,.8,.3,1.1) forwards;
@@ -2434,7 +2446,7 @@ function townOpenAchievements(){
   position:relative;z-index:1;
   width:min(500px,92vw);max-height:75vh;overflow-y:auto;
   border-radius:14px;border-width:1px;border-style:solid;
-  padding:22px 24px;
+  padding:22px 24px;box-sizing:border-box;
   background:rgba(10,12,10,.97);backdrop-filter:blur(8px);
   animation:achCardIn .35s ease forwards;
   scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.2) transparent;

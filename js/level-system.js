@@ -384,8 +384,22 @@ function _onPlayerLevelUp(oldLv, newLv, gainedExp){
       const newStats = edStats();
       const oldMaxHp = edS.maxHp || newStats.hp;
       const oldMaxMp = edS.maxMp || newStats.mp;
-      edS.maxHp = newStats.hp;
-      edS.maxMp = newStats.mp;
+      // ★ 改造（2026-05-05）：用 refreshEquippedStats() 统一缓存所有属性
+      const _isInTown = (typeof WEAPONS !== 'undefined' && typeof COSTUMES !== 'undefined'
+                         && typeof getTotalStats === 'function');
+      if (_isInTown && typeof refreshEquippedStats === 'function') {
+        refreshEquippedStats();
+      } else if (_isInTown) {
+        const ts = getTotalStats();
+        edS.equippedMaxHp = ts.hp;
+        edS.equippedMaxMp = ts.mp;
+        edS.maxHp = ts.hp;
+        edS.maxMp = ts.mp;
+      } else {
+        // dungeon 里升级：只更新基础值，equippedMaxHp 保持不变（下次进 town 会重算）
+        edS.maxHp = newStats.hp;
+        edS.maxMp = newStats.mp;
+      }
       // 按比例恢复当前值（升级回血）
       edS.hp = Math.min(edS.maxHp, edS.hp + Math.round((edS.maxHp - oldMaxHp) * 0.5 + 10));
       edS.mp = Math.min(edS.maxMp, edS.mp + Math.round((edS.maxMp - oldMaxMp) * 0.5 + 5));

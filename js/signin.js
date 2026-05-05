@@ -93,8 +93,23 @@ function _signinApplyReward(reward) {
   if (!reward || !reward.reward) return;
   const r = reward.reward;
 
-  if (r.silver && typeof addSilver === 'function') {
-    addSilver(r.silver);
+  // 银两：优先用 SilverManager（各页面通用），其次用 addSilver
+  if (r.silver) {
+    if (typeof SilverManager !== 'undefined' && SilverManager.add) {
+      SilverManager.add(r.silver);
+      SilverManager.save();
+    } else if (typeof addSilver === 'function') {
+      addSilver(r.silver);
+      // 额外同步到 travelPlayerState（防止 battle 页面 edS 不同步）
+      if (typeof travelPlayerState !== 'undefined') {
+        travelPlayerState.silver = (travelPlayerState.silver || 0) + r.silver;
+        if (typeof travelSave === 'function') travelSave();
+      }
+    } else if (typeof travelPlayerState !== 'undefined') {
+      // 最底层 fallback：直接写 travelPlayerState
+      travelPlayerState.silver = (travelPlayerState.silver || 0) + r.silver;
+      if (typeof travelSave === 'function') travelSave();
+    }
   }
   if (r.exp && typeof addExp === 'function') {
     addExp(r.exp);

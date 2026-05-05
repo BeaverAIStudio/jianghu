@@ -1,4 +1,4 @@
-// ══════════════════════════════════════════════════════════════════
+﻿// ══════════════════════════════════════════════════════════════════
 //  技能博弈系统辅助函数
 // ══════════════════════════════════════════════════════════════════
 
@@ -727,7 +727,9 @@ const INTENT_HINTS = {
 };
 // 内力条刷新（模块级，供 resetFight 内的内嵌函数调用）
 function updateMpBars(){
+  console.log('[updateMpBars] lMp='+lMp+' LH._maxMpFull='+(LH&&LH._maxMpFull)+' LH.maxMp='+(LH&&LH.maxMp));
   const lMax = (LH&&LH._maxMpFull)||150, rMax = (RH&&RH._maxMpFull)||150;
+  console.log('[updateMpBars] lMax='+lMax);
   ['l','r'].forEach(side=>{
     const bar = document.getElementById(side+'MpBar');
     const num = document.getElementById(side+'MpNum');
@@ -1653,7 +1655,30 @@ function buildFighterEl(el, ch, isFlip){
 function resetFight(){
   // 战斗DOM不存在时静默返回（index.html没有战斗界面）
   if(!document.getElementById('fL')) return;
-  
+
+  // ★ 修复（2026-05-05）：添加 _MAX_STAT=9999 脏值保护，防止时间戳等巨大数字被使用
+  const _MAX_STAT = 9999;
+  if (LH && LH.id === 'cp_self') {
+    const eqHp = (typeof edS !== 'undefined' && edS.equippedMaxHp > 0 && edS.equippedMaxHp <= _MAX_STAT) ? edS.equippedMaxHp : null;
+    const eqMp = (typeof edS !== 'undefined' && edS.equippedMaxMp > 0 && edS.equippedMaxMp <= _MAX_STAT) ? edS.equippedMaxMp : null;
+    if (eqHp && LH.maxHp !== eqHp) {
+      console.log('[resetFight] LH.maxHp:', LH.maxHp, '→', eqHp, '(equippedTotal)');
+      LH.maxHp = eqHp;
+    }
+    if (eqMp && LH.maxMp !== eqMp) {
+      console.log('[resetFight] LH.maxMp:', LH.maxMp, '→', eqMp, '(equippedTotal)');
+      LH.maxMp = eqMp;
+      LH._maxMpFull = eqMp;
+    }
+  }
+  // ★ 修复（2026-05-05）：添加 _MAX_STAT=9999 脏值保护
+  if (RH && RH.id === 'cp_self') {
+    const eqHp = (typeof edS !== 'undefined' && edS.equippedMaxHp > 0 && edS.equippedMaxHp <= _MAX_STAT) ? edS.equippedMaxHp : null;
+    const eqMp = (typeof edS !== 'undefined' && edS.equippedMaxMp > 0 && edS.equippedMaxMp <= _MAX_STAT) ? edS.equippedMaxMp : null;
+    if (eqHp && RH.maxHp !== eqHp) { RH.maxHp = eqHp; }
+    if (eqMp && RH.maxMp !== eqMp) { RH.maxMp = eqMp; }
+  }
+
   // 播放战斗开始音效（首次初始化时）
   if(typeof playSound==='function' && !resetFight._started){
     playSound('battle_start');
@@ -1670,8 +1695,11 @@ function resetFight(){
   // 先清除上一场的 _maxHpFull，避免 updateBars 用旧值导致血条显示一半
   LH._maxHpFull = null; RH._maxHpFull = null;
   lHp=LH.maxHp; rHp=RH.maxHp;
+  // ★ 同步初始化 lMp（与 lHp 对齐）
+  lMp=LH.maxMp||150; rMp=RH.maxMp||150;
   // 同步到 window 对象，确保全局可访问
   window.lHp=lHp; window.rHp=rHp;
+  window.lMp=lMp; window.rMp=rMp;
   cds={};
   LH.skills.forEach(s=>{cds[s.id]=0;});
   RH.skills.forEach(s=>{cds[s.id]=0;});
@@ -1772,6 +1800,85 @@ function resetFight(){
     return {};
   }
   function calcFinalStats(ch, wep, cos){
+    // ★ 改造（2026-05-05）：玩家侧（cp_self）直接读缓存值，不再重复计算装备/词条/强化/门派/境界/天赋/情缘/结义
+    if (ch.id === 'cp_self' && typeof edS !== 'undefined') {
+      const _MAX_STAT = 9999;
+      // 读缓存的总属性（已含所有加成，由 refreshEquippedStats() 写入）
+      const eqHp = (edS.equippedMaxHp > 0 && edS.equippedMaxHp <= _MAX_STAT) ? edS.equippedMaxHp : (ch.maxHp || 150);
+      const eqMp = (edS.equippedMaxMp > 0 && edS.equippedMaxMp <= _MAX_STAT) ? edS.equippedMaxMp : (ch.maxMp || 100);
+      ch.maxHp = eqHp;
+      ch.maxMp = eqMp;
+      const eqAtk   = edS.equippedAtk   || ch.atk || 15;
+      const eqDef   = edS.equippedDef   || ch.def || 10;
+      const eqCrit  = edS.equippedCrit  || ch.crit || 10;
+      const eqDodge = edS.equippedDodge || ch.dodge || 8;
+      const eqSpd   = edS.equippedSpd   || ch.speedN || 8;
+
+      // ── 战斗专属修正（仍需计算）──
+      // 饥渴惩罚
+      let hungerMult = 1, thirstMult = 1;
+      if (typeof travelPlayerState !== 'undefined') {
+        const food  = travelPlayerState.food  ?? 100;
+        const water = travelPlayerState.water ?? 100;
+        if(food < 10)      { hungerMult = 0.6; }
+        else if(food < 30) { hungerMult = 0.85; }
+        else if(food < 50) { hungerMult = 0.95; }
+        if(water < 5)       { thirstMult = 0.7; }
+        else if(water < 20){ thirstMult = 0.80; }
+        else if(water < 40){ thirstMult = 0.90; }
+      }
+      // 师徒加成
+      let maAtkMult=1, maDefMult=1;
+      if (typeof MA !== 'undefined' && typeof MA.getMasterApprenticeBonus === 'function') {
+        const mab = MA.getMasterApprenticeBonus(RH?._npcId || null);
+        maAtkMult = mab.atkMult || 1;
+        maDefMult = mab.defMult || 1;
+      }
+
+      // 收集效果类词条（吸血/反击/灼烧/护盾等）
+      let _equipEffects = {};
+      function _collectEquipEffects(affixes){
+        if(!affixes || !Array.isArray(affixes)) return;
+        affixes.forEach(a=>{
+          const s = a.stat;
+          if(['atkBonus','critBonus','hpBonus','defBonus','mpBonus','dodgeBonus','speedBonus'].includes(s)) return;
+          if(!a.isNegative){
+            const cur = _equipEffects[s] || 0;
+            _equipEffects[s] = Math.max(cur, a.value);
+          }
+        });
+      }
+      if(wep){ const wa = getItemAffixes('weapon', wep.id)||[]; _collectEquipEffects(wa); }
+      if(cos){ const ca = getItemAffixes('costume', cos.id)||[]; _collectEquipEffects(ca); }
+
+      // 门派建筑效果（经验/突破加成，非属性加成）
+      let bldExpMult = 1, bldBreakthrough = 0;
+      if (typeof sbGetAllEffects === 'function') {
+        const bfx = sbGetAllEffects();
+        bldExpMult = bfx.expBonus || 1;
+        bldBreakthrough = bfx.breakthroughBonus || 0;
+      }
+      // 门派天赋特殊效果
+      if (typeof stGetAllTalentEffects === 'function') {
+        const te = stGetAllTalentEffects();
+        if(te.specials) window._talentSpecials = te.specials;
+      }
+
+      return {
+        totalCrit:  Math.min(0.75, eqCrit / 100),
+        totalDodge: Math.min(0.50, eqDodge / 100),
+        totalHp: eqHp,
+        totalAtk:   Math.round(eqAtk * hungerMult * thirstMult * maAtkMult),
+        totalMp: eqMp,
+        totalSpd:   Math.round(eqSpd * thirstMult),
+        totalDef:   Math.round(eqDef * hungerMult * maDefMult),
+        _sectBonus: (typeof _getSectBonusFor === 'function') ? _getSectBonusFor(ch) : null,
+        _petEquipBonus: null,
+        _equipEffects: Object.keys(_equipEffects).length ? _equipEffects : null,
+      };
+    }
+
+    // ═══ 以下为 NPC 侧计算（ch.id !== 'cp_self'），逻辑不变 ═══
     const baseCrit = (ch.crit||10) / 100;
     const baseDodge = (ch.dodge||8) / 100;
     const wepCrit = wep ? (wep.critBonus||0) : 0;
@@ -1823,19 +1930,19 @@ function resetFight(){
       });
     }
     // ── 强化加成 ──
-    let enhAtk=0, enhDef=0, enhHp=0;
+    let enhAtk=0, enhDef=0, enhHp=0, enhMp=0;
     if(ch.id === 'cp_self' && typeof calcEnhBonus === 'function'){
       // 武器强化
       const wepInstId = typeof edS !== 'undefined' ? edS.weaponInstId : null;
       if(wepInstId && Array.isArray(edS.bag)){
         const wInst = edS.bag.find(i=>i.instId===wepInstId);
-        if(wInst){ const b=calcEnhBonus(wInst); enhAtk+=b.atk; enhDef+=b.def; enhHp+=b.hp; }
+        if(wInst){ const b=calcEnhBonus(wInst); enhAtk+=b.atk||0; enhDef+=b.def||0; enhHp+=b.hp||0; enhMp+=b.mp||0; }
       }
       // 防具强化
       const cosInstId = typeof edS !== 'undefined' ? edS.costumeInstId : null;
       if(cosInstId && Array.isArray(edS.bag)){
         const cInst = edS.bag.find(i=>i.instId===cosInstId);
-        if(cInst){ const b=calcEnhBonus(cInst); enhAtk+=b.atk; enhDef+=b.def; enhHp+=b.hp; }
+        if(cInst){ const b=calcEnhBonus(cInst); enhAtk+=b.atk||0; enhDef+=b.def||0; enhHp+=b.hp||0; enhMp+=b.mp||0; }
       }
     }
     // ── 出战宠物装备加成（仅玩家生效）──
@@ -1944,9 +2051,15 @@ function resetFight(){
     return {
       totalCrit:  Math.min(0.75, baseCrit + wepCrit + cosCrit + affCrit + sbCrit + swCrit + romCrit + (realmBonus.crit||0)/100 + tCrit),
       totalDodge: Math.min(0.50, baseDodge + wepDodge + cosDodge + affDodge + (realmBonus.dodge||0)/100 + tDodge),
-      totalHp:    ch.maxHp + wepHp + cosHp + affHp + sbHp + romHp + enhHp + petHp + Math.round(realmBonus.hp||0) + tHp,
+      // ★ 修复（2026-05-05）：equippedMaxHp/Mp 已由 getTotalStats() 包含所有加成
+      // （词条/强化/宠物/门派/境界/天赋/情缘/结义），直接使用即可，避免重复叠加
+      totalHp: (typeof edS !== 'undefined' && edS.equippedMaxHp > 0 && edS.equippedMaxHp <= 99999)
+        ? edS.equippedMaxHp
+        : ch.maxHp + wepHp + cosHp + affHp + sbHp + romHp + enhHp + petHp + Math.round(realmBonus.hp||0) + tHp,
       totalAtk:   Math.round((ch.atk + (wep?wep.atkBonus:0) * wepDurMult + cosAtk + affAtk + sbAtk + swAtk + romAtk + enhAtk + petAtk + (realmBonus.atk||0) + tAtk) * hungerMult * thirstMult * maAtkMult),
-      totalMp:    (ch.maxMp||150) + wepMp + cosMp + affMp + sbMp + petInt + Math.round(realmBonus.mp||0) + tMp,
+      totalMp: (typeof edS !== 'undefined' && edS.equippedMaxMp > 0 && edS.equippedMaxMp <= 99999)
+        ? edS.equippedMaxMp
+        : (ch.maxMp||150) + wepMp + cosMp + affMp + sbMp + enhMp + petInt + Math.round(realmBonus.mp||0) + tMp,
       totalSpd:   Math.round(((ch.speedN||8)  + wepSpd + cosSpd + affSpd + sbSpd + petSpd + tSpd) * thirstMult),
       totalDef:   Math.round((ch.def + ((wep?wep.defBonus||0:0)) * wepDurMult + ((cos?cos.defBonus||0:0)) * cosDurMult + affDef + sbDef + swDef + romDef + enhDef + petDef + (realmBonus.def||0) + tDef) * hungerMult * maDefMult),
       // 暴露门派加成信息供UI显示
@@ -1975,9 +2088,18 @@ function resetFight(){
   injectPrimaryPts(LH);
   injectPrimaryPts(RH);
   // 保存当前血量比例（在覆盖前）
-  const lHpRatio = (typeof lHp === 'number' && LH._maxHpFull) ? (lHp / LH._maxHpFull) : 1;
-  const lMpRatio = (typeof lMp === 'number' && LH._maxMpFull) ? (lMp / LH._maxMpFull) : 1;
+  // ★ 修复（2026-05-05）：clamp lMpRatio 到 [0, 2]，防止 _maxMpFull 异常导致比例爆炸
+  let _rawMpRatio = (typeof lMp === 'number' && LH._maxMpFull > 1) ? (lMp / LH._maxMpFull) : 1;
+  if (_rawMpRatio > 2) { console.warn('[resetFight] lMpRatio 异常:', _rawMpRatio, 'lMp='+lMp, '_maxMpFull='+LH._maxMpFull); _rawMpRatio = 1; }
+  if (_rawMpRatio < 0) { _rawMpRatio = 0; }
+  const lMpRatio = _rawMpRatio;
+  // ★ 同理处理 lHpRatio
+  let _rawHpRatio = (typeof lHp === 'number' && LH._maxHpFull > 1) ? (lHp / LH._maxHpFull) : 1;
+  if (_rawHpRatio > 2) { console.warn('[resetFight] lHpRatio 异常:', _rawHpRatio); _rawHpRatio = 1; }
+  if (_rawHpRatio < 0) { _rawHpRatio = 0; }
+  const lHpRatio = _rawHpRatio;
   // 用综合气血设置最大血量，但保留当前血量比例
+  console.log('[resetFight] calcFinalStats 结果：LH._stats.totalHp='+LH._stats.totalHp+', LH.maxHp='+LH.maxHp+', LH.name='+LH.name);
   LH._maxHpFull = LH._stats.totalHp; RH._maxHpFull = RH._stats.totalHp;
   lHp = Math.round(LH._stats.totalHp * lHpRatio);
   rHp = RH._stats.totalHp;
@@ -2009,6 +2131,9 @@ function resetFight(){
   // ── 内力（MP）初始化 ──
   LH._maxMpFull = LH._stats.totalMp; RH._maxMpFull = RH._stats.totalMp;
   lMp = Math.round(LH._stats.totalMp * lMpRatio);
+  // ★ 修复（2026-05-05）：clamp 当前内力到 [0, maxMp]，防止脏值或比例计算异常导致溢出
+  if (lMp > LH._stats.totalMp) { lMp = LH._stats.totalMp; }
+  if (lMp < 0) { lMp = 0; }
   rMp = RH._stats.totalMp;
   // 同步到 window 对象
   window.lMp = lMp; window.rMp = rMp;
@@ -2085,10 +2210,22 @@ function resetFight(){
   // ── 开场演出（精英/BOSS/剧情怪显示，普通野外怪跳过；擂台切磋始终播放 arena 风格）──
   const _bm = (typeof battleMode !== 'undefined') ? battleMode : '';
   const enemyTier = RH && (RH._enemyTier || RH.tier);
-  const isNormalWildEnemy = enemyTier === 'func' && !window._storyBossName;
+  const isNormalWildEnemy = enemyTier === 'func' && !window._storyBossName && !RH?._isNpc;
   const isArenaMode = _bm === 'arena';
   if(!resetFight._isReset){
     resetFight._isReset = true;
+    // 对NPC动手 → 好感直接-100（仅触发一次）
+    if(RH && RH._isNpc && RH._npcId){
+      try {
+        const raw = localStorage.getItem('wuxia_npc_state');
+        let ns = raw ? JSON.parse(raw) : { relations:{} };
+        if(!ns.relations) ns.relations = {};
+        ns.relations[RH._npcId] = -100;
+        localStorage.setItem('wuxia_npc_state', JSON.stringify(ns));
+      } catch(e) {
+        console.error('[resetFight] 存档失败:', e);
+      }
+    }
     // 擂台切磋：始终播放入场动画（showBossIntro 内部 isArena 判断会切换为切磋风格）
     // 非切磋：普通野外怪跳过，精英/BOSS/剧情怪播放
     if((isArenaMode || !isNormalWildEnemy) && typeof showBossIntro === 'function'){
@@ -2114,7 +2251,9 @@ function resetFight(){
 }
 
 function updateBars(){
+  console.log('[updateBars] lHp='+lHp+' LH._maxHpFull='+(LH&&LH._maxHpFull)+' LH.maxHp='+(LH&&LH.maxHp));
   const lMax=LH._maxHpFull||LH.maxHp, rMax=RH._maxHpFull||RH.maxHp;
+  console.log('[updateBars] lMax='+lMax+', rMax='+rMax);
   const lPct=Math.max(0,lHp/lMax*100),rPct=Math.max(0,rHp/rMax*100);
   const lEl=document.getElementById('lHp'),rEl=document.getElementById('rHp');
   if(lEl) lEl.style.width=lPct+'%';
@@ -3397,6 +3536,8 @@ function checkWin(){
       console.log('[掉落调试] 银两计算: base='+baseSilver+' tMult='+tMult+' talentSilver='+(talentSpec&&talentSpec.silverMult||1)+' → silverGained='+silverGained);
       
       // 发放银两：优先 addSilver > SilverManager > travelPlayerState > edS
+      // 记录实际发放总额（包含掉落银两、连胜加成等所有来源）
+      var totalSilverAwarded = silverGained;
       if(silverGained > 0){
         if(typeof addSilver === 'function'){
           addSilver(silverGained);
@@ -3409,6 +3550,8 @@ function checkWin(){
         }
         console.log('[掉落调试] 银两已发放: +'+silverGained);
       }
+      // 记录实际发放值，供 dungeon.js / town / 弹窗读取（包含后续掉落银两的累加）
+      window._lastBattleSilverGain = silverGained;
 
       if(typeof injectDropToCraftBag === 'function'){
         console.log('[掉落调试] ✅ 进入掉落循环');
@@ -3420,6 +3563,7 @@ function checkWin(){
             console.log('[掉落调试] 银两掉落项: qty='+qty);
             if(qty > 0){
               if(typeof addSilver === 'function') addSilver(qty);
+              totalSilverAwarded += qty; // 累加到弹窗显示值
               matLootLines.push(`💰银子×${qty}`);
             }
             return;
@@ -3454,6 +3598,8 @@ function checkWin(){
         </div>`;
         matLootLines.forEach(s => log(`🎒 材料：${s}`, 'lk'));
       }
+      // 更新实际发放总额（基础 + 所有掉落银两），供弹窗正确显示
+      window._lastBattleSilverGain = totalSilverAwarded;
     }
 
     // ── 成就系统触发 ──
@@ -3566,8 +3712,11 @@ function checkWin(){
           }
           console.log('[掉落调试] === 弹窗渲染(胜利) === silverGained='+silverGained+' lootHtml='+(lootHtml||'(空)'));
           const expHtml = `<div style="margin-top:6px;font-size:11px;letter-spacing:1px;color:rgba(100,180,255,.9)">✨ 获得经验 +${expGained}</div>`;
-          const silverHtml = (typeof silverGained !== 'undefined' && silverGained > 0)
-            ? `<div style="font-size:11px;letter-spacing:1px;color:rgba(255,215,100,.9)">💰 获得银两 +${silverGained}</div>`
+          const silverDisplay = (window._lastBattleSilverGain != null)
+            ? window._lastBattleSilverGain
+            : (silverGained || 0);
+          const silverHtml = (silverDisplay > 0)
+            ? `<div style="font-size:11px;letter-spacing:1px;color:rgba(255,215,100,.9)">💰 获得银两 +${silverDisplay}</div>`
             : '';
           const lootSectionHtml = lootHtml 
             ? `<div style="margin-top:6px;padding-top:6px;border-top:1px dashed rgba(240,192,96,.15)">${lootHtml}</div>` 
@@ -3701,7 +3850,6 @@ function renderBagPanel(){
         <div class="bag-item-affixes">${affixHtml}</div>
       </div>
       <div class="bag-item-actions">
-        ${!inst.identified&&inst.type!=='accessory'?`<div class="bag-action-btn identify" onclick="identifyInst('${inst.instId}')">鉴定</div>`:''}
         ${equipBtn}
         ${inst.type === 'accessory' && typeof CG !== 'undefined' && CG.squad && CG.squad.length > 0
           ? `<div class="bag-action-btn drop" style="opacity:.4;cursor:not-allowed" title="笼中有蛐蛐，请先移出">丢弃</div>`
@@ -4940,10 +5088,9 @@ function createPlayerFromSave() {
   // 优先从当前正式角色存档恢复：出身结束后生成的外观、装备与名字都应以 wuxia_editor 为准
   const currentSave = hydrateEdSFromEditorSave();
   if (currentSave) {
-    const stats = (typeof edStats === 'function') ? edStats() : {};
     const ascii = buildAsciiFromAvatarState(currentSave);
     // 速度优先用实时计算的，其次存档，最后默认值
-    const speedN = stats.spd ?? currentSave.speedN ?? 8;
+    const speedN = currentSave.speedN ?? 8;
     return {
       id: 'cp_self',
       name: currentSave.name || '无名侠',
@@ -4951,13 +5098,13 @@ function createPlayerFromSave() {
       tag: '江湖侠客',
       tagColor: currentSave.color || '#c0a070',
       color: currentSave.color || '#c0a070',
-      // 属性优先使用 edStats() 实时计算的值（包含等级成长、根骨加成）
-      maxHp: stats.hp ?? currentSave.maxHp ?? 200,
-      atk: stats.atk ?? currentSave.atk ?? 30,
-      def: stats.def ?? currentSave.def ?? 10,
-      crit: stats.crit ?? currentSave.crit ?? 10,
-      dodge: stats.dodge ?? currentSave.dodge ?? 5,
-      maxMp: stats.mp ?? currentSave.maxMp ?? 100,
+      // 直接读 currentSave（已含装备加成）
+      maxHp: currentSave.equippedMaxHp ?? currentSave.maxHp ?? 200,
+      atk: currentSave.equippedAtk ?? currentSave.atk ?? 30,
+      def: currentSave.equippedDef ?? currentSave.def ?? 10,
+      crit: currentSave.crit ?? 10,
+      dodge: currentSave.dodge ?? 5,
+      maxMp: currentSave.equippedMaxMp ?? currentSave.maxMp ?? 100,
       speedN,
       speed: speedN >= 10 ? '极快' : speedN >= 9 ? '快' : speedN >= 8 ? '中' : speedN >= 7 ? '慢' : '极慢',
       desc: '当前存档中的江湖角色',
@@ -5167,8 +5314,13 @@ function initBattleScene() {
       window.lHp = lHp; // 同步到 window 对象
     }
     if (typeof contextData.player._currentMp === 'number') {
-      lMp = contextData.player._currentMp;
-      window.lMp = lMp; // 同步到 window 对象
+      // ★ 修复（2026-05-05）：防止脏值（>99999）被写入 lMp
+      if (contextData.player._currentMp > 99999) {
+        console.warn('[battle.js] contextData.player._currentMp 脏值已丢弃:', contextData.player._currentMp);
+      } else {
+        lMp = contextData.player._currentMp;
+        window.lMp = lMp; // 同步到 window 对象
+      }
     }
     
     // ═══════════════════════════════════════════════════════════════

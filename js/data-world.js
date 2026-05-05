@@ -260,6 +260,7 @@ const WORLD_NODES = {
     region:'汉中盆地', terrain:'盆地',
     desc:'汉水源头，天府之国北门。蜀道咽喉，历代兵家必争之地。米仓山以南，秦岭以北。',
     services:['inn','shop','blacksmith','market','tavern','stable','poststation'],
+    roads:{ N:'xian', NE:'shangzhou', S:'guangyuan' },
   },
   lanzhou: {
     id:'lanzhou', name:'兰州', icon:'🏘', type:'city', tier:'major',

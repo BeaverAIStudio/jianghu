@@ -290,7 +290,8 @@ const DUNGEON_DB = {
         { type:'boss',    cleared:false, enemyId:'deserter_boss', desc:'【暗道霸主】原是襄阳守将，如今落草为寇' },
       ],
     ],
-    startPos: [1, 0],
+    // 玩家出生点（entry 在第1行第1列）
+    startPos: [1, 1],
     bossReward: { exp:460, silver:88, items:[{id:'item_iron_ore',qty:3},{id:'item_cloth',qty:2}], manualChance:0.15 },
     unlocks: [],
     restInterval: 3,
@@ -776,31 +777,31 @@ const DUNGEON_DB = {
     map: [
       [
         { type:'entry',  cleared:true,  desc:'塔林入口，古塔林立' },
-        null,
+        { type:'event', cleared:false, desc:'塔间小径，古塔耸立' },
         { type:'battle', cleared:false, enemyId:'pagoda_thief',   desc:'山贼在塔间埋伏' },
-        null,
+        { type:'event', cleared:false, desc:'塔间小径，尽头有闪光' },
         { type:'chest',  cleared:false, lootTier:'common',     desc:'香客落下的香油钱袋' },
       ],
       [
         { type:'battle', cleared:false, enemyId:'wolf',          desc:'野狗在塔林游荡' },
         { type:'rest',   cleared:false, desc:'塔下的石凳可以休息' },
-        null,
+        { type:'event', cleared:false, desc:'塔间小径' },
         { type:'chest',  cleared:false, lootTier:'uncommon',     desc:'塔基下的秘密藏宝处' },
         { type:'battle', cleared:false, enemyId:'pagoda_thief',   desc:'山贼在塔后躲藏' },
       ],
       [
-        null,
+        { type:'event', cleared:false, desc:'塔基旁的石径' },
         { type:'trap',   cleared:false, desc:'塔林中的陷阱！' },
         { type:'elite',  cleared:false, enemyId:'pagoda_thief',   desc:'山贼小头目' },
         { type:'battle', cleared:false, enemyId:'pagoda_thief',   desc:'山贼手下' },
-        null,
+        { type:'event', cleared:false, desc:'塔林边缘的小径' },
       ],
       [
         { type:'chest',  cleared:false, lootTier:'rare',         desc:'高僧塔中的遗物' },
-        null,
+        { type:'event', cleared:false, desc:'塔基旁的石径' },
         { type:'event',  cleared:false, desc:'一位老僧，知道山贼的藏身之处' },
         { type:'boss',   cleared:false, enemyId:'pagoda_boss', desc:'【塔林恶霸】胆敢在佛门清净地行凶' },
-        null,
+        { type:'event', cleared:false, desc:'塔林边缘' },
       ],
     ],
     startPos: [0, 0],
@@ -3726,6 +3727,10 @@ const DUNGEON_LOCAL_TASK_LOOT = {
   },
 
   dungeon_xiangyang_secret_passage: {
+    roomCollect: [
+      { id:'item_herb_common',  chance:0.55, minQty:1, maxQty:2 },
+      { id:'item_iron_ore',     chance:0.45, minQty:1, maxQty:2 },
+    ],
     enemyDrops: [
       { id:'item_ore_iron',        chance:0.22, minQty:1, maxQty:2 },
       { id:'item_leftover_food',   chance:0.18, minQty:1, maxQty:2 },

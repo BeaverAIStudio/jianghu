@@ -34,14 +34,9 @@ let goGameState = {
 };
 
 // ==================== 初始化 ====================
-function openGoGame(cityId) {
-    if (!cityId) {
-        console.error('openGoGame: cityId is required');
-        return;
-    }
-    
+function openGoGame() {
     // 检查悟性
-    const wisdom = edS.playerAttributes?.wisdom || 50;
+    const wisdom = (typeof edS !== 'undefined' && edS.playerAttributes) ? (edS.playerAttributes.wisdom || 30) : 30;
     if (wisdom < 30) {
         showBanner('悟性不足', '你的悟性不足30，难以领悟棋道。', 'warning');
         return;

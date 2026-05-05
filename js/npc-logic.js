@@ -23,13 +23,16 @@ function npcStateLoad(){
     const raw = localStorage.getItem(NPC_STATE_KEY);
     if(raw){
       const d = JSON.parse(raw);
-      if(d && d.relations){
+      if(d){
         // 兼容旧存档：补齐新字段（含 npc-combat.js 需要的 deaths/npcInsts）
         npcState = Object.assign({
-          interactCounts:{}, lastInteractDay:{}, topicsDone:{}, questDoneFor:{},
-          alignQuests:{}, questLastDone:{}, questChainUnlock:{},
+          relations:{}, interactCounts:{}, lastInteractDay:{}, topicsDone:{},
+          giftTopics:{}, questDoneFor:{}, alignQuests:{},
+          questLastDone:{}, questChainUnlock:{},
           deaths:{}, npcInsts:{}, npcMoods:{}, lastDecayDay:0
         }, d);
+        // 确保 relations 不为空（旧存档可能没有）
+        if(!npcState.relations) npcState.relations = {};
         // 确保 deaths/npcInsts 不为 null/undefined（旧存档可能存了 null）
         if(!npcState.deaths)  npcState.deaths  = {};
         if(!npcState.npcInsts) npcState.npcInsts = {};
@@ -114,9 +117,8 @@ function getNpcRel(npcId){
   return npcState.relations[npcId];
 }
 
-// ── 好感系统：有限制的 changeNpcRel（闲聊/赠礼路径走此函数）
-// 任务奖励直接调 _changeNpcRelDirect 绕过软上限
 function changeNpcRel(npcId, delta){
+  console.log('[changeNpcRel] 被调用, npcId=', npcId, 'delta=', delta, new Error().stack);
   const cur = getNpcRel(npcId);
   // 阶段软上限：好感 ≥ 60 需完成过该NPC至少1个任务
   let cap = 100;
@@ -125,8 +127,8 @@ function changeNpcRel(npcId, delta){
   npcState.relations[npcId] = next;
   npcStateSave();
 }
-// 任务奖励专用：无软上限限制
 function _changeNpcRelDirect(npcId, delta){
+  console.log('[_changeNpcRelDirect] 被调用, npcId=', npcId, 'delta=', delta, new Error().stack);
   const cur = getNpcRel(npcId);
   npcState.relations[npcId] = Math.max(-100, Math.min(100, cur + delta));
   npcStateSave();
@@ -3095,8 +3097,10 @@ function npcDoTopic(topicId, npcId){
   // 执行动作
   if(tp.action){
     const _svcFn = typeof window.travelServiceAction === 'function' ? window.travelServiceAction : null;
-    if(tp.action === 'inn_rest') { closeNpcDialog(); _svcFn ? _svcFn('inn', _curCityId) : showToast('旅店服务暂不可用'); }
-    else if(tp.action === 'heal_hp' || tp.action === 'open_hospital') { closeNpcDialog(); _svcFn ? _svcFn('hospital', _curCityId) : showToast('医馆服务暂不可用'); }
+    // 兜底：_curCityId 可能因某些调用路径未传 cityId 而为 null/undefined，此时用 travelCurrentCity 或 'luoyang'
+    const _resolvedCityId = _curCityId || (typeof travelCurrentCity !== 'undefined' ? travelCurrentCity : null) || 'luoyang';
+    if(tp.action === 'inn_rest') { closeNpcDialog(); _svcFn ? _svcFn('inn', _resolvedCityId) : showToast('旅店服务暂不可用'); }
+    else if(tp.action === 'heal_hp' || tp.action === 'open_hospital') { closeNpcDialog(); _svcFn ? _svcFn('hospital', _resolvedCityId) : showToast('医馆服务暂不可用'); }
     else if(tp.action === 'go_weapons') { closeNpcDialog(); travelGoWeapons(); }
     else if(tp.action === 'go_skills') { closeNpcDialog(); showPage('skills'); }
     else if(tp.action === 'open_shop') { _switchNpcTabByName('商店'); }
@@ -5222,21 +5226,36 @@ function doNpcIdentify(instId, cost) {
     ? WEAPONS.find(w => w.id === inst.templateId)
     : COSTUMES.find(c => c.id === inst.templateId);
 
-  // 使用 data-equip.js 的鉴定函数
-  if (typeof rollAffixes === 'function') {
-    inst.affixes = rollAffixes(tpl ? tpl.rarity : 'common');
-  } else {
-    inst.affixes = [];
+  // 如果找不到模板，提示用户
+  if (!tpl) {
+    showToast('⚠️ 装备模板数据异常，无法鉴定！');
+    return;
   }
+
+  // 使用 data-equip.js 的鉴定函数
+  if (typeof rollAffixes !== 'function') {
+    showToast('⚠️ 鉴定系统未加载，请刷新页面！');
+    return;
+  }
+
+  inst.affixes = rollAffixes(tpl.rarity);
   inst.identified = true;
+
+  // 双重保存：wuxia_bag（背包系统）+ wuxia_editor（战斗系统）
   bagSave();
+  // 同步到 wuxia_editor，确保战斗系统能读取到鉴定后的词条
+  if (typeof editorSave === 'function') {
+    editorSave();
+  } else if (typeof saveGameState === 'function') {
+    saveGameState();
+  }
 
   // 显示结果
   const names = inst.affixes && inst.affixes.length > 0
     ? inst.affixes.map(a => `<span style="color:#ffd060">${a.label || '?'}</span>`).join('·')
     : '无';
 
-  showToast(`✨ 鉴定成功！${tpl ? tpl.name : '装备'} 获得词条：${names}`);
+  showToast(`✨ 鉴定成功！${tpl.name} 获得词条：${names}`);
   if (typeof playAudio === 'function') playAudio('identify');
 
   // 刷新面板

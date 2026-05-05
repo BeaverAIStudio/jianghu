@@ -1,4 +1,4 @@
-// ════════════════════════════════════════════════════
+﻿// ════════════════════════════════════════════════════
 //  dungeon.js  地下城系统
 //  功能：进入/地图探索/战斗接入/结算/存档
 //  version: 24
@@ -264,8 +264,8 @@ function _startFactionPatrolBattle(enemyId, dungeonId, fromPage, ownerId, patrol
   if(!playerChar){ showToast('请先创建或选择角色'); return; }
 
   if(typeof edS !== 'undefined'){
-    const _rs = (typeof edStats === 'function') ? edStats() : {};
-    playerChar.maxHp = _rs.hp || edS.maxHp || playerChar.maxHp || 100;
+    // ★ 修复（2026-05-04）：直接用 edS.maxHp，不用 edStats()
+    playerChar.maxHp = edS.maxHp || playerChar.maxHp || 100;
     // 当前血量：优先 travelPlayerState 百分比 → edS.hp → 满血
     if (typeof travelPlayerState !== 'undefined' && typeof travelPlayerState.hp === 'number') {
       playerChar._currentHp = Math.max(1, Math.round(playerChar.maxHp * travelPlayerState.hp / 100));
@@ -274,8 +274,8 @@ function _startFactionPatrolBattle(enemyId, dungeonId, fromPage, ownerId, patrol
     } else {
       playerChar._currentHp = playerChar.maxHp || 100;
     }
-    playerChar.maxMp = _rs.mp || edS.maxMp || playerChar.maxMp || 100;
-    playerChar._currentMp = (typeof edS.mp === 'number') ? Math.min(edS.mp, playerChar.maxMp) : (playerChar.maxMp || 100);
+    playerChar.maxMp = edS.maxMp || playerChar.maxMp || 100;
+    playerChar._currentMp = (typeof edS.mp === 'number' && edS.mp <= 99999) ? Math.min(edS.mp, playerChar.maxMp) : (playerChar.maxMp || 100);
   }
 
   const enemyDb = (typeof ENEMY_DB !== 'undefined' && ENEMY_DB) || {};
@@ -316,15 +316,23 @@ function _onFactionPatrolBattleEnd(playerWon){
 
   const { dungeonId, fromPage, _origEnemy, ownerId, patrolCityId } = ctx;
   const origEnemy = _origEnemy || null;
-  const expGain = origEnemy ? (origEnemy.exp || 10) : 10;
-  const silverGain = origEnemy ? (origEnemy.silver || 5) : 5;
+  // 优先读 battle.js 实际发放值，其次用原始值兜底
+  const expGain = window._lastBattleExpGain || (origEnemy ? (origEnemy.exp || 10) : 10);
+  const silverGain = window._lastBattleSilverGain || (origEnemy ? (origEnemy.silver || 5) : 5);
+  // 清除，防止下一战误用旧值
+  window._lastBattleExpGain = null;
+  window._lastBattleSilverGain = null;
 
   if(playerWon){
-    // ── 打赢 → 银子 + 城市声望变化（经验已由 checkWin() 统一发放）──
-    if(typeof addSilver === 'function'){
-      addSilver(silverGain);
-    } else if(typeof travelPlayerState !== 'undefined'){
-      travelPlayerState.silver = (travelPlayerState.silver || 0) + silverGain;
+    // ── 打赢 → 银两 + 城市声望变化（经验已由 checkWin() 统一发放）──
+    if(silverGain > 0){
+      if(typeof SilverManager !== 'undefined'){
+        SilverManager.add(silverGain); SilverManager.save();
+      } else if(typeof addSilver === 'function'){
+        addSilver(silverGain);
+      } else if(typeof travelPlayerState !== 'undefined'){
+        travelPlayerState.silver = (travelPlayerState.silver || 0) + silverGain;
+      }
     }
 
     // 城市声望变化（仅在被门派控制的城市）
@@ -1393,8 +1401,8 @@ function dungeonStartBattle(){
 
   // 同步玩家当前血量（从 edS 读取实际血量）
   if(typeof edS !== 'undefined'){
-    const _rs = (typeof edStats === 'function') ? edStats() : {};
-    playerChar.maxHp = _rs.hp || edS.maxHp || playerChar.maxHp || 100;
+    // ★ 修复（2026-05-04）：直接用 edS.maxHp，不用 edStats()
+    playerChar.maxHp = edS.maxHp || playerChar.maxHp || 100;
     // 当前血量：优先 travelPlayerState 百分比 → edS.hp → 满血
     if (typeof travelPlayerState !== 'undefined' && typeof travelPlayerState.hp === 'number') {
       playerChar._currentHp = Math.max(1, Math.round(playerChar.maxHp * travelPlayerState.hp / 100));
@@ -1403,8 +1411,8 @@ function dungeonStartBattle(){
     } else {
       playerChar._currentHp = playerChar.maxHp || 100;
     }
-    playerChar.maxMp = _rs.mp || edS.maxMp || playerChar.maxMp || 100;
-    playerChar._currentMp = (typeof edS.mp === 'number') ? Math.min(edS.mp, playerChar.maxMp) : (playerChar.maxMp || 100);
+    playerChar.maxMp = edS.maxMp || playerChar.maxMp || 100;
+    playerChar._currentMp = (typeof edS.mp === 'number' && edS.mp <= 99999) ? Math.min(edS.mp, playerChar.maxMp) : (playerChar.maxMp || 100);
   }
 
   // 缩放敌人等级（用 edS.level 而非 playerChar.level，因为 cp_self 没有 level 字段）
@@ -1525,12 +1533,21 @@ function _onDungeonBattleEnd(playerWon){
     _pendingDungeonBattleCell = null;
 
     // 经验已由 checkWin() 统一发放；此处只处理银两
-    const expGain = enemy.exp || 0;   // 保留变量供 Toast 显示
-    const silverGain = enemy.silver || 0;
+    // 读取 battle.js 实际发放的值（含加成），而非 enemy 原始值
+    const expGain = window._lastBattleExpGain || (enemy ? (enemy.exp || 0) : 0);
+    const silverGain = window._lastBattleSilverGain || (enemy ? (enemy.silver || 0) : 0);
     if(silverGain > 0){
-      addSilver(silverGain);
-      SilverManager.save();
+      if(typeof SilverManager !== 'undefined'){
+        SilverManager.add(silverGain); SilverManager.save();
+      } else if(typeof addSilver === 'function'){
+        addSilver(silverGain);
+      } else if(typeof travelPlayerState !== 'undefined'){
+        travelPlayerState.silver = (travelPlayerState.silver || 0) + silverGain;
+      }
     }
+    // 用完清除，防止下一战读到旧值
+    window._lastBattleExpGain = null;
+    window._lastBattleSilverGain = null;
 
     // ── 动态任务进度更新 ──
     if (typeof updateQuestProgressOnKill === 'function') {
@@ -1588,7 +1605,12 @@ function _onDungeonBossKilled(row, col){
     rewardLines.push(`✨ 额外奖励：${reward.exp} 经验`);
   }
   if(reward.silver){
-    addSilver(reward.silver);
+    if(typeof SilverManager !== 'undefined'){
+      SilverManager.add(reward.silver);
+      SilverManager.save();
+    } else if(typeof addSilver === 'function') {
+      addSilver(reward.silver);
+    }
     rewardLines.push(`💰 银两：${reward.silver} 两`);
   }
   if(reward.items && reward.items.length){
@@ -2719,8 +2741,8 @@ function _dungeonTriggerMimicBattle(){
     
     // 同步玩家血量
     if(typeof edS !== 'undefined'){
-      const _rs = (typeof edStats === 'function') ? edStats() : {};
-      playerChar.maxHp = _rs.hp || edS.maxHp || playerChar.maxHp || 100;
+      // ★ 修复（2026-05-04）：直接用 edS.maxHp，不用 edStats()
+      playerChar.maxHp = edS.maxHp || playerChar.maxHp || 100;
       playerChar._currentHp = (typeof travelPlayerState !== 'undefined' && typeof travelPlayerState.hp === 'number')
         ? Math.max(1, Math.round(playerChar.maxHp * travelPlayerState.hp / 100))
         : ((typeof edS.hp === 'number') ? Math.min(edS.hp, playerChar.maxHp) : playerChar.maxHp);
@@ -2885,9 +2907,19 @@ function _dungeonAddItem(itemId, qty){
     }
     return;
   }
-  // 查找物品元数据（优先级：DUNGEON_ITEM_DB > ENEMY_DROP_ITEMS > CRAFT_MATERIAL_NAMES）
-  const meta = (typeof getItemMeta === 'function') ? getItemMeta(itemId) : null;
-  const type = meta?.type || 'consumable';
+  // 查找物品元数据（优先级：DUNGEON_ITEM_DB > ENEMY_DROP_ITEMS > 装备模板 > CRAFT_MATERIAL_NAMES）
+  let meta = (typeof getItemMeta === 'function') ? getItemMeta(itemId) : null;
+  let type = meta?.type || '';
+  // 额外检查装备模板（WEAPONS / COSTUMES 数组）
+  if (!type && typeof WEAPONS !== 'undefined') {
+    const _tpl = WEAPONS.find(w => w.id === itemId);
+    if (_tpl) { type = 'weapon'; meta = _tpl; }
+  }
+  if (!type && typeof COSTUMES !== 'undefined') {
+    const _tpl = COSTUMES.find(c => c.id === itemId);
+    if (_tpl) { type = 'costume'; meta = _tpl; }
+  }
+  if (!type) type = 'consumable';
 
   if(type === 'collectible' || type === 'material'){
     // 材料/收藏品 → 合成材料背包
@@ -3208,16 +3240,16 @@ function startBattleInNewPage(playerChar, enemyChar, returnUrl, callback){
 
   // 强制从 edS 同步玩家数据（确保使用最新存档数据）
   if(typeof edS !== 'undefined'){
-    const _realStats = (typeof edStats === 'function') ? edStats() : {};
-    playerChar.maxHp = _realStats.hp || edS.maxHp || playerChar.maxHp || 100;
+    // ★ 修复（2026-05-04）：直接用 edS.maxHp，不用 edStats()
+    playerChar.maxHp = edS.maxHp || playerChar.maxHp || 100;
     // 当前血量：优先 travelPlayerState 百分比 → edS.hp → playerChar 已有值
     if (typeof travelPlayerState !== 'undefined' && typeof travelPlayerState.hp === 'number') {
       playerChar._currentHp = Math.max(1, Math.round(playerChar.maxHp * travelPlayerState.hp / 100));
     } else if (typeof edS.hp === 'number') {
       playerChar._currentHp = Math.min(edS.hp, playerChar.maxHp);
     }
-    playerChar.maxMp = _realStats.mp || edS.maxMp || playerChar.maxMp || 100;
-    if (typeof edS.mp === 'number') {
+    playerChar.maxMp = edS.maxMp || playerChar.maxMp || 100;
+    if (typeof edS.mp === 'number' && edS.mp <= 99999) {
       playerChar._currentMp = Math.min(edS.mp, playerChar.maxMp);
     }
   }
@@ -3310,18 +3342,36 @@ function startBattleInNewPage(playerChar, enemyChar, returnUrl, callback){
   sessionStorage.setItem('battleContext', JSON.stringify(battleContext));
 
   // ★ 同步玩家当前血量到 sessionStorage（battle.html 需要读取）
-  if (playerChar._currentHp) {
-    sessionStorage.setItem('wuxia_dungeon_player_hp', String(Math.round(playerChar._currentHp)));
+  // ★ 修复（2026-05-05）：写入 sessionStorage 前检查脏值
+  if (playerChar._currentHp != null) {
+    const _safeCurHp = (typeof playerChar._currentHp === 'number' && playerChar._currentHp >= 0 && playerChar._currentHp <= 99999) ? playerChar._currentHp : 0;
+    sessionStorage.setItem('wuxia_dungeon_player_hp', String(Math.round(_safeCurHp)));
     sessionStorage.setItem('wuxia_dungeon_player_maxhp', String(Math.round(playerChar.maxHp || 100)));
   }
-  if (playerChar._currentMp) {
-    sessionStorage.setItem('wuxia_dungeon_player_mp', String(Math.round(playerChar._currentMp)));
+  if (playerChar._currentMp != null) {
+    // ★ 修复（2026-05-05）：当前值不能超过 maxMp，防止比例 >1 导致翻倍
+    const _safeCurMp = (typeof playerChar._currentMp === 'number' && playerChar._currentMp >= 0 && playerChar._currentMp <= 99999) ? Math.min(playerChar._currentMp, playerChar.maxMp) : 0;
+    sessionStorage.setItem('wuxia_dungeon_player_mp', String(Math.round(_safeCurMp)));
     sessionStorage.setItem('wuxia_dungeon_player_maxmp', String(Math.round(playerChar.maxMp || 100)));
   }
   
   // 保存回调函数引用（序列化不了，用全局变量）
   window._pendingBattleCallback = callback;
   
+  // ── 战斗前同步背包（确保 battle.html 能加载到最新背包）──
+  if (typeof edS !== 'undefined' && edS) {
+    try {
+      if (typeof bagSave === 'function') bagSave();
+      else localStorage.setItem('wuxia_bag', JSON.stringify(edS.bag || []));
+      const _edRaw = localStorage.getItem('wuxia_editor');
+      if (_edRaw) {
+        const _edD = JSON.parse(_edRaw);
+        _edD.bag = edS.bag || [];
+        localStorage.setItem('wuxia_editor', JSON.stringify(_edD));
+      }
+    } catch(e) { console.warn('[startBattleInNewPage] 同步背包失败:', e); }
+  }
+
   // 跳转到战斗页面前先清掉上一界面的残留音效
   if (typeof clearGameAudio === 'function') clearGameAudio();
   window.location.href = 'battle.html';

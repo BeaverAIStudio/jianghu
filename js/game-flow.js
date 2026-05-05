@@ -75,17 +75,22 @@ const SilverManager = {
     return true;
   },
 
-  // 保存银两状态
+  // 保存银两状态（同步到所有存档）
   save() {
-    // 保存 travelPlayerState
-    if (typeof travelSave === 'function') {
-      travelSave();
-    }
-    // 保存 edS
-    if (typeof editorSave === 'function') {
-      editorSave();
-    } else if (typeof saveGameState === 'function') {
-      saveGameState();
+    // 优先使用统一存档 API
+    if (typeof WuxiaSave !== 'undefined' && typeof WuxiaSave.syncSilver === 'function') {
+      const cur = this.get();
+      WuxiaSave.syncSilver(cur);
+    } else {
+      // fallback：保留原有保存逻辑
+      if (typeof travelSave === 'function') {
+        travelSave();
+      }
+      if (typeof editorSave === 'function') {
+        editorSave();
+      } else if (typeof saveGameState === 'function') {
+        saveGameState();
+      }
     }
   },
 
@@ -109,12 +114,34 @@ const SilverManager = {
   }
 };
 
-// 全局快捷函数（方便调用）
-function getSilver() { return SilverManager.get(); }
+// 全局快捷函数（方便调用）—— 统一走 WuxiaSave
+function getSilver() {
+  if (typeof WuxiaSave !== 'undefined' && typeof WuxiaSave.loadProfile === 'function') {
+    const p = WuxiaSave.loadProfile();
+    if (p && p.silver != null) return p.silver;
+  }
+  return SilverManager.get();
+}
 function setSilver(v) { return SilverManager.set(v); }
-function addSilver(delta) { return SilverManager.add(delta); }
-function hasSilver(amount) { return SilverManager.has(amount); }
-function spendSilver(amount) { return SilverManager.spend(amount); }
+function addSilver(delta) {
+  // 优先使用统一存档 API
+  if (typeof WuxiaSave !== 'undefined' && typeof WuxiaSave.syncSilver === 'function') {
+    const cur = getSilver();
+    const newVal = cur + delta;
+    // 同时更新内存中的银两，防止后续 saveProfile 覆盖
+    if (typeof edS !== 'undefined') edS.silver = newVal;
+    if (typeof travelPlayerState !== 'undefined') travelPlayerState.silver = newVal;
+    WuxiaSave.syncSilver(newVal);
+    return newVal;
+  }
+  return SilverManager.add(delta);
+}
+function hasSilver(amount) { return getSilver() >= amount; }
+function spendSilver(amount) {
+  if (!hasSilver(amount)) return false;
+  addSilver(-amount);
+  return true;
+}
 
 // ── 功能解锁配置 ──
 const FEATURE_UNLOCKS = [
@@ -150,32 +177,45 @@ function saveGameState() {
   try {
     gameState.lastSaveTime = new Date().toISOString();
     localStorage.setItem(GAME_STATE_KEY, JSON.stringify(gameState));
-    localStorage.setItem(TRAVEL_STATE_KEY, JSON.stringify({
-      city: travelCurrentCity,
-      history: travelHistory,
-      eventLog: travelEventLog,
-      state: travelPlayerState,
-    }));
+
+    // ── 玩家数据：统一存档（2026-05-03）──
     if (typeof edS !== 'undefined') {
-      localStorage.setItem('wuxia_editor', JSON.stringify(edS));
+      if (typeof WuxiaSave !== 'undefined' && typeof WuxiaSave.saveProfile === 'function') {
+        WuxiaSave.saveProfile(edS);
+      } else {
+        // fallback：保留原有逐键同步逻辑
+        localStorage.setItem('wuxia_editor', JSON.stringify(edS));
+        try {
+          if (typeof bagSave === 'function') { bagSave(); }
+          else if (Array.isArray(edS.bag)) { localStorage.setItem('wuxia_bag', JSON.stringify(edS.bag)); }
+        } catch(e) {}
+        try {
+          const profile = {
+            name: edS.name || '',
+            level: edS.level || 1,
+            hp: edS.hp || 0,
+            maxHp: edS.maxHp || 0,
+            mp: edS.mp || 0,
+            maxMp: edS.maxMp || 0,
+            silver: (typeof getSilver === 'function') ? getSilver() : (edS.silver || 0),
+            totalExp: edS.totalExp || 0,
+          };
+          localStorage.setItem(PLAYER_PROFILE_KEY, JSON.stringify(profile));
+        } catch(e) {}
+      }
     }
-    // 独立保存玩家档案（名称+核心属性），确保跨页面可靠读取
-    if (typeof edS !== 'undefined') {
-      try {
-        const profile = {
-          name: edS.name || '',
-          level: edS.level || 1,
-          hp: edS.hp || 0,
-          maxHp: edS.maxHp || 0,
-          mp: edS.mp || 0,
-          maxMp: edS.maxMp || 0,
-          silver: getSilver(), // 使用统一银两管理器获取
-          totalExp: edS.totalExp || 0, // 保存经验值
-        };
-        localStorage.setItem(PLAYER_PROFILE_KEY, JSON.stringify(profile));
-      } catch(e) {}
-    }
-    // 同时保存到 wuxia_player_progress（确保兼容性）
+
+    // ── 旅行状态（city/history/eventLog）在 WuxiaSave 之后补全 ──
+    try {
+      const t = JSON.parse(localStorage.getItem('wuxia_travel') || '{}');
+      if (!t.state) t.state = {};
+      t.city = travelCurrentCity;
+      t.history = travelHistory;
+      t.eventLog = travelEventLog;
+      localStorage.setItem('wuxia_travel', JSON.stringify(t));
+    } catch(e) {}
+
+    // ── 经验/境界进度（独立存档）──
     if (typeof edS !== 'undefined') {
       try {
         const progress = JSON.parse(localStorage.getItem('wuxia_player_progress') || '{}');
@@ -188,6 +228,7 @@ function saveGameState() {
         localStorage.setItem('wuxia_player_progress', JSON.stringify(progress));
       } catch(e) {}
     }
+
     showToast('[OK] 游戏已保存', 2000);
   } catch (e) {
     console.error('保存失败:', e);
@@ -206,33 +247,28 @@ function loadGameState() {
     // 加载旅行状态
     travelLoad();
     
-    // 加载角色状态（跳过 getter 属性避免 setter-only 报错）
-    if (typeof edS !== 'undefined') {
+    // ── 统一存档初始化 ──
+    if (typeof edS !== 'undefined' && typeof WuxiaSave !== 'undefined' && typeof WuxiaSave.initPage === 'function') {
+      WuxiaSave.initPage(edS);
+    } else {
+      // fallback：保留原有逐字段加载逻辑
       const edRaw = localStorage.getItem('wuxia_editor');
       if (edRaw) {
         const edData = JSON.parse(edRaw);
-        // edS.weaponId / edS.costumeId 是只读 getter，Object.assign 不能覆盖
-        // 改为逐字段赋值，跳过 getter
-        const getterKeys = [];
-        const desc = Object.getOwnPropertyDescriptors(edS);
-        for (const k of Object.keys(desc)) {
-          if (typeof desc[k].get === 'function' && typeof desc[k].set !== 'function') getterKeys.push(k);
-        }
+        const getterKeys = Object.keys(Object.getOwnPropertyDescriptors(edS))
+          .filter(k => typeof Object.getOwnPropertyDescriptor(edS, k)?.get === 'function' 
+                    && typeof Object.getOwnPropertyDescriptor(edS, k)?.set !== 'function');
         for (const [k, v] of Object.entries(edData)) {
           if (!getterKeys.includes(k)) edS[k] = v;
         }
       }
-      // 独立恢复玩家档案（优先级最高，确保 name 可靠）
       const profileRaw = localStorage.getItem(PLAYER_PROFILE_KEY);
       if (profileRaw) {
-        try {
-          const profile = JSON.parse(profileRaw);
-          if (profile.name) edS.name = profile.name;
-        } catch(e) {}
+        try { const p = JSON.parse(profileRaw); if (p.name) edS.name = p.name; } catch(e) {}
       }
     }
     
-    // 同步银两状态（统一管理系统）
+    // 同步银两状态
     SilverManager.sync();
     
     return true;
@@ -847,7 +883,11 @@ function startTownTutorial() {
   const cityName = document.getElementById('townCityName')?.textContent || '洛阳';
   const steps = TOWN_TUTORIAL_STEPS.map((s, i) => {
     if (i === 0) {
-      return { ...s, title: '欢迎来到' + cityName };
+      return {
+        ...s,
+        title: '欢迎来到' + cityName,
+        content: s.content.replace('洛阳', cityName),
+      };
     }
     return s;
   });

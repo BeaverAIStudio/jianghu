@@ -650,11 +650,11 @@ function renderSectTalentPanel(sect){
 
       // 效果
       if(t.effect){
-        var effStrs = Object.keys(t.effect).map(function(k){
+        var effStrs = Object.keys(t.effect).filter(function(k){ return k.charAt(0) !== '_'; }).map(function(k){
           var labels = { atk:'⚔攻击', def:'🛡防御', hp:'❤气血', mp:'💙内力', crit:'🎯暴击', dodge:'💨闪避', spd:'⚡速度', poisonAtk:'🐍毒攻', poisonResist:'💚抗毒', iceAtk:'❄冰攻', iceResist:'🧊抗冰', cureBonus:'💖疗效', counterAtk:'⚔反击' };
           return (labels[k]||k) + '+' + t.effect[k];
         }).join(' · ');
-        html += '<div style="font-size:9px;color:rgba(200,180,120,.6);margin-top:2px">' + effStrs + '</div>';
+        if(effStrs) html += '<div style="font-size:9px;color:rgba(200,180,120,.6);margin-top:2px">' + effStrs + '</div>';
       }
       if(t.special === 'exp_boost') html += '<div style="font-size:9px;color:#80d0ff;margin-top:1px">✨ 经验×' + (t._expMult||1.1) + '</div>';
       if(t.special === 'silver_boost') html += '<div style="font-size:9px;color:#f0c060;margin-top:1px">💰 银两×' + (t._silverMult||1.1) + '</div>';

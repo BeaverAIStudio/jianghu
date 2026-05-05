@@ -426,6 +426,10 @@ function travelRenderEventLog(){
 function travelServiceAction(service, cityId){
   // 首次调用时自注册到 window（防御性）
   if(typeof window.travelServiceAction !== 'function') window.travelServiceAction = travelServiceAction;
+  // 兜底：cityId 无效时尝试 travelCurrentCity，否则用 'luoyang'
+  if (!cityId || !WORLD_NODES[cityId]) {
+    cityId = (typeof travelCurrentCity !== 'undefined' && WORLD_NODES[travelCurrentCity]) ? travelCurrentCity : 'luoyang';
+  }
   const node = WORLD_NODES[cityId];
   const svcName = {inn:'旅店',shop:'商店',market:'集市',guild:'镖局',hospital:'医馆'}[service]||service;
 

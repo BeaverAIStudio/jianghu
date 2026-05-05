@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -240,6 +240,45 @@ body::before{
 .sect-library-empty{
   text-align:center;padding:40px 16px;color:var(--text3);
   font-size:13px;letter-spacing:1px;
+}
+
+/* ── 公告栏 ── */
+.sb-board-section{
+  margin-bottom:12px;
+}
+.sb-board-title{
+  font-size:13px;color:var(--gold);letter-spacing:1px;
+  margin-bottom:8px;padding-bottom:6px;
+  border-bottom:1px dashed rgba(255,255,255,.06);
+}
+.sb-board-list{
+  display:flex;flex-direction:column;gap:4px;
+}
+.sb-notice-item{
+  display:flex;align-items:flex-start;gap:6px;
+  padding:6px 8px;border-radius:6px;
+  background:rgba(255,255,255,.02);
+  border:1px solid rgba(255,255,255,.04);
+  font-size:11px;color:var(--text2);line-height:1.6;
+}
+.sb-notice-icon{
+  flex-shrink:0;font-size:14px;
+}
+.sb-notice-text{
+  flex:1;min-width:0;
+}
+.sb-notice-date{
+  flex-shrink:0;font-size:9px;color:var(--text3);
+  align-self:center;
+}
+.sb-bounty-list{
+  display:flex;flex-direction:column;gap:4px;
+}
+.sb-bounty-item{
+  padding:8px 10px;border-radius:6px;
+  background:rgba(255,170,64,.04);
+  border:1px solid rgba(255,170,64,.12);
+  font-size:12px;color:var(--warn);
 }
 .sl-manual-grid{display:grid;gap:8px;}
 .sl-manual-item{
@@ -530,12 +569,12 @@ body::before{
 /* ── 门派入场动画全屏覆盖层 ── */
 .sect-entry-overlay{
   position:fixed;inset:0;z-index:99999;
-  background:linear-gradient(180deg, #0a0612 0%, #0d0818 50%, #080410 100%);
+  background:rgba(0,0,0,.7);
   display:none;align-items:center;justify-content:center;
   flex-direction:column;text-align:center;
-  pointer-events:auto;
+  /* pointer-events:none 让动画期间仍能点返回按钮 */
 }
-.sect-entry-overlay.active{display:flex!important;}
+.sect-entry-overlay.active{ display:flex!important; pointer-events:none; }
 
 /* ASCII 大画容器 */
 .sect-entry-art{
@@ -749,6 +788,19 @@ body::before{
 </style>
 </head>
 <body>
+<!-- 门派加载进度指示器 -->
+<div id="_sect_loading_bar" style="position:fixed;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#f0c060,#ff9040);z-index:999999;transition:width .3s,opacity .5s;width:0%;box-shadow:0 0 8px #f0c06088"></div>
+<div id="_sect_loading_label" style="position:fixed;top:6px;left:50%;transform:translateX(-50%);font-size:11px;color:#f0c060;z-index:999999;opacity:0;transition:opacity .3s;pointer-events:none;text-shadow:0 0 6px #000"></div>
+<script>
+// 加载进度（外部可见）
+window._sectProgress = function(n,label){
+  var b=document.getElementById('_sect_loading_bar');
+  if(b) b.style.width=n+'%';
+  var l=document.getElementById('_sect_loading_label');
+  if(l){ l.textContent=label||''; l.style.opacity=label?'1':'0'; }
+};
+window._sectProgress(10,'开始加载'); // 开始
+</script>
 
 <!-- DEBUG: 页面加载确认 -->
 <script>console.log('[sect] body start, readyState:', document.readyState);</script>
@@ -976,6 +1028,8 @@ body::before{
 <script src="js/data-world.js?v=332"></script>
 <script src="js/data-scenes.js"></script>
 <script src="js/data-sects.js"></script>
+<script src="js/lang-zh-sects.js"></script>
+<script src="js/lang-zh-sects2.js"></script>
 <script src="js/npc-portraits.js?v=337"></script>
 <script src="js/data-enemies.js"></script>
 <script src="js/data-story.js"></script>
@@ -992,7 +1046,7 @@ body::before{
 <script src="js/npc-data-map.js?v=331"></script>
 <script src="js/npc-logic.js?v=353"></script>
 <script src="js/npc-skills.js?v=330"></script>
-<script src="js/npc-combat.js?v=331"></script>
+<script src="js/npc-combat.js?v=335"></script>
 <script src="js/jianghu.js?v=331"></script>
 <script src="js/achievements.js?v=1"></script>
 <script src="js/story-ui.js?v=340"></script>
@@ -1001,8 +1055,8 @@ body::before{
 <script src="js/chiptune-bgm.js?v=2"></script>
 <script src="js/minigame-sounds.js?v=102"></script>
 <script src="js/data-chars.js"></script>
-<script src="js/battle-cinematic.js?v=100"></script>
-<script src="js/battle.js"></script>
+<script src="js/battle-cinematic.js?v=101"></script>
+<script src="js/battle.js?v=26"></script>
 <script src="js/level-system.js"></script>
 <script src="js/primary-stats.js"></script>
 <script src="js/skill-proficiency.js"></script>
@@ -1012,6 +1066,7 @@ body::before{
 <script src="js/dungeon.js"></script>
 <script src="js/sect-realm.js"></script>
 <script src="js/sect-war.js"></script>
+<script src="js/data-materials.js"></script>
 <script src="js/sect-building.js"></script>
 <script src="js/sect-npc-growth.js"></script>
 <script src="js/sect-economy.js"></script>
@@ -1023,6 +1078,7 @@ body::before{
 <script src="js/travel-render.js?v=336"></script>
 <script src="js/ui-pages.js"></script>
 <script src="js/editor.js?v=7"></script>
+<script src="js/wuxia-save.js?v=5"></script>
 <script src="js/master-apprentice.js?v=100"></script>
 <script src="js/sworn-brother.js?v=100"></script>
 <script src="js/sect-championship.js?v=100"></script>
@@ -1037,10 +1093,34 @@ body::before{
 (function(){
   'use strict';
 
+  // ── 全局错误捕获（方便定位卡死原因）──
+  let _inSectOnError = false; // 防止 onerror 自身递归
+  window.onerror = function(msg, url, line, col, error){
+    if(_inSectOnError) return true; // 防止递归
+    _inSectOnError = true;
+    try {
+      var errMsg = '[sect] 全局错误: ' + msg + ' (行:' + line + ', 列:' + col + ')';
+      console.error(errMsg, error);
+      var toastEl = document.createElement('div');
+      toastEl.style.cssText = 'position:fixed;top:60px;left:50%;transform:translateX(-50%);background:rgba(255,60,60,.9);color:#fff;padding:8px 16px;border-radius:6px;font-size:12px;z-index:99999;max-width:90%;text-align:center;pointer-events:none;';
+      toastEl.textContent = '⚠️ JS错误: ' + (msg||'').substring(0, 100);
+      if(document.body) document.body.appendChild(toastEl);
+      setTimeout(function(){ try{if(toastEl.parentNode) toastEl.parentNode.removeChild(toastEl);}catch(e){} }, 5000);
+    } catch(e2) {
+      console.error('[sect] onerror 自身出错:', e2);
+    }
+    _inSectOnError = false;
+    return true;
+  };
+  window.addEventListener('error', function(e){
+    console.error('[sect] Event error:', e.error);
+  });
+
   // ── 状态 ──
   let currentSectId = null;   // 当前查看/加入的门派ID
   let isJoined = false;       // 是否已加入当前门派
   let currentTab = 'overview';
+  let _trialViewShown = false; // 试炼结果已处理标志（IIFE级，可被 _checkSectTrialResult 修改）
 
   // ── 门派规模 → 功能开关表 ──
   // supreme=超级门派(全功能) / major=大型门派(大部分) / minor=小型/新兴势力(基础)
@@ -1140,14 +1220,34 @@ body::before{
     if(!artBox){ console.warn('[entry] no artBox'); _skipEntry(); return; }
     if(!sect){ console.warn('[entry] no sect data'); _skipEntry(); return; }
 
-    // 设置 ASCII 大画
+    // 设置 ASCII 大画（分片插入，防止大图卡死浏览器）
     var artContent = (sect.asciiArt || sect.ascii || '');
     if(!artContent){
       console.warn('[entry] no ascii art for', sect.id);
       _skipEntry(); return;
     }
 
-    artBox.innerHTML = '<pre style="margin:0;color:inherit;font-size:.72em;line-height:1.15;text-shadow:0 0 8px ' + (sect.color||'#f0c060') + '66;white-space:pre-wrap;word-break:break-all">' + _escapeAscii(artContent) + '</pre>';
+    // 先清空，再分片注入
+    artBox.innerHTML = '';
+    var lines = artContent.split('\n');
+    var CHUNK = 20; // 每批行数
+    var idx = 0;
+    function _insertArtChunk(){
+      var frag = document.createDocumentFragment();
+      var end = Math.min(idx + CHUNK, lines.length);
+      for(var i=idx; i<end; i++){
+        var div = document.createElement('div');
+        div.textContent = lines[i];
+        frag.appendChild(div);
+      }
+      artBox.appendChild(frag);
+      idx = end;
+      if(idx < lines.length){
+        requestAnimationFrame(_insertArtChunk);
+      }
+    }
+    requestAnimationFrame(_insertArtChunk);
+
     artBox.style.setProperty('--entry-color', sect.color || '#f0c060');
     artBox.style.setProperty('--entry-glow', (sect.color||'#f0c060') + '44');
 
@@ -1160,12 +1260,11 @@ body::before{
     // 副标题
     if(subEl) subEl.textContent = '「' + (sect.tag || '') + '」·' + ({supreme:'超级',major:'大型',minor:'小型'}[sect.tier]||'' ) + '门派';
 
-    // 强制显示 overlay
+    // 强制显示 overlay（用 requestAnimationFrame 避免同步重排卡死）
     overlay.className = 'sect-entry-overlay active entry-phase-fadein';
-    void overlay.offsetWidth;
-
-    // 阶段1：ASCII画渐显
-    setTimeout(function(){ if(artBox) artBox.classList.add('show'); }, 80);
+    requestAnimationFrame(function(){
+      if(artBox) artBox.classList.add('show');
+    });
 
     // 阶段2：标题
     setTimeout(function(){
@@ -1201,12 +1300,6 @@ body::before{
         if(artBox) artBox.classList.remove('show');
         if(titleEl) titleEl.classList.remove('show');
         if(subEl) subEl.classList.remove('show');
-        // 清除动态添加的提示
-        var hints = overlay.querySelectorAll('.sect-entry-skip');
-        for(var i=0;i<hints.length;i++){
-          if(hints[i].parentNode && i > 0 || hints[i].innerHTML.indexOf('点击任意处')>=0)
-            hints[i].remove();
-        }
       }, 500);
     }
 
@@ -1223,6 +1316,14 @@ body::before{
       e.preventDefault();
       closeEntry();
     });
+
+    // 安全网：8秒后自动关闭（防止点击失效导致页面卡死）
+    setTimeout(function(){
+      if(!closed){
+        console.warn('[sect] 入场动画超时自动关闭');
+        try { closeEntry(); } catch(e) {}
+      }
+    }, 8000);
   }
 
   function _skipEntry(){
@@ -1238,26 +1339,38 @@ body::before{
   function sectInit(){
     // DEBUG: 确认初始化被调用
     console.log('[sect] sectInit called, readyState:', document.readyState);
-    
-    // fallback: 如果 edS 未定义，尝试从 localStorage 恢复基础数据
-    if(typeof edS === 'undefined'){
-      try{
-        var _saved = JSON.parse(localStorage.getItem('wuxia_editor') || '{}');
-        if(_saved && _saved.name){
-          window.edS = _saved;
-        } else {
-          // 完全无存档时创建一个最小化的假 edS 以便浏览
-          window.edS = { name:'侠客', sect:null, level:1, silver:0, contribution:0 };
-        }
-      }catch(e){
+    _trialViewShown = false; // 每次 init 重置
+
+    // ★ 恢复原逻辑：统一存档模块初始化 edS
+    window._sectProgress(25);
+    if(typeof WuxiaSave !== 'undefined' && WuxiaSave.initPage){
+      if(typeof edS === 'undefined') window.edS = {};
+      WuxiaSave.initPage(edS);
+    } else if(typeof WuxiaSave !== 'undefined' && WuxiaSave.loadEdS){
+      var _saved = WuxiaSave.loadEdS();
+      if(_saved && _saved.name){
+        window.edS = _saved;
+      } else {
         window.edS = { name:'侠客', sect:null, level:1, silver:0, contribution:0 };
       }
+    } else {
+      if(typeof edS === 'undefined'){
+        try{
+          var _saved = JSON.parse(localStorage.getItem('wuxia_editor') || '{}');
+          window.edS = (_saved && _saved.name) ? _saved : { name:'侠客', sect:null, level:1, silver:0, contribution:0 };
+        }catch(e){
+          window.edS = { name:'侠客', sect:null, level:1, silver:0, contribution:0 };
+        }
+      }
     }
+    window._sectProgress(35);
+    _checkSectTrialResult();
 
     // 从 URL 参数或 sessionStorage 获取目标门派
     const urlParams = new URLSearchParams(window.location.search);
     const targetSect = urlParams.get('sect') || sessionStorage.getItem('wuxia_target_sect') || null;
     const returnCity = sessionStorage.getItem('wuxia_return_city') || 'luoyang';
+    window._sectProgress(45);
 
     // 返回按钮
     qs('#sectBackBtn').addEventListener('click', function(){
@@ -1268,13 +1381,20 @@ body::before{
 
     // 决定显示哪个视图
     const playerSect = edS.sect || null;
+    window._sectProgress(55);
 
     if(targetSect){
       // 指定了目标门派 → 总舵界面
       currentSectId = targetSect;
       isJoined = (playerSect === targetSect);
-      console.log('[sect] calling showHqView for:', targetSect, 'SECTS exists:', typeof SECTS !== 'undefined');
-      showHqView();
+      window._sectProgress(65);
+      if(!_trialViewShown){
+        console.log('[sect] calling showHqView for:', targetSect, 'SECTS exists:', typeof SECTS !== 'undefined');
+        window._sectProgress(75);
+        showHqView();
+      } else {
+        console.log('[sect] showHqView skipped (试炼已处理)');
+      }
       if(typeof BgmManager !== 'undefined') BgmManager.play('townMellow');
 
       // 门派演武场战斗结果检查
@@ -1283,6 +1403,7 @@ body::before{
       // 无门派参数 → 显示提示
       showNoSectView();
     }
+    window._sectProgress(95);
 
     // 绑定 Tab 切换
     qsa('.sect-tab').forEach(function(tab){
@@ -1291,6 +1412,37 @@ body::before{
         switchTab(t);
       });
     });
+    window._sectProgress(100);
+    setTimeout(function(){var b=document.getElementById('_sect_loading_bar');if(b) b.style.opacity='0';},500);
+  }
+
+  // ── 检查门派试炼结果 ──
+  function _checkSectTrialResult(){
+    const trialResult = sessionStorage.getItem('wuxia_sect_trial_result');
+    if(!trialResult) return;
+
+    try {
+      const result = JSON.parse(trialResult);
+      sessionStorage.removeItem('wuxia_sect_trial_result');
+
+      // 先读取试炼名称，再清理
+      const cfgName = sessionStorage.getItem('sectTrial_cfgName') || '试炼';
+      sessionStorage.removeItem('sectTrial_sectId');
+      sessionStorage.removeItem('sectTrial_cfgName');
+      sessionStorage.removeItem('sectTrial_returnUrl');
+
+      if(result.won && result.sectId) {
+        // 试炼成功 → 自动加入门派（_onSectTrialSuccess 内部会调 showHqView，标记避免主流程重复调用）
+        _trialViewShown = true;
+        _onSectTrialSuccess(result.sectId);
+      } else if(result.sectId) {
+        // 试炼失败
+        showToast('你在' + cfgName + '中惜败……再练些时日吧。', 'error');
+      }
+    } catch(e) {
+      console.warn('[sect] 解析试炼结果失败:', e);
+      sessionStorage.removeItem('wuxia_sect_trial_result');
+    }
   }
 
   // ── 无门派参数时显示提示 ──
@@ -1304,58 +1456,131 @@ body::before{
   }
 
   // ── 显示门派总舵（指定门派的完整页面）──
+  let _showHqRetryCount = 0; // 防止无限重试
+  let _showHqRunning = false; // 防止重入
   function showHqView(){
+    // 防止重入
+    if(_showHqRunning){
+      console.warn('[sect] showHqView 正在运行中，跳过重入');
+      return;
+    }
+    _showHqRunning = true;
+
     qs('#sectBrowserView').style.display = 'none';
     qs('#sectHqView').style.display = '';
     // 确保 Tab 导航可见
     const tabsNav = qs('#sectTabsNav');
     if(tabsNav) tabsNav.style.display = '';
 
-    const sect = (typeof SECTS !== 'undefined') ? SECTS.find(function(s){return s.id === currentSectId;}) : null;
+    const sect = (typeof SECTS !== 'undefined' && Array.isArray(SECTS)) ? SECTS.find(function(s){return s.id === currentSectId;}) : null;
+    window._sectProgress(70);
     if(!sect){
-      // 延迟重试：可能数据还未加载完
-      console.warn('[sect] 门派数据未找到:', currentSectId, 'SECTS:', typeof SECTS !== 'undefined' ? SECTS.length : 'undefined');
-      setTimeout(function(){ showHqView(); }, 300);
+      // 延迟重试：可能数据还未加载完（最多重试 10 次，约 3 秒）
+      if(_showHqRetryCount < 10){
+        _showHqRetryCount++;
+        console.warn('[sect] 门派数据未找到:', currentSectId, '重试', _showHqRetryCount, '/10');
+        setTimeout(function(){ _showHqRunning = false; showHqView(); }, 300);
+      } else {
+        _showHqRetryCount = 0;
+        _showHqRunning = false;
+        console.error('[sect] 门派数据反复找不到，停止重试。currentSectId:', currentSectId, 'SECTS:', typeof SECTS !== 'undefined' ? SECTS.length : 'undefined');
+        showToast('⚠️ 门派数据加载失败，请返回重试', 'warn');
+      }
       return;
     }
+    _showHqRetryCount = 0; // 找到了，重置计数
 
     // 更新标题栏颜色主题
-    document.documentElement.style.setProperty('--tab-color', sect.color);
-
-    // 🎬 播放入场动画（每次进入门派总舵时播放，可点击跳过）
-    window._entryPlayed = false;
-    if(!window._entryPlayed){
-      window._entryPlayed = true;
-      setTimeout(function(){ playEntryAnimation(sect); }, 200);
-    }
-    console.log('[sect] showHqView completed for:', sect.id, 'SECTS count:', (typeof SECTS !== 'undefined' ? SECTS.length : 'undefined'));
+    if(sect && sect.color) document.documentElement.style.setProperty('--tab-color', sect.color);
 
     // ── 根据门派规模动态调整可用功能 ──
     const feats = getSectFeatures(sect);
+    window._sectProgress(76);
     applyTierTabs(sect, feats);
+    window._sectProgress(77);
 
-    // 渲染各区域
-    renderHero(sect);
-    renderOverview(sect);
-    renderHall(sect);
-    renderLibrary(sect);
-    renderShop(sect);
-    renderMissions(sect);
-    renderArena(sect);     // 演武场
-    renderAlchemy(sect);   // 炼丹房
-    renderTreasury(sect);  // 藏宝阁
-    renderRealmPanel(sect); // 秘境
-    renderSectBuildingPanel(sect); // 建筑
-    renderSectTalentPanel(sect);  // 天赋
-    renderSectNpcPanel(sect);      // 弟子成长
-    renderSectEventsPanel(sect); // 动态事件
-    renderSectWarPanel(sect);    // 阵营战争
-    renderSectEconomyPanel(sect); // 门派经济
-    renderBoard(sect);            // 公告栏
+    // ══════════════════════════════════════════════════
+    //  渲染和动画并行：用户一进来就看到内容
+    // ══════════════════════════════════════════════════
+    // 渲染各区域（异步分步，动画之前就开始执行）
+    var renderSteps = [
+      {name:'renderHero', fn:renderHero},
+      {name:'renderOverview', fn:renderOverview},
+      {name:'renderHall', fn:renderHall},
+      {name:'renderLibrary', fn:renderLibrary},
+      {name:'renderShop', fn:renderShop},
+      {name:'renderMissions', fn:renderMissions},
+      {name:'renderArena', fn:renderArena},
+      {name:'renderAlchemy', fn:renderAlchemy},
+      {name:'renderTreasury', fn:renderTreasury},
+      {name:'renderRealmPanel', fn:renderRealmPanel},
+      {name:'renderSectBuildingPanel', fn:renderSectBuildingPanel},
+      {name:'renderSectTalentPanel', fn:renderSectTalentPanel},
+      {name:'renderSectNpcPanel', fn:renderSectNpcPanel},
+      {name:'renderSectEventsPanel', fn:renderSectEventsPanel},
+      {name:'renderSectWarPanel', fn:renderSectWarPanel},
+      {name:'renderSectEconomyPanel', fn:renderSectEconomyPanel},
+      {name:'renderBoard', fn:renderBoard}
+    ];
+    var _rp = 80;
+    var _ri = 0;
+    function _nextRender(){
+      if(_ri >= renderSteps.length){
+        try {
+          window._sectProgress(98);
+          var _jm = (isJoined ? '✦' : '🔍');
+          var _t = qs('#sectPageTitle');
+          if(_t) _t.textContent = _jm + ' ' + (sect ? sect.name : '');
+        } catch(e) {
+          console.error('[sect] 更新标题异常:', e);
+        }
+        window._sectProgress(100);
+        setTimeout(function(){var b=document.getElementById('_sect_loading_bar');if(b) b.style.opacity='0';},500);
+        _showHqRunning = false;
+        return;
+      }
+      var step = renderSteps[_ri];
+      _rp += (17 / renderSteps.length);
+      window._sectProgress(Math.min(97, Math.round(_rp)));
+      if(typeof step.fn === 'function'){
+        try {
+          var _t0 = performance.now();
+          step.fn(sect);
+          var _elapsed = Math.round(performance.now() - _t0);
+          if(_elapsed > 20) console.warn('[sect:perf] ' + step.name + ' 耗时 ' + _elapsed + 'ms');
+        } catch(e) {
+          console.error('[sect] ' + step.name + ' 渲染异常:', e);
+        }
+      }
+      _ri++;
+      setTimeout(_nextRender, 0);
+    }
 
-    // 更新页面标题
-    const joinMark = isJoined ? '✦' : '🔍';
-    qs('#sectPageTitle').textContent = joinMark + ' ' + sect.name;
+    // 立即开始渲染（不等动画）
+    setTimeout(_nextRender, 0);
+    window._sectProgress(79); // 通知进度：渲染已开始
+
+    // 入场动画叠在内容之上（不阻塞渲染）
+    if(!window._skipEntryAnim){
+      window._entryPlayed = false;
+      if(!window._entryPlayed){
+        window._entryPlayed = true;
+        window._sectProgress(78);
+        // 给 DOM 一点时间完成初始渲染，再弹出动画
+        setTimeout(function(){
+          try {
+            playEntryAnimation(sect);
+          } catch(e) {
+            console.error('[sect] 入场动画异常:', e);
+            _skipEntry();
+          }
+        }, 100);
+      }
+    } else {
+      _skipEntry();
+      window._skipEntryAnim = false;
+    }
+    console.log('[sect] showHqView completed for:', sect.id, 'SECTS count:', (typeof SECTS !== 'undefined' ? SECTS.length : 'undefined'));
   }
 
   /**
@@ -1499,6 +1724,34 @@ body::before{
     } else {
       rankBar.style.display = 'none';
     }
+  }
+
+  // ══ 门派实力计算缓存（避免每次 showHqView 都重算25个门派）══
+  var _sectPowerCache = null;     // { sectId: { score, breakdown } }
+  var _sectRankAllCache = null;   // [{ id, name, icon, score, tier, align }]
+  var _sectPowerCacheTime = 0;
+  var _SECT_POWER_CACHE_TTL = 30000; // 30秒内复用缓存
+
+  function _getSectPowerCache(sectId){
+    var now = Date.now();
+    if(_sectPowerCache && _sectRankAllCache && (now - _sectPowerCacheTime) < _SECT_POWER_CACHE_TTL){
+      return { powerCache: _sectPowerCache, rankAll: _sectRankAllCache };
+    }
+    return null; // 缓存过期或不存在
+  }
+
+  function _buildSectPowerCache(){
+    if(typeof SECTS === 'undefined') return;
+    var now = Date.now();
+    var cache = {};
+    var rankAll = SECTS.map(function(s){
+      var score = _calcSectPower(s);
+      cache[s.id] = { score: score, breakdown: _calcSectPowerBreakdown(s) };
+      return { id:s.id, name:s.name, icon:s.emblem||s.icon, score:score, tier:s.tier, align:s.alignment };
+    }).sort(function(a,b){ return b.score - a.score; });
+    _sectPowerCache = cache;
+    _sectRankAllCache = rankAll;
+    _sectPowerCacheTime = now;
   }
 
   // ── 门派综合实力评分 ──
@@ -1753,12 +2006,16 @@ body::before{
     const schoolCard = schoolHtml ?
       '<div class="sect-info-card"><div class="sect-card-title">⚡ 修炼体系</div><div class="sect-card-body" style="display:flex;flex-wrap:wrap;gap:6px">' + schoolHtml + '</div></div>' : '';
 
-    // ── 门派综合实力评分 ──
+    // ── 门派综合实力评分（使用缓存避免重复计算25个门派）──
     var powerCard = '';
     if(typeof SECTS !== 'undefined'){
-      var powerScore = _calcSectPower(sect);
-      var rankAll = SECTS.map(function(s){ return { id:s.id, name:s.name, icon:s.emblem||s.icon, score:_calcSectPower(s), tier:s.tier, align:s.alignment }; })
-        .sort(function(a,b){ return b.score - a.score; });
+      // 优先从缓存读取（首次或缓存过期时重建）
+      if(!_getSectPowerCache()){
+        _buildSectPowerCache();
+      }
+      var cData = _getSectPowerCache();
+      var powerScore = cData ? (cData.powerCache[sect.id] ? cData.powerCache[sect.id].score : _calcSectPower(sect)) : _calcSectPower(sect);
+      var rankAll = cData ? cData.rankAll : SECTS.map(function(s){ return { id:s.id, name:s.name, icon:s.emblem||s.icon, score:_calcSectPower(s), tier:s.tier, align:s.alignment }; }).sort(function(a,b){ return b.score - a.score; });
       var myRank = rankAll.findIndex(function(r){ return r.id === sect.id; }) + 1;
 
       // 门派综合信息条
@@ -1769,8 +2026,8 @@ body::before{
       statsHtml += '<div style="background:rgba(255,255,255,.03);padding:6px 8px;border-radius:6px"><span style="font-size:10px;color:var(--text3)">⚖ 阵营</span><div style="font-size:14px;color:' + ({righteous:'#60d060',neutral:'#b0b0b0',chaotic:'#ff8040',evil:'#ff4040'}[sect.alignment]||'#b0b0b0') + ';margin-top:2px">' + ({righteous:'正道',neutral:'中立',chaotic:'混乱',evil:'邪道'}[sect.alignment]||'中立') + '</div></div>';
       statsHtml += '</div>';
 
-      // 实力评分构成
-      var breakdown = _calcSectPowerBreakdown(sect);
+      // 实力评分构成（使用缓存）
+      var breakdown = (cData && cData.powerCache[sect.id]) ? cData.powerCache[sect.id].breakdown : _calcSectPowerBreakdown(sect);
       var bkHtml = breakdown.map(function(b){
         var pct = powerScore > 0 ? Math.round(b.val / powerScore * 100) : 0;
         return '<div style="display:flex;align-items:center;gap:6px;font-size:10px;margin-top:3px">' +
@@ -1811,6 +2068,7 @@ body::before{
     const ed = edS || {};
     const playerLevel = ed.level || 1;
     const playerSect = ed.sect || null;
+    let switchHtml = '';
 
     if(!isJoined){
       // 未加入 → 显示申请加入界面
@@ -1824,22 +2082,23 @@ body::before{
         const remaining = Math.ceil((ed.sectLeaveCooldown - Date.now()) / (86400000));
         cooldownHtml = '<div class="sh-locked-msg">⏳ 冷却中：需等待 ' + remaining + ' 天才能重新申请</div>';
       }
-      // 已有门派
-      let switchHtml = '';
+      // 已有门派 → 禁止申请（不能同时属于多个门派）
       if(playerSect && playerSect !== sect.id){
         const oldName = (SECTS.find(function(s){return s.id === playerSect}) || {}).name || playerSect;
         switchHtml = '<p style="color:var(--warn);font-size:12px;margin-bottom:10px">⚠ 你当前属于「' + oldName + '」，申请加入将自动脱离旧门派。</p>';
       }
+      // 已加入其他门派时，隐藏试炼按钮（必须先退出现门派）
+      const hasOtherSect = playerSect && playerSect !== sect.id;
 
       el.innerHTML =
         '<div class="sh-master-avatar">' + sect.emblem + '</div>' +
         '<div class="sh-master-name" style="color:' + sect.color + '">' + sect.name + '</div>' +
         '<div class="sh-master-title">「' + sect.title + '」</div>' +
         switchHtml + cooldownHtml +
-        (canJoin && !cooldownHtml ?
+        (canJoin && !cooldownHtml && !hasOtherSect ?
           '<button class="sh-action-btn sh-join-btn" onclick="window._startSectTrial && _startSectTrial(\'' + sect.id + '\')">📜 ' + trialName + ' · 申请加入</button>'
           :
-          (!canJoin ? '<div class="sh-locked-msg">🔒 需要 Lv5 才能申请加入门派</div>' : '')
+          (!canJoin ? '<div class="sh-locked-msg">🔒 需要 Lv5 才能申请加入门派</div>' : (hasOtherSect ? '<div class="sh-locked-msg">🚪 请先退出门派「' + ((SECTS.find(function(s){return s.id === playerSect})||{}).name || playerSect) + '」</div>' : ''))
         ) +
         '<div class="sh-req-box">' +
           '<div class="sh-req-title">📋 入门要求</div>' +
@@ -1876,7 +2135,7 @@ body::before{
     }
   }
 
-  // ── 藏经阁（功法商店）──
+  // ── 藏经阁（直接学招式）──
   function renderLibrary(sect){
     const listEl = qs('#sectLibraryList');
     const ed = edS || {};
@@ -1886,50 +2145,119 @@ body::before{
       return;
     }
 
-    // 收集本门派 reqSect 的功法
-    let manuals = [];
-    if(typeof MANUAL_DB !== 'undefined'){
-      Object.keys(MANUAL_DB).forEach(function(mid){
-        const m = MANUAL_DB[mid];
-        if(m.reqSect === sect.id || (Array.isArray(m.reqSect) && m.reqSect.includes(sect.id))){
-          manuals.push({id:mid, data:m});
-        }
-      });
-    }
-
-    if(manuals.length === 0){
-      listEl.innerHTML = '<div class="sect-library-empty">📖 藏经阁暂无私籍可购……</div>';
+    // 获取本门派的 sigSkills
+    const sigSkills = sect.sigSkills || [];
+    if(sigSkills.length === 0){
+      listEl.innerHTML = '<div class="sect-library-empty">📖 本门暂无独有招式……</div>';
       return;
     }
 
-    // 排序：按价格升序
-    manuals.sort(function(a,b){return (a.data.price||0) - (b.data.price||0);});
+    // 获取玩家已学技能（从存档读取）
+    const profile = (typeof WuxiaSave !== 'undefined' && WuxiaSave.loadProfile) ? WuxiaSave.loadProfile() : {};
+    const learnedSkills = profile.learnedSkills || ed.learnedSkills || [];
+    console.log('[藏经阁] learnedSkills:', learnedSkills);
+    const playerLv = ed.level || 1;
 
-    const ownedManuals = JSON.parse(localStorage.getItem('wuxia_manuals') || '[]');
+    // 构建招式列表
+    let skillList = [];
+    sigSkills.forEach(function(skillId){
+      // 从 SKILL_LIB 中查找技能详情
+      let skillData = null;
+      if(typeof SKILL_LIB !== 'undefined'){
+        for(let school in SKILL_LIB){
+          const found = SKILL_LIB[school].find(function(sk){ return sk.id === skillId; });
+          if(found){ skillData = found; break; }
+        }
+      }
 
-    listEl.innerHTML = manuals.map(function(item){
-      const m = item.data;
-      const owned = ownedManuals.includes(item.id);
-      const lvReq = m.reqLv || 1;
-      const playerLv = ed.level || 1;
-      const locked = playerLv < lvReq;
-      const price = m.price || 0;
-      const silver = ed.silver || 0;
+      if(skillData){
+        skillList.push({
+          id: skillId,
+          data: skillData,
+          learned: learnedSkills.includes(skillId),
+          lvReq: skillData.cd ? Math.max(1, Math.floor(skillData.mpCost / 5)) : 1
+        });
+      }
+    });
 
-      return '<div class="sl-manual-item ' + (owned?'sl-manual-owned':'') + (locked?' sl-manual-locked':'') + '" ' +
-        (owned || locked ? '' : 'onclick="window._buySectManual && _buySectManual(\'' + item.id + '\')"') +
-        ' title="' + (owned?'已拥有':(locked?'等级不足 Lv'+lvReq:'点击购买')) + '">' +
-        '<div class="sl-manual-icon">' + (m.icon||'📜') + '</div>' +
+    if(skillList.length === 0){
+      listEl.innerHTML = '<div class="sect-library-empty">📖 暂无可学招式……</div>';
+      return;
+    }
+
+    // 渲染招式列表
+    listEl.innerHTML = skillList.map(function(item){
+      const sk = item.data;
+      const learned = item.learned;
+      const locked = playerLv < item.lvReq;
+
+      return '<div class="sl-manual-item ' + (learned?'sl-manual-owned':'') + (locked?' sl-manual-locked':'') + '" ' +
+        (learned || locked ? '' : 'onclick="window._learnSectSkill && _learnSectSkill(\'' + item.id + '\')"') +
+        ' title="' + (learned?'已学会':(locked?'需要 Lv'+item.lvReq:'点击学习')) + '">' +
+        '<div class="sl-manual-icon">' + (sk.icon||'⚔') + '</div>' +
         '<div class="sl-manual-info">' +
-          '<div class="sl-manual-name">' + m.name + (owned ? ' ✓' : (locked ? ' 🔒' : '')) + '</div>' +
-          '<div class="sl-manual-desc">' + (m.desc||'') + (lvReq>1 ? ' · 需Lv'+lvReq : '') + '</div>' +
+          '<div class="sl-manual-name">' + sk.name + (learned ? ' ✓' : (locked ? ' 🔒' : '')) + '</div>' +
+          '<div class="sl-manual-desc">' + (sk.desc||'') + ' · ' + (sk.school||'通用') + '系' + (item.lvReq>1 ? ' · 需Lv'+item.lvReq : '') + '</div>' +
         '</div>' +
         '<div class="sl-manual-price">' +
-          (owned ? '<span style="font-size:11px;color:var(--ok)">已获得</span>' :
-           '<span class="sl-manual-cost">' + price + '</span><span class="sl-manual-currency">银两</span>') +
+          (learned ? '<span style="font-size:11px;color:var(--ok)">已学会</span>' :
+           locked ? '<span style="font-size:11px;color:var(--text3)">需 Lv '+item.lvReq+'</span>' :
+           '<span class="sl-manual-cost" style="font-size:12px;color:var(--gold);">可直接学习</span>') +
         '</div></div>';
     }).join('');
   }
+
+  // 学习门派招式
+  window._learnSectSkill = function(skillId){
+    const ed = edS;
+    if(!ed){ console.warn('[learnSectSkill] edS is null'); return; }
+
+    const learnedSkills = ed.learnedSkills || [];
+    if(learnedSkills.includes(skillId)){
+      console.log('[learnSectSkill] already learned:', skillId);
+      return; // 已经学会了
+    }
+
+    // 添加到已学技能列表
+    learnedSkills.push(skillId);
+    ed.learnedSkills = learnedSkills;
+
+    // 保存到存档（优先用 wuxia_player_profile）
+    try {
+      // 保存到 player_progress
+      const progressRaw = localStorage.getItem('wuxia_player_progress');
+      const progress = progressRaw ? JSON.parse(progressRaw) : {};
+      progress.learnedSkills = learnedSkills;
+      localStorage.setItem('wuxia_player_progress', JSON.stringify(progress));
+
+      // 保存到 wuxia_editor
+      if(typeof WuxiaSave !== 'undefined' && WuxiaSave.saveProfile){
+        WuxiaSave.saveProfile(ed);
+      } else {
+        localStorage.setItem('wuxia_editor', JSON.stringify(ed));
+      }
+    } catch(e) { console.error('[learnSectSkill] save error:', e); }
+
+    // 刷新藏经阁显示
+    const sectId = ed.sect;
+    if(sectId && typeof SECTS !== 'undefined'){
+      const sect = SECTS.find(function(s){ return s.id === sectId; });
+      if(sect){ renderLibrary(sect); }
+    }
+
+    // 提示
+    let skillName = skillId;
+    if(typeof SKILL_LIB !== 'undefined'){
+      for(let school in SKILL_LIB){
+        const found = SKILL_LIB[school].find(function(sk){ return sk.id === skillId; });
+        if(found){ skillName = found.name; break; }
+      }
+    }
+    console.log('[learnSectSkill] learned:', skillId, skillName);
+    if(typeof showToast === 'function'){
+      showToast('✅ 学会「' + skillName + '」！', 'success');
+    }
+  };
 
   // ── 贡献商店 ──
   function renderShop(sect){
@@ -1944,45 +2272,203 @@ body::before{
     const ed = edS || {};
     const contrib = ed.sectContrib || 0;
     const playerLv = ed.level || 1;
+    const playerBag = ed.bag || [];
 
     if(!isJoined){
       shopEl.innerHTML = '<div class="sect-library-empty">⚔ 加入门派后方可使用贡献商店</div>';
       return;
     }
 
-    const shop = (typeof SECT_CONTRIB_SHOP !== 'undefined') ? SECT_CONTRIB_SHOP[sect.id] : null;
-    if(!shop || !shop.items || !shop.items.length){
-      shopEl.innerHTML = '<div class="sect-library-empty">🏪 本店暂无货物……</div>';
-      return;
+    let html = '';
+
+    // ── 门派服装区域 ──
+    if(typeof COSTUMES !== 'undefined'){
+      const sectCostumes = COSTUMES.filter(function(c){ return c.sectId === sect.id; });
+
+      if(sectCostumes.length > 0){
+        html += '<div class="cs-shop-section" style="margin-bottom:20px;">' +
+          '<div class="cs-shop-header">' +
+            '<span class="cs-shop-title">🎽 门派服装</span>' +
+          '</div>';
+
+        sectCostumes.forEach(function(costume){
+          const owned = playerBag.includes(costume.id);
+          const canAfford = contrib >= 800; // 服装800贡献
+
+          html += '<div class="cs-item' + (owned?' cs-owned':'') + (!canAfford&&!owned?' cs-cant-afford':'') + '" ' +
+            (owned ? '' : 'onclick="window._buySectCostume && _buySectCostume(\'' + costume.id + '\')"') +
+            ' title="' + (owned?'已拥有':(canAfford?'点击购买':'贡献不足')) + '">' +
+            '<span class="cs-item-icon">' + costume.icon + '</span>' +
+            '<div class="cs-item-info">' +
+              '<span class="cs-item-name">' + costume.name + (owned?' ✓':'') + '</span>' +
+              '<span class="cs-item-desc">' + costume.desc + '</span>' +
+            '</div>' +
+            '<div class="cs-item-price">' +
+              (owned ? '<span style="font-size:11px;color:var(--ok)">已拥有</span>' :
+               '<span class="cs-item-cost">800</span>' +
+               '<span class="cs-item-curr">贡献</span>') +
+            '</div></div>';
+        });
+
+        html += '</div>';
+      }
     }
 
-    let html = '<div class="cs-shop-section">' +
-      '<div class="cs-shop-header">' +
-        '<span class="cs-shop-title">⚔ 门派贡献商店</span>' +
-        '<span class="cs-shop-balance">💰 当前贡献：<b>' + contrib + '</b></span>' +
-      '</div>';
+    // ── 门派武器区域 ──
+    if(typeof WEAPONS !== 'undefined' && sect.schools){
+      const sectWeapons = WEAPONS.filter(function(w){
+        return w.schools && w.schools.some(function(s){ return sect.schools.includes(s); });
+      });
 
-    shop.items.forEach(function(item){
-      const locked = playerLv < (item.reqLv || 0);
-      const canAfford = contrib >= item.cost;
+      // 按稀有度排序：mythic > legendary > epic > rare > uncommon > common
+      const rarityOrder = {'mythic':0,'legendary':1,'epic':2,'rare':3,'uncommon':4,'common':5};
+      sectWeapons.sort(function(a,b){
+        return (rarityOrder[a.rarity]||5) - (rarityOrder[b.rarity]||5);
+      });
 
-      html += '<div class="cs-item' + (locked?' cs-locked':'') + (!canAfford&&!locked?' cs-cant-afford':'') + '" ' +
-        (locked ? '' : 'onclick="window._onSectContribBuy && _onSectContribBuy(\'' + sect.id + '\',\'' + item.id + '\')"') +
-        ' title="' + (locked?'需要 Lv'+(item.reqLv||0):(canAfford?'点击购买':'贡献不足')) + '">' +
-        '<span class="cs-item-icon">' + item.icon + '</span>' +
-        '<div class="cs-item-info">' +
-          '<span class="cs-item-name">' + item.name + (locked?' 🔒':'') + '</span>' +
-          '<span class="cs-item-desc">' + item.desc + '</span>' +
-        '</div>' +
-        '<div class="cs-item-price">' +
-          '<span class="cs-item-cost">' + item.cost + '</span>' +
-          '<span class="cs-item-curr">贡献</span>' +
-        '</div></div>';
-    });
+      if(sectWeapons.length > 0){
+        html += '<div class="cs-shop-section" style="margin-bottom:20px;">' +
+          '<div class="cs-shop-header">' +
+            '<span class="cs-shop-title">⚔ 门派武器</span>' +
+          '</div>';
 
-    html += '</div>';
-    shopEl.innerHTML = html;
+        sectWeapons.forEach(function(weapon){
+          const owned = playerBag.includes(weapon.id);
+          const weaponPrice = weapon.rarity === 'mythic' ? 5000 :
+                             weapon.rarity === 'legendary' ? 3000 :
+                             weapon.rarity === 'epic' ? 1500 : 800;
+          const canAfford = contrib >= weaponPrice;
+
+          html += '<div class="cs-item' + (owned?' cs-owned':'') + (!canAfford&&!owned?' cs-cant-afford':'') + '" ' +
+            (owned ? '' : 'onclick="window._buySectWeapon && _buySectWeapon(\'' + weapon.id + '\')"') +
+            ' title="' + (owned?'已拥有':(canAfford?'点击购买':'贡献不足')) + '">' +
+            '<span class="cs-item-icon">' + weapon.icon + '</span>' +
+            '<div class="cs-item-info">' +
+              '<span class="cs-item-name">' + weapon.name + ' <span style="font-size:10px;color:' + (weapon.color||'#fff') + '">[' + (weapon.rarity||'common') + ']</span>' + (owned?' ✓':'') + '</span>' +
+              '<span class="cs-item-desc">' + weapon.desc + '</span>' +
+            '</div>' +
+            '<div class="cs-item-price">' +
+              (owned ? '<span style="font-size:11px;color:var(--ok)">已拥有</span>' :
+               '<span class="cs-item-cost">' + weaponPrice + '</span>' +
+               '<span class="cs-item-curr">贡献</span>') +
+            '</div></div>';
+        });
+
+        html += '</div>';
+      }
+    }
+
+    // ── 原有贡献商店 ──
+    const shop = (typeof SECT_CONTRIB_SHOP !== 'undefined') ? SECT_CONTRIB_SHOP[sect.id] : null;
+    if(shop && shop.items && shop.items.length){
+
+      html += '<div class="cs-shop-section">' +
+        '<div class="cs-shop-header">' +
+          '<span class="cs-shop-title">⚔ 贡献商店</span>' +
+          '<span class="cs-shop-balance">💰 当前贡献：<b>' + contrib + '</b></span>' +
+        '</div>';
+
+      shop.items.forEach(function(item){
+        const locked = playerLv < (item.reqLv || 0);
+        const canAfford = contrib >= item.cost;
+
+        html += '<div class="cs-item' + (locked?' cs-locked':'') + (!canAfford&&!locked?' cs-cant-afford':'') + '" ' +
+          (locked ? '' : 'onclick="window._onSectContribBuy && _onSectContribBuy(\'' + sect.id + '\',\'' + item.id + '\')"') +
+          ' title="' + (locked?'需要 Lv'+(item.reqLv||0):(canAfford?'点击购买':'贡献不足')) + '">' +
+          '<span class="cs-item-icon">' + item.icon + '</span>' +
+          '<div class="cs-item-info">' +
+            '<span class="cs-item-name">' + item.name + (locked?' 🔒':'') + '</span>' +
+            '<span class="cs-item-desc">' + item.desc + '</span>' +
+          '</div>' +
+          '<div class="cs-item-price">' +
+            '<span class="cs-item-cost">' + item.cost + '</span>' +
+            '<span class="cs-item-curr">贡献</span>' +
+          '</div></div>';
+      });
+
+      html += '</div>';
+    }
+
+    if(html === ''){
+      shopEl.innerHTML = '<div class="sect-library-empty">🏪 本店暂无货物……</div>';
+    } else {
+      shopEl.innerHTML = html;
+    }
   }
+
+  // 购买门派服装
+  window._buySectCostume = function(costumeId){
+    const ed = edS;
+    if(!ed){ return; }
+
+    const contrib = ed.sectContrib || 0;
+    const price = 800;
+
+    if(contrib < price){
+      return; // 贡献不足
+    }
+
+    const bag = ed.bag || [];
+    if(bag.includes(costumeId)){
+      return; // 已拥有
+    }
+
+    // 扣除贡献
+    ed.sectContrib = contrib - price;
+    // 添加到背包
+    bag.push(costumeId);
+    ed.bag = bag;
+
+    // 保存
+    if(typeof saveProfile === 'function'){ saveProfile(ed); }
+    if(typeof WuxiaSave !== 'undefined' && WuxiaSave.saveProfile){ WuxiaSave.saveProfile(ed); }
+
+    // 刷新商店
+    const sect = SECTS[ed.sect];
+    if(sect){ renderShop(sect); }
+  };
+
+  // 购买门派武器
+  window._buySectWeapon = function(weaponId){
+    const ed = edS;
+    if(!ed){ return; }
+
+    const contrib = ed.sectContrib || 0;
+
+    // 查找武器价格
+    let price = 800;
+    if(typeof WEAPONS !== 'undefined'){
+      const weapon = WEAPONS.find(function(w){ return w.id === weaponId; });
+      if(weapon){
+        price = weapon.rarity === 'mythic' ? 5000 :
+                weapon.rarity === 'legendary' ? 3000 :
+                weapon.rarity === 'epic' ? 1500 : 800;
+      }
+    }
+
+    if(contrib < price){
+      return; // 贡献不足
+    }
+
+    const bag = ed.bag || [];
+    if(bag.includes(weaponId)){
+      return; // 已拥有
+    }
+
+    // 扣除贡献
+    ed.sectContrib = contrib - price;
+    // 添加到背包
+    bag.push(weaponId);
+    ed.bag = bag;
+
+    // 保存
+    if(typeof saveProfile === 'function'){ saveProfile(ed); }
+    if(typeof WuxiaSave !== 'undefined' && WuxiaSave.saveProfile){ WuxiaSave.saveProfile(ed); }
+
+    // 刷新商店
+    const sect = SECTS[ed.sect];
+    if(sect){ renderShop(sect); }
+  };
 
   // ── 门派任务链 ──
   function renderMissions(sect){
@@ -2007,13 +2493,23 @@ body::before{
       return;
     }
 
-    // 读取任务进度
-    let progress = {};
-    if(typeof getSectChainProgress === 'function'){
-      progress = getSectChainProgress();
+    // 读取任务进度（兼容 per-node 和 step 两种格式）
+    let nodeStates = {};
+    if(typeof getSectChainNodeStates === 'function'){
+      nodeStates = getSectChainNodeStates(sect.id);
+    } else if(typeof getSectChainProgress === 'function') {
+      // fallback: 读 step 格式并转换为 per-node 格式
+      const prog = getSectChainProgress(sect.id);
+      const chain = (typeof SECT_CHAINS !== 'undefined' && SECT_CHAINS[sect.id]) ? SECT_CHAINS[sect.id].chain : [];
+      const currentStep = (prog && prog.currentStep) || 0;
+      const completed = prog && prog.completed;
+      chain.forEach(function(n, i){
+        if(completed || i < currentStep) nodeStates[n.id] = 'done';
+        else if(i === currentStep) nodeStates[n.id] = 'active';
+        else nodeStates[n.id] = 'locked';
+      });
     }
-
-    const chainProgress = progress[sect.id] || {};
+    const chainProgress = nodeStates;
 
     // 头部
     let html =
@@ -2022,7 +2518,7 @@ body::before{
         '<div class="sc-chain-theme">' + (chain.theme||'') + '</div>' +
       '</div><div class="sc-task-list">';
 
-    // 记录第一个 active 节点之前的都是 done
+    // 记录第一个 active 节点，之后的都是 locked
     let foundActive = false;
 
     chain.chain.forEach(function(node, idx){
@@ -2035,11 +2531,13 @@ body::before{
           foundActive = true;
         }
       }
-      if(nodeState === 'done') foundActive = true;
+      if(nodeState === 'done' || nodeState === 'active') foundActive = true;
 
       const statusClass = nodeState === 'done' ? 'done' : (nodeState === 'active' || nodeState === 'available' ? 'active' : 'locked');
       const statusIcon = nodeState === 'done' ? '✅' : (nodeState === 'active' ? '🔶' : (nodeState === 'available' ? '⬜' : '🔒'));
-      const canAccept = (nodeState === 'available' || nodeState === 'active');
+      // 有其他 active 节点时，禁止接取（链条只能同时进行一个任务）
+      const hasActiveNode = chain.chain.some(function(n){ return n.id !== node.id && (chainProgress[n.id] === 'active'); });
+      const canAccept = (nodeState === 'available') && !hasActiveNode;
 
       html +=
         '<div class="sc-task-node" data-node-id="' + node.id + '">' +
@@ -2064,6 +2562,9 @@ body::before{
   //   ⚔️ 演武场 — 与本门弟子切磋
   // ════════════════════════════════════════
 
+  // ★ 调试：在定义 SECT_ARENA_OPPONENTS 之前，检查 SECTS 是否已加载
+  console.log('[sect] Before SECT_ARENA_OPPONENTS, SECTS:', typeof SECTS, 'length:', (SECTS && SECTS.length) || 0);
+
   // 演武场对手数据（每个门派3-5个对手）
   const SECT_ARENA_OPPONENTS = (function(){
     const base = {};
@@ -2073,29 +2574,29 @@ body::before{
         const names = {
           shaolin:['慧空法师','慧明武僧','慧能禅师','玄苦大师','方丈师兄'],
           wudang:['清虚道长','清风师兄','纯阳子','太初道人','冲虚子'],
-          huashan:['岳肃师弟','令狐师兄','封不平','成不忧','丛不弃'],
+          huashan:['岳肃师弟','令狐师兄','封不平','丛不弃','梁发师弟'],
           mingjiao:['韦一笑','范遥长老','说不得','彭莹玉','五散人'],
           wudu:['蓝凤凰','何铁手','毒娘子','葛长老','五毒童子'],
           tangmen:['唐门杀手','唐无影','唐百晓','唐暗器','唐千机'],
-          taohuadao:['哑仆','曲师兄','陆师妹','黄药师','桃花侍女'],
+          taohuadao:['哑仆','曲师兄','陆师妹','冯默师弟','桃花侍女'],
           xiaoyao:['苏星河','丁春秋','薛慕华','范百岁','天山童姥'],
           emei:['静玄师太','周芷若师妹','丁敏君','灭绝师太','纪晓芙'],
           kongtong:['关根长老','宗维侠','唐文亮','常敬之','耿天霸'],
           kunlun:['何足道','班淑娴','昆仑掌门','西华子','青灵子'],
-          tiandibang:['帮众甲','帮众乙','堂主丙','护法丁','天地帮少主'],
+          tiandibang:['铁爪堂主','银钩赌坊','神拳帮众','铁掌水上漂','天地帮少主'],
           guigu:['鬼谷弟子','算命先生','阵法师','谋士','鬼谷门客'],
           shengguang:['圣骑士','牧师长老','审判官','圣光使者','光明祭司'],
           diancang:['点苍剑士','蛊师弟子','南疆行者','点苍掌门','苗疆侠客'],
-          tianshan:['冰霜弟子','天山侍女','六阳掌传人','折梅手传人','天山长老'],
-          xixia:['密宗僧人','西域武士','预言者','国师护卫','西夏王子'],
-          tianlong:['罗汉弟子','龙象武士','吐蕃勇士','天龙护法','天龙帮主'],
+          tianshan:['冰霜弟子','天山侍女','不平道人','卓不凡','天山童姥'],
+          xixia:['密宗僧人','西夏武士','一品堂刺客','赫连铁树','西夏王子'],
+          tianlong:['罗汉弟子','龙象武士','吐蕃勇士','天龙护法','保定帝'],
           nangong:['南宫少爷','世家护卫','剑术教师','南宫老爷','管家'],
-          xuanming:['玄冥弟子','寒冰使者','黑衣杀手','二老亲信','教徒'],
-          haisha:['海盗头目','水贼喽啰','七杀刀客','东海浪人','海沙船长'],
-          riyue:['日月教徒','黑木崖守卫','十长老亲随','东方不败','任我行'],
+          xuanming:['玄冥弟子','寒冰使者','玄冥二老','百损道人','教徒'],
+          haisha:['海盗头目','水贼喽啰','七杀刀客','东海浪人','海沙帮众'],
+          riyue:['日月教徒','黑木崖守卫','十长老亲随','任我行','向问天'],
           xuegu:['血骨卫士','炼血者','死士','血骨长老','血骨门主'],
           lingxiao:['凌霄弟子','情报探子','剑术高手','阁主亲信','凌霄楼主'],
-          qingcheng:['青城弟子','松风观人','余沧海','辟邪剑客','青城长老'],
+          qingcheng:['青城弟子','松风观人','余沧海','侯人英','于人豪'],
         };
         const list = names[sect.id] || ['入门弟子','资深弟子','精英弟子','内门弟子','首席弟子'];
         const tiers = ['func','func','major','major', sect.tier==='supreme'?'elite':'major'];
@@ -2117,10 +2618,41 @@ body::before{
     return base;
   })();
 
+  // ★ 调试：检查 SECT_ARENA_OPPONENTS 是否正确定义
+  console.log('[sect] SECT_ARENA_OPPONENTS defined:', typeof SECT_ARENA_OPPONENTS);
+  if (typeof SECT_ARENA_OPPONENTS !== 'undefined') {
+    console.log('[sect] SECT_ARENA_OPPONENTS keys:', Object.keys(SECT_ARENA_OPPONENTS));
+    // 检查少林派的对手
+    if (SECT_ARENA_OPPONENTS['shaolin']) {
+      console.log('[sect] shaolin opponents:', SECT_ARENA_OPPONENTS['shaolin'].length, SECT_ARENA_OPPONENTS['shaolin']);
+    }
+  } else {
+    console.error('[sect] SECT_ARENA_OPPONENTS is NOT defined!');
+  }
+
+  // ★ 修复（2026-05-06）：获取门派代表性NPC ID，用于切磋时渲染正确形象
+  function _getSectRepresentativeNpc(sectId) {
+    const mapping = {
+      'shaolin': 'shaolin_abbot',       // 少林→玄慈方丈
+      'wudang':  'wudang_zhangmen',     // 武当→张三丰
+      'emei':    'emei_zhangmen',        // 峨眉→掌门
+      'kunlun':  'kunlun_zhangmen',      // 昆仑→掌门
+      'hua_shan': 'hua_shan_zhangmen',   // 华山→掌门
+      'quanzhen': 'quanzhen_zhangmen',   // 全真→掌门
+      'ming_cult': 'ming_cult_leader',    // 明教→教主
+      'sun_moon': 'sun_moon_leader',     // 日月神教→教主
+      'qingcheng': 'qingcheng_zhangmen',  // 青城→掌门
+      'dali':    'dali_prince',          // 大理→世子
+      'beggar':  'beggar_zhangmen',     // 丐帮→帮主
+    };
+    return mapping[sectId] || null;
+  }
+
   function renderArena(sect){
+    try {
     const el = qs('#sectArenaContent');
     const feats = getSectFeatures(sect);
-    if(!feats.arena) return; // applyTierTabs 已填充锁定提示
+    if(!feats.arena) return;
 
     const ed = edS || {};
     if(!isJoined){
@@ -2128,17 +2660,15 @@ body::before{
       return;
     }
 
-    // 读取今日已击败记录
     let defeatedToday = [];
     try{ defeatedToday = JSON.parse(localStorage.getItem('wuxia_arena_defeated_'+sect.id+'_'+_todayStr()) || '[]'); }catch(e){}
 
-    const opponents = SECT_ARENA_OPPONENTS[sect.id] || [];
+    const opponents = (typeof SECT_ARENA_OPPONENTS !== 'undefined' && SECT_ARENA_OPPONENTS[sect.id]) ? SECT_ARENA_OPPONENTS[sect.id] : [];
     if(!opponents.length){
       el.innerHTML = '<div class="sb-board-empty">🏟 本门演武场暂无对手……</div>';
       return;
     }
 
-    // 过滤：根据阶级解锁不同难度
     const playerRank = ed.sectRank || 'disciple';
     const maxUnlockIdx = {disciple:2, elite:3, elder:4, grand:5}[playerRank] || 2;
 
@@ -2171,11 +2701,15 @@ body::before{
     html += '</div>';
     el.innerHTML = html;
 
-    // ── 追加段位赛 / 武斗大会 / 排行榜 ──
     if (typeof scEnhanceArena === 'function') {
       var oldSc = document.getElementById('scEnhancedArena');
       if (oldSc) oldSc.remove();
       setTimeout(function(){ scEnhanceArena(sect.id); }, 50);
+    }
+    } catch(e) {
+      console.error('[renderArena] ERROR:', e);
+      const el = qs('#sectArenaContent');
+      if(el) el.innerHTML = '<div class="sb-board-empty">❌ 演武场加载异常：' + e.message + '</div>';
     }
   }
 
@@ -2191,7 +2725,7 @@ body::before{
 
       if(!result.sectArena) return; // 不是门派演武场，跳过
       const { won, sectId, oppIdx, reward, fled } = result;
-      const opponents = SECT_ARENA_OPPONENTS[sectId] || [];
+      const opponents = (typeof SECT_ARENA_OPPONENTS !== 'undefined' && SECT_ARENA_OPPONENTS[sectId]) ? SECT_ARENA_OPPONENTS[sectId] : [];
       const opp = opponents[oppIdx] || {};
       const npcName = (typeof SECTS !== 'undefined') ?
         (SECTS.find(s => s.id === sectId) || {}).name + '·' + opp.name : opp.name;
@@ -2203,7 +2737,7 @@ body::before{
   window._onArenaFight = function(sectId, oppIdx){
     const sect = (typeof SECTS!=='undefined') ? SECTS.find(function(s){return s.id===sectId;}) : null;
     if(!sect) return;
-    const opponents = SECT_ARENA_OPPONENTS[sectId] || [];
+    const opponents = (typeof SECT_ARENA_OPPONENTS !== 'undefined' && SECT_ARENA_OPPONENTS[sectId]) ? SECT_ARENA_OPPONENTS[sectId] : [];
     const opp = opponents[oppIdx];
     if(!opp) return;
 
@@ -2249,7 +2783,7 @@ body::before{
         heavy: (typeof edS !== 'undefined' && edS.heavy) || 1,
         hit: (typeof edS !== 'undefined' && edS.hit) || 0.95,
         down: (typeof edS !== 'undefined' && edS.down) || null,
-        skillIds: (typeof edS !== 'undefined' && edS.skillIds) || ['cm01','cm02','cm03'],
+        skills: (typeof edS !== 'undefined' && edS.skills && edS.skills.length > 0) ? edS.skills : [{id:'cm01',name:'劈空掌',mpCost:5},{id:'cm02',name:'连环腿',mpCost:6},{id:'cm03',name:'运气调息',mpCost:8}],
         _currentHp: (typeof edS !== 'undefined' && edS.hp) || 150,
       },
       enemy: {
@@ -2269,7 +2803,9 @@ body::before{
         speed: Math.round((5 + opp.level*0.08)*tierMult*10)/10,
         speedN: Math.round((5 + opp.level*0.08)*tierMult*10)/10,
         color: opp.tier === 'elite' ? '#ff8060' : opp.tier === 'major' ? '#ffd060' : '#a08060',
-        type: 'bandit',
+        // ★ 修复（2026-05-06）：使用门派NPC数据渲染形象，不再硬编码bandit
+        //   优先使用 opp.npcId（如果数据里有），否则根据门派自动匹配代表性NPC
+        _npcId: opp.npcId || _getSectRepresentativeNpc(sectId),
         skills: [],
         drops: [],
         _sectArena: true,
@@ -2296,7 +2832,7 @@ body::before{
   function _showArenaResult(won, sectId, oppIdx, npc, fled){
     const overlay = document.createElement('div');
     overlay.className = 'sa-arena-result active';
-    const opponents = SECT_ARENA_OPPONENTS[sectId] || [];
+    const opponents = (typeof SECT_ARENA_OPPONENTS !== 'undefined' && SECT_ARENA_OPPONENTS[sectId]) ? SECT_ARENA_OPPONENTS[sectId] : [];
     const opp = opponents[oppIdx] || {};
     var resultText;
     if(won){
@@ -2492,7 +3028,9 @@ body::before{
         const qty = getMatQty(m.id);
         const enough = qty >= m.qty;
         if(!enough) allMatsReady = false;
-        matsHtml += '<span class="'+(enough?'has':'miss')+'">'+(m.name||m.id)+'×'+m.qty+(enough?'('+qty+')':'')+'</span> ';
+        const meta = (typeof getItemMeta === 'function') ? getItemMeta(m.id) : null;
+        const matName = (meta && meta.name) ? meta.name : m.id;
+        matsHtml += '<span class="'+(enough?'has':'miss')+'">' + matName + '×' + m.qty + (enough?'('+qty+')':'') + '</span> ';
       });
 
       html +=
@@ -2855,6 +3393,28 @@ body::before{
   };
 
   function doAcceptMission(sectId, nodeId, node){
+    // 统一获取 per-node 状态字典
+    let nodeStates = {};
+    if(typeof getSectChainNodeStates === 'function'){
+      nodeStates = getSectChainNodeStates(sectId);
+    } else if(typeof getSectChainProgress === 'function'){
+      const prog = getSectChainProgress(sectId);
+      const chain = (typeof SECT_CHAINS !== 'undefined' && SECT_CHAINS[sectId]) ? SECT_CHAINS[sectId].chain : [];
+      const currentStep = (prog && prog.currentStep) || 0;
+      const completed = prog && prog.completed;
+      chain.forEach(function(n, i){
+        if(completed || i < currentStep) nodeStates[n.id] = 'done';
+        else if(i === currentStep) nodeStates[n.id] = 'active';
+        else nodeStates[n.id] = 'locked';
+      });
+    }
+    // 防护：链中已有其他 active 节点，则不能再接取
+    const alreadyActive = Object.keys(nodeStates).some(function(k){ return k !== nodeId && nodeStates[k] === 'active'; });
+    if(alreadyActive){
+      showToast('已有进行中的门派要务，请先完成！','warn');
+      return;
+    }
+
     if(typeof setSectChainNodeState === 'function'){
       setSectChainNodeState(sectId, nodeId, 'active');
     }
@@ -2925,12 +3485,55 @@ body::before{
     window._startSectTrial(sectId);
   };
 
+  // ── 门派 ID → schoolTag 映射（对应 npc-portraits.js 的 COS_BODY_MAP）──
+  const SECT_SCHOOL_TAG_MAP = {
+    shaolin:'cs_shaolin', wudang:'cs_wudang', xiaoyao:'cs_xiaoyao',
+    riyue:'cs_riyue', huashan:'cs_huashan', mingjiao:'cs_mingjiao',
+    wudu:'cs_wudu', tangmen:'cs_tangmen', taohuadao:'cs_taohuadao',
+    emei:'cs_emei', kongtong:'cs_kongtong', kunlun:'cs_kunlun',
+    tiandibang:'cs_tiandibang', guigu:'cs_guigu', shengguang:'cs_shengguang',
+    tianshan:'cs_tianshan', nangong:'cs_nangong', gao:'cs_gao',
+    songshan:'cs_shaolin', qingcheng:'cs_qingcheng', luoyang:'cs_gao',
+    // 默认使用 force
+    _default:'cs_cloth'
+  };
+
+  // ── 门派考官 ASCII 形象（简短版，5行以内）──
+  const SECT_TRIAL_STAND = {
+    shaolin: '  卍 南无 卍\n  ╭(◎_◎)╮\n  卍（禅）卍\n  ╠═══╦═══╣\n  卍━━━┿━━━卍',
+    wudang:   '  ☯ 太上 ☯\n  ╭(^_^)╮\n  ☯（道）☯\n  ╠═══╩═══╣\n  ～～～─┿～～～',
+    xiaoyao:  '  ～～逍遥～~\n  ╭(◕‿◕)╮\n  ～（逍）～\n  ╠═══╩═══╣\n  ～～～～│～～～～',
+    riyue:    '  ☀ 日月 ☀\n  ╭(◉_◉)╮\n  ☀（教）☀\n  ╠═══╬═══╣\n  ▓▓━━━┿━━━▓▓',
+    huashan:  '  ✦ 剑宗 ✦\n  ╭(◉_◉)╮\n  ✦（华）✦\n  ╠═══╬═══╣\n  ⚔━━━┿━━━⚔',
+    mingjiao: '  🔥 圣火 🔥\n  ╭(◉_◉)╮\n  🔥（明）🔥\n  ╠═══╬═══╣\n  ▓━━━┿━━━▓',
+    wudu:     '  🐍 五毒 🐍\n  ╭(◉_◉)╮\n  🐍（毒）🐍\n  ╠═══╬═══╣\n  ░━━━┿━━━░',
+    tangmen:  '  ░ 唐门 ░\n  ╭(◉_◉)╮\n  ░（唐）░\n  ╠═══╬═══╣\n  ░━━━┿━━━░',
+    taohuadao:'  🌸 桃花 🌸\n  ╭(◕‿◕)╮\n  🌸（桃）🌸\n  ╠═══╩═══╣\n  ～～～～│～～～～',
+    emei:     '  ⚪ 峨眉 ⚪\n  ╭(◕‿◕)╮\n  ⚪（眉）⚪\n  ╠═══╩═══╣\n  ～～～─┿～～～',
+    kongtong: '  █ 崆峒 █\n  ╭(◎_◎)╮\n  █（崆）█\n  ╠═══╬═══╣\n  █━━━┿━━━█',
+    kunlun:   '  ❄ 天山 ❄\n  ╭(◎_◎)╮\n  ❄（昆）❄\n  ╠═══╩═══╣\n  ❄～～─┿～～❄',
+    tiandibang:'  ▓ 丐帮 ▓\n  ╭(◎_◎)╮\n  ▓（帮）▓\n  ╠═══╩═══╣\n  ▓～～─┿～～▓',
+    guigu:    '  ★ 归墟 ★\n  ╭(◎_◎)╮\n  ★（谷）★\n  ╠═══╩═══╣\n  ★━━━┿━━━★',
+    shengguang:'  ✨ 圣光 ✨\n  ╭(◎_◎)╮\n  ✨（圣）✨\n  ╠═══╩═══╣\n  ✨━━━┿━━━✨',
+    tianshan: '  雪 天山 雪\n  ╭(◎_◎)╮\n  雪（山）雪\n  ╠═══╩═══╣\n  雪～～─┿～～雪',
+    nangong:  '  公 南宫 公\n  ╭(◎_◎)╮\n  公（宫）公\n  ╠═══╩═══╣\n  ◇━━━┿━━━◇',
+    gao:      '  高 高家 高\n  ╭(◎_◎)╮\n  高（家）高\n  ╠═══╩═══╣\n  ◆━━━┿━━━◆',
+    qingcheng:'  ◇ 青城 ◇\n  ╭(◎_◎)╮\n  ◇（城）◇\n  ╠═══╩═══╣\n  ◇～～─┿～～◇',
+    // 默认通用形象
+    _default:'  ⚔ 江湖 ⚔\n  ╭(◎_◎)╮\n  ⚔（人）⚔\n  ╠═══╩═══╣\n  ◇━━━┿━━━◇'
+  };
+
   window._startSectTrial = function(sectId){
     if(typeof SECTS === 'undefined') return;
     const sect = SECTS.find(function(s){return s.id === sectId;});
     if(!sect) return;
     const cfg = SECT_TRIAL_CFG[sect.tier] || SECT_TRIAL_CFG.minor;
     const playerLevel = (edS||{}).level || 1;
+
+    // 获取门派对应的服装标签（对应 npc-portraits.js 的 COS_BODY_MAP）
+    const schoolTag = SECT_SCHOOL_TAG_MAP[sect.id] || SECT_SCHOOL_TAG_MAP._default;
+    // 获取门派 ASCII 形象
+    const sectStand = SECT_TRIAL_STAND[sect.id] || SECT_TRIAL_STAND._default;
 
     // 构建试炼对手
     const opponentLv = Math.max(5, Math.round(playerLevel * (cfg.baseLvl / 20)));
@@ -2941,7 +3544,7 @@ body::before{
       level: opponentLv,
       tier: sect.tier==='supreme'?'elite':(sect.tier==='major'?'major':'func'),
       role:'fighter',
-      schoolTag:(sect.schools||[])[0]||'force',
+      schoolTag: schoolTag,
       maxHp: Math.round((40 + opponentLv*8)*tierMult*0.7),
       atk: Math.round((5 + opponentLv*1.0)*tierMult),
       def: Math.round((2 + opponentLv*0.5)*tierMult),
@@ -2949,24 +3552,53 @@ body::before{
       crit: Math.min(28, Math.round(5 + opponentLv*0.12)),
       dodge: Math.min(18, Math.round(3 + opponentLv*0.06)),
       maxMp: Math.round((30 + opponentLv*4)*tierMult*0.6),
+      // 门派信息（用于显示）
+      sectEmblem: sect.emblem,
+      sectName: sect.name,
+      sectId: sect.id,
+      icon: sect.emblem,
+      color: sect.color || '#f0c040',
+      // ★ 门派考官 ASCII 形象（供 battle.js 渲染）
+      stand: sectStand,
+      title: '门派考官',
+      _isEnemy: true,
     };
 
-    // 尝试打开切磋面板
-    if(typeof openRplFightPanel === 'function'){
-      window._tmpTrialNpc = {inst:trialNpc, sectId:sectId};
-      window._isSectTrialFight = true;
-      window._trialTargetSectId = sectId;
-      setTimeout(function(){
-        try{
-          openRplFightPanel(trialNpc.id, travelCurrentCity||(typeof WORLD_NODES!=='undefined'&&sect.city?sect.city:'kaifeng'));
-        }catch(e){
-          console.warn('[SectTrial] 切磋不可用，走简易判定', e);
-          _doSimpleSectTrial(sectId, trialNpc, cfg);
-        }
-      },300);
-    } else {
-      _doSimpleSectTrial(sectId, trialNpc, cfg);
-    }
+    console.log('[SectTrial] 开始门派试炼，对手等级:', opponentLv);
+
+    // 保存试炼信息到 sessionStorage，供战斗结束后回调使用
+    sessionStorage.setItem('sectTrial_sectId', sectId);
+    sessionStorage.setItem('sectTrial_cfgName', cfg.name || '试炼');
+    sessionStorage.setItem('sectTrial_returnUrl', window.location.href);
+
+    // 构建玩家角色对象（让 battle.js 从 edS 自动同步数据）
+    const playerChar = {
+      id: 'cp_self',
+      name: edS ? (edS.name || '无名侠') : '无名侠',
+      maxHp: 100,
+      atk: 15,
+      def: 10,
+      crit: 10,
+      dodge: 8,
+      maxMp: 100,
+      speedN: 8,
+      parts: edS ? edS.parts : null,
+      custom: edS ? edS.custom : null,
+      useCustom: edS ? edS.useCustom : null,
+    };
+
+    // 设置 arena 模式（门派试炼复用切磋结果机制）
+    sessionStorage.setItem('battleMode', 'arena');
+    // ★ 关键：标记这是门派试炼（battle.html 会检查这个键）
+    sessionStorage.setItem('wuxia_sect_trial', sectId);
+
+    // 调用战斗系统
+    startBattleInNewPage(
+      playerChar,
+      trialNpc,
+      window.location.href,
+      null
+    );
   };
 
   function _doSimpleSectTrial(sectId, npc, cfg){
@@ -2995,15 +3627,33 @@ body::before{
       _clearSectNpcRels(oldSect);
     }
 
+    // ★ 修复：先计算所有数值
     ed.sect = sectId;
     if(!ed.sectContrib || ed.sectContrib < 0) ed.sectContrib = 0;
     ed.sectRank = 'disciple';
-    if(typeof saveGameState === 'function') saveGameState();
-    try{ localStorage.setItem('wuxia_editor', JSON.stringify(ed)); }catch(e){}
 
     const contribBonus = {supreme:50,major:30,minor:15}[sect.tier]||15;
     ed.sectContrib = (ed.sectContrib||0) + contribBonus;
     if(typeof checkSectRankUp === 'function') checkSectRankUp(ed);
+
+    // ★ 修复：直接写入所有4个存档键，绕过 saveProfile 的字段列表遗漏问题
+    try {
+      var saveKeys = ['wuxia_player_profile','wuxia_save','wuxia_editor'];
+      saveKeys.forEach(function(key){
+        try {
+          var data = JSON.parse(localStorage.getItem(key) || '{}');
+          data.sect = sectId;
+          data.sectRank = ed.sectRank;
+          data.sectContrib = ed.sectContrib;
+          localStorage.setItem(key, JSON.stringify(data));
+        } catch(e2){ console.warn('[sectTrial] 写入 '+key+' 失败:', e2); }
+      });
+      console.log('[sectTrial] 已直接写入 sect='+sectId+' 到所有存档键');
+    } catch(e){ console.warn('[sectTrial] 直接写存档失败:', e); }
+
+    // 再走 saveGameState 确保其他字段也同步
+    if(typeof saveGameState === 'function') saveGameState();
+    try{ localStorage.setItem('wuxia_editor', JSON.stringify(ed)); }catch(e){}
 
     const rankCfg = (typeof SECT_RANK_CFG !== 'undefined') ? SECT_RANK_CFG[ed.sectRank||'disciple'] : null;
     const rankHint = rankCfg ? ' · '+rankCfg.icon+rankCfg.name : '';
@@ -3014,12 +3664,17 @@ body::before{
 
     // 手动触发"门派已加入"提示（showTip 内部已遵守 once 规则）
     if(typeof showTip === 'function'){
-      setTimeout(function(){ showTip('sect_join', TIPS_DB['sect_join']); }, 600);
+      try {
+        var _tipData = (typeof TIPS_DB !== 'undefined') ? TIPS_DB['sect_join'] : undefined;
+        if(_tipData) setTimeout(function(){ showTip('sect_join', _tipData); }, 600);
+      } catch(e){ console.warn('[sectTrial] showTip error:', e); }
     }
     if(typeof _tipMarkShown === 'function'){
-      setTimeout(function(){ _tipMarkShown('sect_join'); }, 600);
+      try{ setTimeout(function(){ _tipMarkShown('sect_join'); }, 600); }catch(e){}
     }
 
+    // 试炼刚结束，跳过入场动画直接显示总舵
+    window._skipEntryAnim = true;
     showHqView();
   };
 
@@ -3032,6 +3687,84 @@ body::before{
 
     if(confirm('确定要退出「'+sect.name+'】吗？\n\n退出后将清零贡献、清除门派NPC好感度，且7天内不能重新加入。')){
       _doSectLeave(sectId);
+    }
+  };
+
+  // ── 贡献商店购买 ──
+  window._onSectContribBuy = function(sectId, itemId){
+    const ed = edS || {};
+    const shop = (typeof SECT_CONTRIB_SHOP !== 'undefined') ? SECT_CONTRIB_SHOP[sectId] : null;
+    if(!shop || !shop.items) return;
+    const item = shop.items.find(function(x){return x.id===itemId;});
+    if(!item) return;
+
+    // 检查等级
+    if((ed.level||1) < (item.reqLv||0)){
+      showToast('需要 Lv'+(item.reqLv||0)+' 才能购买','warn');
+      return;
+    }
+    // 检查贡献
+    if((ed.sectContrib||0) < item.cost){
+      showToast('贡献不足！需要 '+item.cost,'warn');
+      return;
+    }
+
+    // 扣贡献
+    ed.sectContrib -= item.cost;
+
+    // 根据类型发放奖励
+    const type = item.type || 'consumable';
+    if(type === 'manual' && item.manualId){
+      // 购买功法秘籍
+      let manuals = [];
+      try{ manuals = JSON.parse(localStorage.getItem('wuxia_manuals')||'[]'); }catch(e){ manuals=[]; }
+      if(manuals.indexOf(item.manualId) === -1){
+        manuals.push(item.manualId);
+        try{ localStorage.setItem('wuxia_manuals', JSON.stringify(manuals)); }catch(e){}
+        showToast('📖 获得「'+(item.name||item.manualId)+'】！已加入功法库','ok');
+      } else {
+        showToast('📖 已拥有该功法，但获得修炼心得，「'+item.name+'】熟练度+5','ok');
+      }
+    }
+    else if(type === 'costume' && item.costumeId){
+      // 购买门派服饰 → 直接装备
+      ed.costumeId = item.costumeId;
+      showToast('🎀 获得并装备了「'+(item.name||item.costumeId)+'】！','ok');
+    }
+    else if(type === 'title'){
+      // 购买称谓
+      let titles = [];
+      try{ titles = JSON.parse(localStorage.getItem('wuxia_titles')||'[]'); }catch(e){ titles=[]; }
+      if(titles.indexOf(itemId) === -1){
+        titles.push(itemId);
+        try{ localStorage.setItem('wuxia_titles', JSON.stringify(titles)); }catch(e){}
+      }
+      ed.title = itemId; // 立即佩戴
+      showToast('🏅 获得并佩戴了「'+(item.name||itemId)+'】！','ok');
+    }
+    else {
+      // 消耗品 → 加入背包
+      let bag = [];
+      try{ bag = JSON.parse(localStorage.getItem('wuxia_bag')||'[]'); }catch(e){ bag=[]; }
+      // 检查是否已有同类物品（消耗品叠加）
+      const existing = bag.find(function(b){ return b.id === itemId; });
+      if(existing){
+        existing.qty = (existing.qty||1) + 1;
+      } else {
+        bag.push({id:itemId, qty:1});
+      }
+      try{ localStorage.setItem('wuxia_bag', JSON.stringify(bag)); }catch(e){}
+      showToast('🎁 获得「'+(item.name||itemId)+'】×1！已放入背包','ok');
+    }
+
+    // 保存
+    if(typeof saveGameState === 'function') saveGameState();
+    try{ localStorage.setItem('wuxia_editor', JSON.stringify(ed)); }catch(e){}
+
+    // 刷新商店显示
+    const sect = (typeof SECTS !== 'undefined') ? SECTS.find(function(s){return s.id===sectId;}) : null;
+    if(sect){
+      renderShop(sect);
     }
   };
 

@@ -293,6 +293,30 @@ function renderSectBuildingPanel(sect){
   html += '<div style="font-size:11px;color:rgba(200,180,120,.7);margin-top:2px">💰 银两：' + (ed.silver || 0) + ' 两</div>';
   html += '</div>';
 
+  // ── 功能入口快捷按钮 ──
+  html += '<div style="display:flex;gap:8px;padding:0 8px 8px;flex-wrap:wrap">';
+  // 讲武堂 → 学武学（藏经阁）
+  html += '<button onclick="try{switchTab(\'library\')}catch(e){}if(typeof window.showToast===\'function\')window.showToast(\'前往藏经阁学习武学\',\'ok\')" ' +
+    'style="flex:1;min-width:45%;padding:8px 6px;border:1px solid rgba(240,192,96,.2);border-radius:8px;' +
+    'background:linear-gradient(135deg,rgba(240,192,96,.08),rgba(240,192,96,.03));color:#f0c060;' +
+    'font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;font-weight:bold">📖 学武学（藏经阁）</button>';
+  // 兵器库/藏宝阁 → 买装备（藏宝阁）
+  html += '<button onclick="try{switchTab(\'treasury\')}catch(e){}if(typeof window.showToast===\'function\')window.showToast(\'前往藏宝阁购买装备\',\'ok\')" ' +
+    'style="flex:1;min-width:45%;padding:8px 6px;border:1px solid rgba(240,192,96,.2);border-radius:8px;' +
+    'background:linear-gradient(135deg,rgba(240,192,96,.08),rgba(240,192,96,.03));color:#f0c060;' +
+    'font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;font-weight:bold">💰 买装备（藏宝阁）</button>';
+  // 贡献商店
+  html += '<button onclick="try{switchTab(\'shop\')}catch(e){}if(typeof window.showToast===\'function\')window.showToast(\'前往贡献商店\',\'ok\')" ' +
+    'style="flex:1;min-width:45%;padding:8px 6px;border:1px solid rgba(128,232,128,.2);border-radius:8px;' +
+    'background:linear-gradient(135deg,rgba(128,232,128,.08),rgba(128,232,128,.03));color:#80e880;' +
+    'font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;font-weight:bold">⚔ 贡献商店</button>';
+  // 演武场
+  html += '<button onclick="try{switchTab(\'arena\')}catch(e){}if(typeof window.showToast===\'function\')window.showToast(\'前往演武场切磋\',\'ok\')" ' +
+    'style="flex:1;min-width:45%;padding:8px 6px;border:1px solid rgba(255,136,32,.2);border-radius:8px;' +
+    'background:linear-gradient(135deg,rgba(255,136,32,.08),rgba(255,136,32,.03));color:#ff8830;' +
+    'font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;font-weight:bold">🏟 演武场</button>';
+  html += '</div>';
+
   // ── 建筑列表 ──
   var buildingIds = Object.keys(SECT_BUILDINGS);
   var totalLevel = 0;
@@ -322,7 +346,7 @@ function renderSectBuildingPanel(sect){
     html += '</div></div>';
     html += '<div style="text-align:right">';
     html += '<div style="font-size:16px;font-weight:bold;color:' + barColor + '">Lv.' + currentLv + '</div>';
-    html += '</div></div>';
+    html += '</div></div></div>';  // 3个: rightSection + iconSection + flexHeader (line 316)
 
     // 等级进度条
     html += '<div style="background:rgba(0,0,0,.3);border-radius:3px;height:6px;overflow:hidden;margin:8px 0">';
@@ -353,13 +377,15 @@ function renderSectBuildingPanel(sect){
       html += '<div>';
       html += '<div style="font-size:11px;color:' + (canAfford ? '#f0c060' : '#ff6060') + '">升级到 Lv.' + nextLvData.lv + ' · ' + nextLvData.name + '</div>';
       html += '<div style="font-size:10px;color:var(--text3)">💰 ' + nextLvData.cost.silver + '两';
-      // 材料消耗
+      // 材料消耗（使用中文名）
       if(nextLvData.cost.mats && Object.keys(nextLvData.cost.mats).length > 0){
         Object.keys(nextLvData.cost.mats).forEach(function(matId){
           var need = nextLvData.cost.mats[matId];
           var have = sbCountItem(matId);
           var enough = have >= need;
-          html += ' · ' + matId + ' <span style="color:' + (enough ? '#80e880' : '#ff6060') + '">' + have + '/' + need + '</span>';
+          var matName = (typeof sbGetMatName === 'function') ? sbGetMatName(matId) : matId;
+          var matIcon = (typeof sbGetMatIcon === 'function') ? sbGetMatIcon(matId) : '📦';
+          html += ' · ' + matIcon + ' ' + matName + ' <span style="color:' + (enough ? '#80e880' : '#ff6060') + '">' + have + '/' + need + '</span>';
         });
       }
       html += '</div>';

@@ -447,7 +447,7 @@ body::before{
 <script src="js/data-manuals.js"></script>
 <script src="js/manuals.js"></script>
 <script src="js/data-chars.js"></script>
-<script src="js/npc-portraits.js"></script>
+<script src="js/npc-portraits.js?v=337"></script>
 <script src="js/data-enemies.js?v=2"></script>
 <script>
 console.log('[Dungeon] data-enemies.js 加载后检查:');
@@ -462,6 +462,8 @@ if(typeof ENEMY_DB !== 'undefined') {
 <script src="js/data-equip.js?v=7"></script>
 <script src="js/icon-ascii.js?v=7"></script>
 <script src="js/editor.js?v=7"></script>
+<script src="js/total-stats.js"></script>
+<script src="js/wuxia-save.js?v=5"></script>
 <script src="js/level-system.js"></script>
 <script src="js/realm-system.js"></script>
 <script src="js/karma-system.js"></script>
@@ -482,6 +484,54 @@ if(typeof ENEMY_DB !== 'undefined') {
 // ════════════════════════════════════════════════════
 // dungeon.html - 独立地下城页面脚本
 // ════════════════════════════════════════════════════
+
+// ── SilverManager Fallback（dungeon.html 不加载 game-flow.js，需要独立实现）──
+if(typeof SilverManager === 'undefined'){
+  window.SilverManager = {
+    _getTravelState(){
+      try {
+        const raw = localStorage.getItem('wuxia_travel');
+        return raw ? JSON.parse(raw) : null;
+      } catch(e) { return null; }
+    },
+    _saveTravel(state){
+      if(!state) return;
+      try { localStorage.setItem('wuxia_travel', JSON.stringify(state)); } catch(e) {}
+    },
+    get(){
+      if(typeof edS !== 'undefined' && edS.silver !== undefined) return edS.silver;
+      if(typeof travelPlayerState !== 'undefined' && travelPlayerState.silver !== undefined) return travelPlayerState.silver;
+      const ts = this._getTravelState();
+      return (ts && ts.silver !== undefined) ? ts.silver : 200;
+    },
+    set(val){
+      const v = Math.max(0, Math.floor(val));
+      if(typeof edS !== 'undefined') edS.silver = v;
+      if(typeof travelPlayerState !== 'undefined') travelPlayerState.silver = v;
+      // 同步到 wuxia_travel
+      const ts = this._getTravelState() || {};
+      ts.silver = v;
+      this._saveTravel(ts);
+      return v;
+    },
+    add(delta){
+      return this.set(this.get() + delta);
+    },
+    save(){
+      // ── 统一存档保存 ──
+      if(typeof WuxiaSave !== 'undefined' && WuxiaSave.saveProfile && typeof edS !== 'undefined'){
+        WuxiaSave.saveProfile(edS);
+      } else if(typeof editorSave === 'function') {
+        editorSave();
+      } else if(typeof saveGameState === 'function') {
+        saveGameState();
+      }
+      // 保存 wuxia_travel
+      const ts = this._getTravelState();
+      if(ts) this._saveTravel(ts);
+    }
+  };
+}
 
 // ── 经验函数桥接（level-system.js 提供 addPlayerExp）──
 if(typeof gainExp !== 'function'){
@@ -509,9 +559,31 @@ document.addEventListener('DOMContentLoaded', function(){
     console.log('[Dungeon] enterDungeon 状态:', typeof enterDungeon !== 'undefined' ? '已定义' : '未定义');
     console.log('[Dungeon] DUNGEON_DB 状态:', typeof DUNGEON_DB !== 'undefined' ? '已定义' : '未定义');
     
-    // 加载玩家存档
-    loadPlayerSave();
-    console.log('[Dungeon] playerSave:', playerSave ? ('已加载: ' + (playerSave.name || '无名')) : '未加载');
+    // ── 统一存档初始化 ──
+    // 使用 WuxiaSave.loadEdS() 替代零散的 localStorage 读取
+    if (typeof WuxiaSave !== 'undefined' && typeof edS !== 'undefined') {
+      WuxiaSave.initPage(edS);
+      console.log('[Dungeon] 存档已通过 WuxiaSave.initPage 加载:', edS.name, 'Lv.' + edS.level, 'HP:' + edS.hp + '/' + edS.maxHp);
+    } else {
+      // fallback：保留原有 loadPlayerSave
+      loadPlayerSave();
+      syncToEdS();
+    }
+
+    // ★ 修复（2026-05-05）：用 getTotalStats() 更新 edS.maxHp/edS.maxMp
+    // 确保 maxHp/maxMp 包含所有装备加成，与 town.html 一致
+    if (typeof getTotalStats === 'function') {
+      const ts = getTotalStats();
+      const newMaxHp = ts.hp;
+      const newMaxMp = ts.mp;
+      if (newMaxHp !== edS.maxHp || newMaxMp !== edS.maxMp) {
+        console.log('[Dungeon] 更新 maxHp/maxMp:', edS.maxHp, '->', newMaxHp, edS.maxMp, '->', newMaxMp);
+        edS.maxHp = newMaxHp;
+        edS.maxMp = newMaxMp;
+        if (edS.hp > newMaxHp) edS.hp = newMaxHp;
+        if (edS.mp > newMaxMp) edS.mp = newMaxMp;
+      }
+    }
     
     // 检查URL参数
     const params = new URLSearchParams(window.location.search);
@@ -522,6 +594,11 @@ document.addEventListener('DOMContentLoaded', function(){
       console.log('[Dungeon] 准备进入地下城...');
       // 同步到 edS（用于兼容 dungeon.js）
       syncToEdS();
+      // 加载境界状态（确保 edS.realm 正确，避免战斗中 addRealmQi 用默认值覆盖存档）
+      if(typeof loadRealmState === 'function'){
+        try { loadRealmState(); console.log('[Dungeon] 境界加载:', typeof getRealmFullName === 'function' ? getRealmFullName() : JSON.stringify(edS.realm)); }
+        catch(e) { console.warn('[Dungeon] 境界加载失败:', e); }
+      }
       console.log('[Dungeon] 调用 enterDungeon');
       enterDungeon(dungeonId, 'town');
     } else {
@@ -532,12 +609,26 @@ document.addEventListener('DOMContentLoaded', function(){
   }, 200); // 200ms 延迟确保所有脚本加载完成
 });
 
-// 加载玩家存档
+// ════════════════════════════════════════════════════════════════
+//  统一存档系统（使用 WuxiaSave 模块）
+//  替代原本零散的 localStorage 读取逻辑
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * 加载玩家存档（fallback：WuxiaSave 不可用时使用）
+ * 优先使用 WuxiaSave.loadEdS()，此函数仅作兜底
+ */
 function loadPlayerSave(){
   try {
-    console.log('[loadPlayerSave] 开始加载存档...');
-    
-    // 调试：列出所有 wuxia_ 开头的 localStorage 键
+    // ── 优先使用统一存档模块 ──
+    if(typeof WuxiaSave !== 'undefined' && WuxiaSave.loadEdS){
+      playerSave = WuxiaSave.loadEdS();
+      console.log('[loadPlayerSave] 通过 WuxiaSave.loadEdS() 加载:', playerSave?.name, 'Lv.'+playerSave?.level);
+      return;
+    }
+    console.warn('[loadPlayerSave] WuxiaSave 不可用，使用原始逻辑');
+
+    // ── fallback：原有逐层读取逻辑 ──
     console.log('[loadPlayerSave] 可用的存档键:');
     for(let i = 0; i < localStorage.length; i++){
       const key = localStorage.key(i);
@@ -546,185 +637,87 @@ function loadPlayerSave(){
         console.log('  -', key, ':', val ? (val.substring(0, 50) + '...') : '空');
       }
     }
-    
-    // 1. 优先从 wuxia_player_progress 加载经验值（battle.js 的 addPlayerExp 保存到这里，最实时）
-    let progressData = null;
     const progressRaw = localStorage.getItem('wuxia_player_progress');
-    if(progressRaw){
-      progressData = JSON.parse(progressRaw);
-      console.log('[loadPlayerSave] 从 wuxia_player_progress 读取:', 'Lv.' + (progressData.level || 1), 'Exp:' + (progressData.totalExp || 0));
-    }
-    
-    // 2. 从 wuxia_player_profile 加载基础数据
-    const profileSave = localStorage.getItem('wuxia_player_profile');
-    if(profileSave){
-      const profileData = JSON.parse(profileSave);
-      playerSave = convertProfileToEdS(profileData);
-      // 用 progress 的经验值覆盖（如果有的话）
-      if(progressData && progressData.totalExp !== undefined){
-        playerSave.totalExp = progressData.totalExp;
-        playerSave.level = progressData.level || playerSave.level || 1;
-        console.log('[loadPlayerSave] 用 wuxia_player_progress 的经验覆盖:', 'Lv.' + playerSave.level, 'Exp:' + playerSave.totalExp);
-      }
-      console.log('[loadPlayerSave] 从 wuxia_player_profile 加载存档:', playerSave.name, 'Lv.' + playerSave.level, 'Exp:' + playerSave.totalExp);
+    const profileRaw  = localStorage.getItem('wuxia_player_profile');
+    const saveRaw     = localStorage.getItem('wuxia_save');
+    const editorRaw   = localStorage.getItem('wuxia_editor');
+    const travelRaw   = localStorage.getItem('wuxia_travel');
+
+    if(profileRaw){
+      playerSave = convertProfileToEdS(JSON.parse(profileRaw));
+      if(progressRaw){ const pg=JSON.parse(progressRaw); playerSave.totalExp=pg.totalExp; playerSave.level=pg.level||1; }
+      console.log('[loadPlayerSave] 从 wuxia_player_profile 加载');
       return;
     }
-    console.log('[loadPlayerSave] wuxia_player_profile 不存在');
-    
-    // 2. 尝试从 wuxia_save 加载（完整存档）
-    const save = localStorage.getItem('wuxia_save');
-    if(save){
-      playerSave = JSON.parse(save);
-      console.log('[loadPlayerSave] 从 wuxia_save 加载存档:', playerSave.name, 'Lv.' + playerSave.level);
-      return;
+    if(saveRaw){ playerSave = JSON.parse(saveRaw); console.log('[loadPlayerSave] 从 wuxia_save 加载'); return; }
+    if(editorRaw){ playerSave = JSON.parse(editorRaw); console.log('[loadPlayerSave] 从 wuxia_editor 加载'); return; }
+    if(travelRaw){
+      const td = JSON.parse(travelRaw);
+      playerSave = td.state ? convertTravelToEdS(td.state) : convertTravelToEdS(td);
+      console.log('[loadPlayerSave] 从 wuxia_travel 加载'); return;
     }
-    console.log('[loadPlayerSave] wuxia_save 不存在');
-    
-    // 3. 尝试从 wuxia_editor 加载（editor.js 使用的格式）
-    const editorSave = localStorage.getItem('wuxia_editor');
-    if(editorSave){
-      playerSave = JSON.parse(editorSave);
-      console.log('[loadPlayerSave] 从 wuxia_editor 加载存档:', playerSave.name, 'Lv.' + playerSave.level);
-      return;
-    }
-    console.log('[loadPlayerSave] wuxia_editor 不存在');
-    
-    // 4. 尝试从 wuxia_travel 加载（旅行系统存档）- 注意：travel.state 可能不是完整角色数据
-    const travelSave = localStorage.getItem('wuxia_travel');
-    if(travelSave){
-      const travelData = JSON.parse(travelSave);
-      console.log('[loadPlayerSave] wuxia_travel 数据:', travelData);
-      // 优先使用 travelData.state.player 或 travelData.player（如果存在）
-      if(travelData.state && travelData.state.player){
-        playerSave = convertTravelToEdS(travelData.state.player);
-        console.log('[loadPlayerSave] 从 wuxia_travel.state.player 加载存档:', playerSave.name, 'Lv.' + playerSave.level);
-        return;
-      }
-      // 如果 state 里有 name，直接用 state
-      if(travelData.state && travelData.state.name && travelData.state.name !== '无名侠客'){
-        playerSave = convertTravelToEdS(travelData.state);
-        console.log('[loadPlayerSave] 从 wuxia_travel.state 加载存档:', playerSave.name, 'Lv.' + playerSave.level);
-        return;
-      }
-      // 尝试直接使用 travelData（兼容旧格式）
-      if(travelData.name && travelData.name !== '无名侠客'){
-        playerSave = convertTravelToEdS(travelData);
-        console.log('[loadPlayerSave] 从 wuxia_travel 直接加载存档:', playerSave.name, 'Lv.' + playerSave.level);
-        return;
-      }
-    }
-    console.log('[loadPlayerSave] wuxia_travel 不存在或格式不正确');
-    
-    // 5. 尝试从 travelPlayerState 内存变量加载（如果在同一页面）
-    if(typeof travelPlayerState !== 'undefined' && travelPlayerState){
+    if(typeof travelPlayerState !== 'undefined' && travelPlayerState?.name){
       playerSave = convertTravelToEdS(travelPlayerState);
-      console.log('[loadPlayerSave] 从 travelPlayerState 内存变量加载存档:', playerSave.name, 'Lv.' + playerSave.level);
-      return;
+      console.log('[loadPlayerSave] 从 travelPlayerState 加载'); return;
     }
-    console.log('[loadPlayerSave] travelPlayerState 不存在');
-    
-  } catch(e){
-    console.error('[loadPlayerSave] 加载存档失败:', e);
-  }
-  
-  if(!playerSave){
     console.error('[loadPlayerSave] 所有存档源都未找到');
     showToast('未找到角色存档，请先创建角色');
     setTimeout(() => returnToTown(), 2000);
+  } catch(e){
+    console.error('[loadPlayerSave] 加载存档失败:', e);
   }
 }
 
-// 同步存档数据到 edS（用于兼容依赖 edS 的代码）
+/**
+ * 同步存档数据到 edS
+ * 使用 WuxiaSave.loadEdS() 获取权威数据，保留背包合并逻辑（地下城获得的物品不丢失）
+ */
 function syncToEdS(){
-  if(!playerSave) {
-    console.error('[syncToEdS] playerSave 为空');
+  // ── 确保 edS 存在 ──
+  if(typeof edS === 'undefined'){ window.edS = {}; }
+
+  // ── 优先使用统一存档模块 ──
+  if(typeof WuxiaSave !== 'undefined' && WuxiaSave.loadEdS){
+    const loaded = WuxiaSave.loadEdS();
+
+    // 保留 edS.bag 中、loaded.bag 里没有的物品（地下城中获得但未保存的）
+    const _currentBag = edS.bag || [];
+    const loadedIds  = new Set((loaded.bag||[]).map(i => i.instId || i.id));
+    const itemsToKeep = _currentBag.filter(i => i && !loadedIds.has(i.instId || i.id));
+
+    Object.assign(edS, loaded);
+    if(itemsToKeep.length > 0){
+      edS.bag = [...(loaded.bag||[]), ...itemsToKeep];
+      console.log('[syncToEdS] 保留地下城获得的物品:', itemsToKeep.length, '件');
+    }
+    console.log('[syncToEdS] 完成:', edS.name, 'Lv.'+edS.level, 'HP:'+edS.hp+'/'+edS.maxHp, '背包:'+(edS.bag||[]).length+'件');
     return;
   }
-  
-  // 确保 edS 存在（editor.js 中定义）
-  if(typeof edS === 'undefined') {
-    console.error('[syncToEdS] edS 未定义，editor.js 可能未加载');
-    // 创建临时 edS 对象以避免崩溃
-    window.edS = {};
-  }
-  
-  // 将 playerSave 的属性复制到 edS（不重新赋值 edS）
-  // ── 先用 wuxia_travel 的百分比血量修正 playerSave.hp ──
-  // town.html 里 travelPlayerState.hp 是百分比(0-100)，wuxia_editor 里是绝对值
-  // 以 wuxia_travel 为准（更实时），避免地下城读到战斗前的旧存档
-  try{
-    var _tRaw = localStorage.getItem('wuxia_travel');
-    if(_tRaw){
-      var _tData = JSON.parse(_tRaw);
-      var _tState = _tData.state || {};
-      if(_tState.hp != null && _tState.hp > 0){
-        var _mhp = playerSave.maxHp || 150;
-        // travelState.hp 是百分比（0-100）
-        var _realHp = Math.max(1, Math.round(_mhp * _tState.hp / 100));
-        console.log('[syncToEdS] 用旅行存档修正血量: pct=' + _tState.hp + '% -> hp=' + _realHp + '/' + _mhp);
-        playerSave.hp = _realHp;
-      }
-      if(_tState.mp != null && _tState.mp > 0){
-        var _mmp = playerSave.maxMp || 100;
-        var _realMp = Math.round(_mmp * _tState.mp / 100);
-        playerSave.mp = _realMp;
-      }
-    }
-  }catch(e){ console.warn('[syncToEdS] travel修正失败:', e); }
 
-  const syncData = {
-    name: playerSave.name || '无名侠客',
-    level: playerSave.level || 1,
-    totalExp: playerSave.totalExp || 0,
-    hp: playerSave.hp || 100,
-    maxHp: playerSave.maxHp || 100,
-    mp: playerSave.mp || 50,
-    maxMp: playerSave.maxMp || 50,
-    energy: playerSave.energy || 100,
-    silver: playerSave.silver || 0,
-    str: playerSave.str || 10,
-    con: playerSave.con || 10,
-    agi: playerSave.agi || 10,
-    dex: playerSave.dex || 10,
-    int: playerSave.int || 10,
-    luk: playerSave.luk || 10,
-    spd: playerSave.spd || 10,
-    atk: playerSave.atk || 10,
-    def: playerSave.def || 5,
-    crit: playerSave.crit || 5,
-    dodge: playerSave.dodge || 3,
-    // 添加战斗需要的额外属性
-    maxEnergy: playerSave.maxEnergy || 100,
-    gender: playerSave.gender || 'male',
-    appearance: playerSave.appearance || {},
-    bag: playerSave.bag || [],
-    skills: playerSave.skills || [],
-    manuals: playerSave.manuals || [],
-    sect: playerSave.sect || '',
-    reputation: playerSave.reputation || 0,
-    fame: playerSave.fame || 0,
-    origin: playerSave.origin || '',
-    originPts: playerSave.originPts || {},
-    primaryPts: playerSave.primaryPts || {}
-  };
-  
-  console.log('[syncToEdS] 准备同步数据:', syncData.name, 'Lv.' + syncData.level);
-  
-  try {
-    Object.assign(edS, syncData);
-    console.log('[syncToEdS] 同步完成:', edS.name, 'Lv.' + edS.level, 'HP:' + edS.hp + '/' + edS.maxHp);
-    console.log('[syncToEdS] edS 完整状态:', {name: edS.name, level: edS.level, hp: edS.hp, maxHp: edS.maxHp});
-  } catch(e) {
-    console.error('[syncToEdS] Object.assign 失败:', e);
-    // 尝试逐个属性赋值
-    for(let key in syncData) {
-      try {
-        edS[key] = syncData[key];
-      } catch(e2) {
-        console.error('[syncToEdS] 赋值失败:', key, e2);
-      }
+  // ── fallback：原有逐字段合并逻辑 ──
+  console.warn('[syncToEdS] WuxiaSave 不可用，使用原始逻辑');
+  if(!playerSave){ console.error('[syncToEdS] playerSave 为空'); return; }
+
+  // 用 travel 百分比修正 HP
+  try{
+    const _t = JSON.parse(localStorage.getItem('wuxia_travel')||'{}').state||{};
+    if(_t.hp != null && _t.hp > 0){
+      playerSave.hp = Math.max(1, Math.round((playerSave.maxHp||150) * _t.hp / 100));
+      console.log('[syncToEdS] travel修正血量:', _t.hp+'% -> '+playerSave.hp);
     }
-  }
+    // ★ 修复（2026-05-05）：travel.state.mp 可能是绝对值（旧 bug 遗留），必须检查 <=100
+    if(_t.mp != null && _t.mp > 0 && _t.mp <= 100) playerSave.mp = Math.round((playerSave.maxMp||100) * _t.mp / 100);
+  }catch(e){}
+
+  // 保留地下城背包
+  const _currentBag = edS.bag || [];
+  const _latestBag  = typeof bagLoad==='function' ? bagLoad() : JSON.parse(localStorage.getItem('wuxia_bag')||'[]');
+  const _latestIds  = new Set(_latestBag.map(i=>i.instId||i.id));
+  const _toKeep     = _currentBag.filter(i=>i&&!_latestIds.has(i.instId||i.id));
+
+  Object.assign(edS, playerSave);
+  edS.bag = [..._latestBag, ..._toKeep];
+  console.log('[syncToEdS] fallback完成:', edS.name, 'Lv.'+edS.level, '背包:'+edS.bag.length+'件');
 }
 
 // 转换travel数据格式到edS格式
@@ -852,6 +845,10 @@ function enterDungeonFromList(dungeonId){
 
 // 返回城镇
 function returnToTown(){
+  // ★ 修复：离开地下城前，把当前 edS（含背包/装备）写回 wuxia_editor
+  if(typeof WuxiaSave !== 'undefined' && WuxiaSave.saveProfile && typeof edS !== 'undefined' && edS){
+    try{ WuxiaSave.saveProfile(edS); }catch(e){ console.warn('[returnToTown] WuxiaSave 失败:',e); }
+  }
   const returnCity = sessionStorage.getItem('wuxia_return_city') || 'luoyang';
   window.location.href = 'town.html?city=' + encodeURIComponent(returnCity);
 }
@@ -993,6 +990,49 @@ const originalSaveProgress = window.saveProgress;
 window.saveProgress = function(){
   if(edS){
     localStorage.setItem('wuxia_save', JSON.stringify(edS));
+
+    // 同步背包到 wuxia_bag（battle.js 的 bagSave() 写此处，town.html/dungeon 读此处）
+    try {
+      if(typeof bagSave === 'function'){
+        bagSave(); // bagSave() 会把 edS.bag 写到 wuxia_bag
+      } else if(edS.bag !== undefined){
+        localStorage.setItem('wuxia_bag', JSON.stringify(edS.bag || []));
+      }
+    } catch(e){ console.warn('[saveProgress] 同步背包到 wuxia_bag 失败:', e); }
+
+    // 同步银两到 wuxia_player_profile（town.html 读取此处的银两）
+    if(edS.silver !== undefined){
+      try{
+        const _pRaw = localStorage.getItem('wuxia_player_profile');
+        if(_pRaw){
+          const _p = JSON.parse(_pRaw);
+          _p.silver = edS.silver;
+          localStorage.setItem('wuxia_player_profile', JSON.stringify(_p));
+        }
+      }catch(e){ console.warn('[saveProgress] 同步银两到 profile 失败:', e); }
+
+      // 同步银两到 wuxia_editor（备用存档）
+      try{
+        const _eRaw = localStorage.getItem('wuxia_editor');
+        if(_eRaw){
+          const _e = JSON.parse(_eRaw);
+          _e.silver = edS.silver;
+          localStorage.setItem('wuxia_editor', JSON.stringify(_e));
+        }
+      }catch(e){ console.warn('[saveProgress] 同步银两到 editor 失败:', e); }
+
+      // 同步银两到 wuxia_travel（town.html 通过 SilverManager.sync() 取 travelPlayerState.silver）
+      try{
+        const _tRaw = localStorage.getItem('wuxia_travel');
+        if(_tRaw){
+          const _t = JSON.parse(_tRaw);
+          if(_t.state){ _t.state.silver = edS.silver; }
+          else { _t.state = { silver: edS.silver }; }
+          localStorage.setItem('wuxia_travel', JSON.stringify(_t));
+          console.log('[saveProgress] 同步银两到 wuxia_travel:', edS.silver);
+        }
+      }catch(e){ console.warn('[saveProgress] 同步银两到 travel 失败:', e); }
+    }
   }
   if(originalSaveProgress) originalSaveProgress();
 };
@@ -1104,13 +1144,40 @@ setTimeout(function(){
   };
   sessionStorage.setItem('wuxia_dungeon_battle_context', JSON.stringify(battleContext));
   
-  // 保存玩家当前状态（血量等）
+  // 保存玩家当前状态（血量用 getTotalStats() 含装备加成）
   if(typeof edS !== 'undefined' && edS){
-    sessionStorage.setItem('wuxia_dungeon_player_hp', edS.hp || 0);
-    sessionStorage.setItem('wuxia_dungeon_player_mp', edS.mp || 0);
-    sessionStorage.setItem('wuxia_dungeon_player_maxhp', edS.maxHp || 100);
-    sessionStorage.setItem('wuxia_dungeon_player_maxmp', edS.maxMp || 100);
-    console.log('[dungeonStartBattle] Saved player HP:', edS.hp, '/', edS.maxHp);
+    // ★ 用 getTotalStats() 获取含装备加成的最大气血
+    const _totalStats = (typeof getTotalStats === 'function') ? getTotalStats() : null;
+    const _maxHpWithEquip = _totalStats ? _totalStats.hp : (edS.maxHp || 100);
+    const _maxMpWithEquip = _totalStats ? _totalStats.mp : (edS.maxMp || 100);
+    // 当前血量也要按比例换算（存档里是无装备比例，需要映射到有装备的比例）
+    const _rawMaxHp = edS.maxHp || 100;
+    const _rawMaxMp = edS.maxMp || 100;
+    // ★ 修复（2026-05-05）：防止 edS.hp/edS.mp 脏值导致比例异常
+    // 额外保护：当前值不能超过对应 max，防止比例 >1 导致战后翻倍
+    const _safeHp = (typeof edS.hp === 'number' && edS.hp >= 0 && edS.hp <= 99999) ? Math.min(edS.hp, _rawMaxHp) : 0;
+    const _safeMp = (typeof edS.mp === 'number' && edS.mp >= 0 && edS.mp <= 99999) ? Math.min(edS.mp, _rawMaxMp) : 0;
+    const _curHpRatio = _safeHp / _rawMaxHp;
+    const _curMpRatio = _safeMp / _rawMaxMp;
+    sessionStorage.setItem('wuxia_dungeon_player_hp', Math.round(_curHpRatio * _maxHpWithEquip));
+    sessionStorage.setItem('wuxia_dungeon_player_mp', Math.round(_curMpRatio * _maxMpWithEquip));
+    sessionStorage.setItem('wuxia_dungeon_player_maxhp', _maxHpWithEquip);
+    sessionStorage.setItem('wuxia_dungeon_player_maxmp', _maxMpWithEquip);
+    console.log('[dungeonStartBattle] Saved player HP:', Math.round(_curHpRatio * _maxHpWithEquip), '/', _maxHpWithEquip, '(装备加成后)');
+
+    // ── 战斗前同步背包：确保 wuxia_bag 和 wuxia_editor.bag 都是最新的 ──
+    // battle.html 会从这两处读取背包，战斗中掉落的装备才不会覆盖旧数据
+    try {
+      if(typeof bagSave === 'function') bagSave();
+      else localStorage.setItem('wuxia_bag', JSON.stringify(edS.bag || []));
+      // 同步到 wuxia_editor.bag
+      const _edRaw = localStorage.getItem('wuxia_editor');
+      if(_edRaw){
+        const _edD = JSON.parse(_edRaw);
+        _edD.bag = edS.bag || [];
+        localStorage.setItem('wuxia_editor', JSON.stringify(_edD));
+      }
+    } catch(e) { console.warn('[dungeonStartBattle] 同步背包失败:', e); }
   }
   
   // 跳转到战斗页面
@@ -1152,32 +1219,71 @@ function handleReturnFromBattle(){
   // 恢复玩家状态
   const savedHp = sessionStorage.getItem('wuxia_dungeon_player_hp');
   const savedMp = sessionStorage.getItem('wuxia_dungeon_player_mp');
-  console.log('[handleReturnFromBattle] 读取sessionStorage - HP:', savedHp, 'MP:', savedMp);
+  const savedMaxHp = sessionStorage.getItem('wuxia_dungeon_player_maxhp');
+  const savedMaxMp = sessionStorage.getItem('wuxia_dungeon_player_maxmp');
+  console.log('[handleReturnFromBattle] 读取sessionStorage - HP:', savedHp, 'MP:', savedMp, 'MaxHP:', savedMaxHp, 'MaxMP:', savedMaxMp);
   if(typeof edS !== 'undefined' && edS) {
-    // 确保 maxHp/maxMp 有默认值
-    if(!edS.maxHp || edS.maxHp <= 0) {
-      edS.maxHp = playerSave?.maxHp || 150;
-      console.log('[handleReturnFromBattle] 初始化 maxHp:', edS.maxHp);
+    // ★ 修复（2026-05-05）：从 sessionStorage 恢复 maxHp/maxMp（含装备加成）
+    if(savedMaxHp !== null && savedMaxHp !== '' && !isNaN(parseInt(savedMaxHp))) {
+      edS.maxHp = parseInt(savedMaxHp, 10);
+      console.log('[handleReturnFromBattle] 恢复 maxHp:', edS.maxHp);
+    } else if (typeof getTotalStats === 'function') {
+      edS.maxHp = getTotalStats().hp;
+      console.log('[handleReturnFromBattle] 用 getTotalStats() 设置 maxHp:', edS.maxHp);
     }
-    if(!edS.maxMp || edS.maxMp <= 0) {
-      edS.maxMp = playerSave?.maxMp || 100;
-      console.log('[handleReturnFromBattle] 初始化 maxMp:', edS.maxMp);
+    if(savedMaxMp !== null && savedMaxMp !== '' && !isNaN(parseInt(savedMaxMp))) {
+      edS.maxMp = parseInt(savedMaxMp, 10);
+      console.log('[handleReturnFromBattle] 恢复 maxMp:', edS.maxMp);
+    } else if (typeof getTotalStats === 'function') {
+      edS.maxMp = getTotalStats().mp;
+      console.log('[handleReturnFromBattle] 用 getTotalStats() 设置 maxMp:', edS.maxMp);
     }
     
     if(savedHp !== null && savedHp !== '' && !isNaN(parseInt(savedHp))) {
-      edS.hp = parseInt(savedHp, 10);
-      console.log('[handleReturnFromBattle] 恢复血量到 edS.hp:', edS.hp);
+      const _hpVal = parseInt(savedHp, 10);
+      // ★ 修复（2026-05-05）：防止脏值被写回 edS.hp（与 savedMp 一致）
+      if (_hpVal > 99999) {
+        console.warn('[handleReturnFromBattle] savedHp 脏值已丢弃:', savedHp);
+        sessionStorage.removeItem('wuxia_dungeon_player_hp');
+      } else {
+        edS.hp = _hpVal;
+        console.log('[handleReturnFromBattle] 恢复血量到 edS.hp:', edS.hp);
+      }
     } else {
       console.warn('[handleReturnFromBattle] 无效的血量值，不恢复:', savedHp);
     }
     if(savedMp !== null && savedMp !== '' && !isNaN(parseInt(savedMp))) {
-      edS.mp = parseInt(savedMp, 10);
+      const _mpVal = parseInt(savedMp, 10);
+      // ★ 修复（2026-05-05）：防止脏值被写回 edS.mp
+      if (_mpVal > 99999) {
+        console.warn('[handleReturnFromBattle] savedMp 脏值已丢弃:', savedMp);
+        sessionStorage.removeItem('wuxia_dungeon_player_mp');
+      } else {
+        edS.mp = _mpVal;
+      }
     }
     console.log('[handleReturnFromBattle] 最终状态 - HP:', edS.hp, '/', edS.maxHp, 'MP:', edS.mp, '/', edS.maxMp);
   }
   
   // 处理战斗结果
   if(result.won){
+    // ── 同步背包：battle.js 已通过 bagSave() 把掉落装备写入 wuxia_bag ──
+    // dungeon.html 的 edS.bag 是进入地下城时快照的旧值，需要重新从 wuxia_bag 加载
+    try {
+      const _latestBag = typeof bagLoad === 'function' ? bagLoad() : JSON.parse(localStorage.getItem('wuxia_bag') || '[]');
+      if(typeof edS !== 'undefined' && edS) {
+        const _oldCount = (edS.bag||[]).length;
+        edS.bag = _latestBag;
+        console.log('[handleReturnFromBattle] 同步背包: 旧', _oldCount, '件 → 新', edS.bag.length, '件');
+      }
+    } catch(e) { console.warn('[handleReturnFromBattle] 背包同步失败:', e); }
+
+    // ── 同步境界：battle.js 通过 _saveRealmState() 更新了 wuxia_editor/profile/progress ──
+    // dungeon.html 的 edS.realm 可能是未初始化状态，需要从存档恢复
+    if(typeof loadRealmState === 'function') {
+      try { loadRealmState(); } catch(e) { console.warn('[handleReturnFromBattle] 境界同步失败:', e); }
+    }
+
     // ── 发放战斗奖励 ──
     // 注意：经验已经在 battle.html 中通过 addPlayerExp() 发放并保存到存档
     // 这里只需要从存档重新加载最新的经验值，避免重复计算
@@ -1234,6 +1340,10 @@ function handleReturnFromBattle(){
       }
       // 保存
       if(typeof saveProgress === 'function') saveProgress();
+      // ★ 修复：用 WuxiaSave 把 weaponInstId/bag 等写回 wuxia_editor，防止回 town 后装备引用丢失
+      if(typeof WuxiaSave !== 'undefined' && WuxiaSave.saveProfile && typeof edS !== 'undefined' && edS){
+        try{ WuxiaSave.saveProfile(edS); }catch(e){ console.warn('[handleReturnFromBattle] WuxiaSave 失败:',e); }
+      }
     }
 
     // 胜利：标记房间已清理，并将玩家位置移动到战斗房间

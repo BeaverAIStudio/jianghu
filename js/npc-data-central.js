@@ -481,7 +481,7 @@ Object.assign(NPC_DB, {
       items:[
         { id:'item_elixir', name:'灵药', desc:'回复气血内力各30', icon:'⚗', price:25, effect:{hp:30,mp:30} },
         { id:'item_travel_ration',name:'行路干粮', desc:'饱食度+35', icon:'🧆', price:7, effect:{food:35} },
-        { id:'item_iron_ore', name:'铁矿石', desc:'锻造用材料', icon:'�ite', price:15, effect:{} },
+        { id:'item_iron_ore', name:'铁矿石', desc:'锻造用材料', icon:'⛏', price:15, effect:{} },
         { id:'item_cricket_cage_basic', name:'竹编蛐蛐罐', desc:'养蛐捉蛐必备，每个可容纳1只蛐蛐', icon:'🧺', price:40, effect:{} },
 
       ]

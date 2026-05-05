@@ -5073,12 +5073,24 @@ function applyOriginStats(data) {
     }
   }
 
-  // 写入技能奖励（追加到 edS.skills）
-  if (bonusSkills.length > 0 && typeof edS !== 'undefined') {
-    if (!edS.skills) edS.skills = [];
-    for (const sid of bonusSkills) {
-      if (!edS.skills.includes(sid)) edS.skills.push(sid);
+  // 写入技能奖励（追加到 edS.skills + wuxia_player_progress.learnedSkills）
+  if (bonusSkills.length > 0) {
+    // 同步到 edS.skills（角色存档）
+    if (typeof edS !== 'undefined') {
+      if (!edS.skills) edS.skills = [];
+      for (const sid of bonusSkills) {
+        if (!edS.skills.includes(sid)) edS.skills.push(sid);
+      }
     }
+    // 同步到 wuxia_player_progress.learnedSkills（招式学习记录，供 getLearnedSkills() 读取）
+    try {
+      const p = JSON.parse(localStorage.getItem('wuxia_player_progress') || '{}');
+      if (!Array.isArray(p.learnedSkills)) p.learnedSkills = [];
+      for (const sid of bonusSkills) {
+        if (!p.learnedSkills.includes(sid)) p.learnedSkills.push(sid);
+      }
+      localStorage.setItem('wuxia_player_progress', JSON.stringify(p));
+    } catch(e) {}
   }
 
   if (typeof saveGameState === 'function') {

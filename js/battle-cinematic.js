@@ -2072,6 +2072,11 @@ function showBossIntro(bossName, rFighter){
         npcArtHtml = buildNpcPartsHtml(npc, rFighter.color || npc.color || null);
       }
     }
+    // 尝试从敌人的 stand 字段获取专属字符画（地下城/野外敌人）
+    let enemyStandArt = null;
+    if(!npcArtHtml && rFighter && rFighter._isEnemy && rFighter.stand){
+      enemyStandArt = rFighter.stand;
+    }
     // 构建 fallback 数据
     data = {
       name:     rFighter ? rFighter.name : bossName || 'BOSS',
@@ -2081,7 +2086,7 @@ function showBossIntro(bossName, rFighter){
       bgColor:  isArena ? 'rgba(60,40,0,.9)' : 'rgba(80,0,0,.9)',
       taunt:    isArena ? (rFighter ? (rFighter.taunt || '……请指教，点到为止。') : '……请指教，点到为止。') : (rFighter ? (rFighter.taunt || '……今日，我们一决生死。') : '……今日，我们一决生死。'),
       bgLabel:  rFighter ? (rFighter.title || 'BOSS') : 'BOSS',
-      art: npcArtHtml || (
+      art: npcArtHtml || enemyStandArt || (
 `    ？？？
    ╱？？？╲
   │ ??  ?? │

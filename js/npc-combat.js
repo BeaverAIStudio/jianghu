@@ -1,6 +1,6 @@
 // npc-combat.js — NPC战斗属性 / 装备实例 / 死亡重生 / 击杀确认
 // 依赖: npc-data.js, npc-logic.js
-// version: 2
+// version: 3
 
 // ── NPC 角色类型 → 战斗基底（将将胡版）──
 // roleType 决定等级范围和属性倾向
@@ -765,15 +765,21 @@ function confirmKillNpc(npcId, npcInstId, cityId){
 
 // ── 发起 NPC 战斗（动手 → 演武场 → 胜利后结算）──
 function startNpcBattle(npcId, npcInstId, cityId){
+  console.log('[startNpcBattle] 参数: npcId=', npcId, 'npcInstId=', npcInstId);
+  // 出手直接扣好感，直接写 localStorage
+  try {
+    const raw = localStorage.getItem('wuxia_npc_state');
+    let ns = raw ? JSON.parse(raw) : { relations:{}, quests:{}, readIntels:{}, interactCounts:{}, lastInteractDay:{}, topicsDone:{}, giftTopics:{}, questDoneFor:{}, alignQuests:{}, questLastDone:{}, questChainUnlock:{}, deaths:{}, npcInsts:{}, npcMoods:{}, lastDecayDay:0 };
+    if(!ns.relations) ns.relations = {};
+    ns.relations[npcId] = -100;
+    localStorage.setItem('wuxia_npc_state', JSON.stringify(ns));
+  } catch(e) {
+    console.error('[startNpcBattle] 存档失败:', e);
+  }
   // 关闭面板 + NPC 对话框
   document.getElementById('npcFightPanel')?.remove();
   if(typeof closeNpcDialog === 'function') closeNpcDialog();
   else document.getElementById('npcDialogOverlay')?.remove();
-
-  // 动手即清零好感（你都对我动手了还能是好朋友吗）
-  if(typeof changeNpcRel === 'function'){
-    changeNpcRel(npcId, -100, '你向对方出手');
-  }
 
   const npc = NPC_DB[npcId];
   const cs  = getNpcCombatStats(npcInstId);
@@ -885,7 +891,7 @@ function startNpcBattle(npcId, npcInstId, cityId){
       weaponInstId: edS.weaponInstId || null,
       weaponId: edS.weaponId || null,
       costumeInstId: edS.costumeInstId || null,
-      skillIds: ['cm01','cm02','cm03'],
+      skills: (edS && edS.skills && edS.skills.length > 0) ? edS.skills : [{id:'cm01',name:'劈空掌',mpCost:5},{id:'cm02',name:'连环腿',mpCost:6},{id:'cm03',name:'运气调息',mpCost:8}],
     };
   }
   if(!playerChar){
@@ -952,9 +958,13 @@ function _handleNpcBattleResult(npcId, npcInstId, cityId, npcName, npcSilver, pl
   if (playerWon) {
     // 玩家胜利：执行 NPC 击杀结算
     confirmKillNpc(npcId, npcInstId, cityId);
-    // 好感大幅下降（主动攻击）
-    if (typeof changeNpcRel === 'function') {
-      changeNpcRel(npcId, -50, '你击败了对方');
+    // 好感确认最低（动手已经清零过了，这里确保）
+    if(typeof npcState !== 'undefined'){
+      npcStateLoad();
+      if((npcState.relations[npcId] || 0) > -100){
+        npcState.relations[npcId] = -100;
+        npcStateSave();
+      }
     }
     // 获取 NPC 身上银两
     if (npcSilver > 0) {
@@ -963,10 +973,7 @@ function _handleNpcBattleResult(npcId, npcInstId, cityId, npcName, npcSilver, pl
       showToast(`💰 搜刮 ${npcName} 身上 ${npcSilver} 两银子`);
     }
   } else {
-    // 玩家落败：NPC 存活，好感微降
-    if (typeof changeNpcRel === 'function') {
-      changeNpcRel(npcId, -10, '你向对方出手');
-    }
+    // 玩家落败：NPC 存活，好感已清零不再重复减
     showToast(`被 ${npcName} 击败，落荒而逃...`);
     // 返回地图/城市
     if (typeof travelRenderIndex === 'function') travelRenderIndex();

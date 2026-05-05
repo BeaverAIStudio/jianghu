@@ -883,83 +883,94 @@ function scRenderTourney() {
  * ════════════════════════════════════════════════════════════════════ */
 
 function scRenderLeaderboard(sectId) {
-  const sect = _scGetSect(sectId);
-  if (!sect) return '';
+  try {
+    const sect = _scGetSect(sectId);
+    if (!sect) return '';
 
-  const ed = _scEdS();
-  const playerContrib = ed.sect === sectId ? (ed.sectContrib || 0) : 0;
-  const playerRank = ed.sect === sectId ? (ed.sectRank || 'disciple') : '';
-  const playerLv = ed.level || 1;
+    const ed = _scEdS();
+    const playerContrib = ed.sect === sectId ? (ed.sectContrib || 0) : 0;
+    const playerRank = ed.sect === sectId ? (ed.sectRank || 'disciple') : '';
+    const playerLv = ed.level || 1;
 
-  // 生成模拟排行（玩家 + 随机NPC）
-  const rankOrder = ['grand', 'elder', 'elite', 'disciple'];
-  const rankLabels = { grand: '👑元老', elder: '🏅长老', elite: '⚔精英', disciple: '📜弟子' };
-  const names = SC_CONTESTANT_NAMES[sectId] || ['弟子甲','弟子乙','弟子丙','弟子丁','弟子戊'];
+    // 生成模拟排行（玩家 + 随机NPC）
+    const rankOrder = ['grand', 'elder', 'elite', 'disciple'];
+    const rankLabels = { grand: '👑元老', elder: '🏅长老', elite: '⚔精英', disciple: '📜弟子' };
+    const names = (typeof SC_CONTESTANT_NAMES !== 'undefined' && SC_CONTESTANT_NAMES[sectId]) || ['弟子甲','弟子乙','弟子丙','弟子丁','弟子戊'];
 
-  const entries = [];
+    const entries = [];
 
-  // 玩家自己
-  if (ed.sect === sectId) {
-    entries.push({
-      name: ed.name || '少侠',
-      level: playerLv,
-      contrib: playerContrib,
-      rank: playerRank,
-      isPlayer: true,
+    // 玩家自己
+    if (ed.sect === sectId) {
+      entries.push({
+        name: ed.name || '少侠',
+        level: playerLv,
+        contrib: playerContrib,
+        rank: playerRank,
+        isPlayer: true,
+      });
+    }
+
+    // 生成其他NPC
+    const usedNames = new Set();
+    names.forEach(n => usedNames.add(n));
+    for (let i = 0; i < 9; i++) {
+      let name;
+      let loopCount = 0;
+      do {
+        name = names[Math.floor(Math.random() * names.length)] + (i > 4 ? String(i-4) : '');
+        loopCount++;
+        if (loopCount > 1000) {
+          name = names[i % names.length] + '_' + i;
+          break;
+        }
+      } while (usedNames.has(name) && usedNames.size < 20);
+      usedNames.add(name);
+
+      const npcRank = i < 1 ? 'grand' : (i < 3 ? 'elder' : (i < 6 ? 'elite' : 'disciple'));
+      const npcContrib = Math.max(0, playerContrib * (0.3 + Math.random() * 1.5) - Math.random() * 50);
+      entries.push({
+        name,
+        level: Math.max(5, Math.floor(playerLv * (0.5 + Math.random() * 0.8))),
+        contrib: Math.floor(npcContrib),
+        rank: npcRank,
+        isPlayer: false,
+      });
+    }
+
+    // 按贡献排序
+    entries.sort((a, b) => {
+      const ra = rankOrder.indexOf(a.rank);
+      const rb = rankOrder.indexOf(b.rank);
+      if (ra !== rb) return ra - rb;
+      return b.contrib - a.contrib;
     });
-  }
 
-  // 生成其他NPC
-  const usedNames = new Set();
-  names.forEach(n => usedNames.add(n));
-  for (let i = 0; i < 9; i++) {
-    let name;
-    do { name = names[Math.floor(Math.random() * names.length)] + (i > 4 ? String(i-4) : ''); }
-    while (usedNames.has(name) && usedNames.size < 20);
-    usedNames.add(name);
-
-    const npcRank = i < 1 ? 'grand' : (i < 3 ? 'elder' : (i < 6 ? 'elite' : 'disciple'));
-    const npcContrib = Math.max(0, playerContrib * (0.3 + Math.random() * 1.5) - Math.random() * 50);
-    entries.push({
-      name,
-      level: Math.max(5, Math.floor(playerLv * (0.5 + Math.random() * 0.8))),
-      contrib: Math.floor(npcContrib),
-      rank: npcRank,
-      isPlayer: false,
-    });
-  }
-
-  // 按贡献排序
-  entries.sort((a, b) => {
-    // 先按阶级
-    const ra = rankOrder.indexOf(a.rank);
-    const rb = rankOrder.indexOf(b.rank);
-    if (ra !== rb) return ra - rb;
-    return b.contrib - a.contrib;
-  });
-
-  let html = `
+    let html = `
     <div style="margin-top:16px;padding:16px;background:rgba(128,160,200,.04);border:1px dashed rgba(128,160,200,.15);border-radius:10px">
       <div style="font-size:13px;color:#80b0e0;font-weight:bold;margin-bottom:12px">📊 ${sect.name} · 贡献榜</div>`;
 
-  entries.forEach((entry, idx) => {
-    const rankIdx = idx + 1;
-    const medal = rankIdx === 1 ? '🥇' : (rankIdx === 2 ? '🥈' : (rankIdx === 3 ? '🥉' : `#${rankIdx}`));
-    const style = entry.isPlayer ?
-      'background:rgba(240,200,80,.08);border:1px solid rgba(240,200,80,.2)' :
-      (idx < 3 ? 'background:rgba(255,255,255,.02)' : '');
+    entries.forEach((entry, idx) => {
+      const rankIdx = idx + 1;
+      const medal = rankIdx === 1 ? '🥇' : (rankIdx === 2 ? '🥈' : (rankIdx === 3 ? '🥉' : `#${rankIdx}`));
+      const style = entry.isPlayer ?
+        'background:rgba(240,200,80,.08);border:1px solid rgba(240,200,80,.2)' :
+        (idx < 3 ? 'background:rgba(255,255,255,.02)' : '');
 
-    html += `
+      html += `
       <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;margin-bottom:4px;border-radius:6px;${style}">
         <span style="font-size:12px;width:28px;text-align:center;flex-shrink:0;color:${idx < 3 ? '#e0c060' : 'rgba(200,180,140,.4)'}">${medal}</span>
         <span style="flex:1;font-size:11px;color:${entry.isPlayer ? '#f0d090' : 'rgba(200,180,140,.7)'};font-weight:${entry.isPlayer ? 'bold' : 'normal'}">${entry.name}${entry.isPlayer ? '（你）' : ''}</span>
         <span style="font-size:10px;color:rgba(200,180,140,.4)">${rankLabels[entry.rank] || ''}</span>
         <span style="font-size:11px;color:#80e880;min-width:50px;text-align:right">⚔${entry.contrib}</span>
       </div>`;
-  });
+    });
 
-  html += '</div>';
-  return html;
+    html += '</div>';
+    return html;
+  } catch(e) {
+    console.error('[scRenderLeaderboard] EXCEPTION:', e);
+    return '';
+  }
 }
 
 /* ════════════════════════════════════════════════════════════════════

@@ -494,7 +494,7 @@ function refreshPlayerSectBonus() {
   window._playerSectBonus = buildCardSystemBonus();
 }
 
-// 首次加载时刷新一次
-if (typeof document !== 'undefined') {
-  refreshPlayerSectBonus();
+// 首次加载时刷新一次（仅在有 #battleWrap 或 #arenaWrap 时执行，避免 sect.html 等页面无意义执行）
+if (typeof document !== 'undefined' && (document.getElementById('battleWrap') || document.getElementById('arenaWrap') || document.getElementById('pageGallery'))) {
+  try { refreshPlayerSectBonus(); } catch(e) { console.warn('[sect-card-bonus] init error:', e); }
 }
